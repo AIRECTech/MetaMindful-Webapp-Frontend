@@ -2,7 +2,6 @@ import { Bell, LogOut } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { api } from "../../lib/api";
 import { clearTokens } from "../../lib/auth";
-import { extractErrorMessage } from "../../lib/errors";
 import { toast } from "react-hot-toast";
 import { Link } from "react-router-dom";
 import { isAuthenticated } from "../../lib/auth";

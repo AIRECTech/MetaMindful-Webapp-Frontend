@@ -1,5 +1,4 @@
 import { useNavigate } from "react-router-dom";
-import { useState } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { toast } from "react-hot-toast";
 import { api } from "../lib/api";
@@ -16,7 +15,6 @@ const options = [
 
 export function WelcomePage() {
   const navigate = useNavigate();
-  const [selectedOption, setSelectedOption] = useState<string | null>(null);
 
   const startChat = useMutation({
     mutationFn: async (message: string) => {
@@ -37,7 +35,6 @@ export function WelcomePage() {
   });
 
   const handleOptionClick = (option: { label: string }) => {
-    setSelectedOption(option.label);
     startChat.mutate(option.label);
   };
 

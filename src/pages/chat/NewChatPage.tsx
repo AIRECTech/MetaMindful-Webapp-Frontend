@@ -1,7 +1,6 @@
 import { useMutation } from "@tanstack/react-query";
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { toast } from "react-hot-toast";
 import { Send } from "lucide-react";
 import { api } from "../../lib/api";
 import { extractErrorMessage } from "../../lib/errors";

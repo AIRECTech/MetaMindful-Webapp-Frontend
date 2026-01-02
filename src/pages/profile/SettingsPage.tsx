@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { toast } from "react-hot-toast";
 import { Card } from "../../components/ui/Card";
 import { api } from "../../lib/api";
@@ -21,10 +21,13 @@ export function SettingsPage() {
       const res = await api.get("/users/me");
       return res.data.data;
     },
-    onSuccess: (data) => {
-      setProfileForm({ name: data.name, email: data.email });
-    },
   });
+
+  useEffect(() => {
+    if (user) {
+      setProfileForm({ name: user.name, email: user.email });
+    }
+  }, [user]);
 
   // Note: These mutations require backend endpoints that may not exist yet
   // PUT /users/me for profile update

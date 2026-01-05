@@ -6,6 +6,9 @@ import "./index.css";
 import App from "./App";
 import { LoginPage } from "./pages/auth/LoginPage";
 import { SignupPage } from "./pages/auth/SignupPage";
+import { ForgotPasswordPage } from "./pages/auth/ForgotPasswordPage";
+import { ResetPasswordPage } from "./pages/auth/ResetPasswordPage";
+import { VerifyEmailPage } from "./pages/auth/VerifyEmailPage";
 import { RequireAuth } from "./components/RequireAuth";
 import { ThreadsPage } from "./pages/chat/ThreadsPage";
 import { ChatPage } from "./pages/chat/ChatPage";
@@ -17,6 +20,9 @@ import { WelcomePage } from "./pages/WelcomePage";
 const router = createBrowserRouter([
   { path: "/login", element: <LoginPage /> },
   { path: "/signup", element: <SignupPage /> },
+  { path: "/forgot-password", element: <ForgotPasswordPage /> },
+  { path: "/reset-password", element: <ResetPasswordPage /> },
+  { path: "/verify-email", element: <VerifyEmailPage /> },
   {
     path: "/",
     element: (

@@ -12,14 +12,16 @@ export type ParsedApiError = {
 };
 
 export function parseApiError(error: unknown, fallback = "Something went wrong"): ParsedApiError {
-  if (isAxiosError(error)) {
-    const payload = (error.response?.data?.error ?? error.response?.data) as {
+  // Check if it's an axios error or a custom error with response structure
+  if (isAxiosError(error) || (error && typeof error === "object" && "response" in error)) {
+    const err = error as any;
+    const payload = (err.response?.data?.error ?? err.response?.data) as {
       message?: string;
       details?: ApiErrorDetail[];
     };
 
     return {
-      message: payload?.message ?? error.message ?? fallback,
+      message: payload?.message ?? err.message ?? fallback,
       details: Array.isArray(payload?.details) ? payload?.details : undefined,
     };
   }

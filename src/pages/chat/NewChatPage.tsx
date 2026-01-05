@@ -1,7 +1,7 @@
 import { useMutation } from "@tanstack/react-query";
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { Send } from "lucide-react";
+import { ArrowUp } from "lucide-react";
 import { api } from "../../lib/api";
 import { extractErrorMessage } from "../../lib/errors";
 import { ensureToken, isGuestUser } from "../../lib/auth";
@@ -172,7 +172,10 @@ export function NewChatPage() {
   const showChat = messages.length > 0 || isLoading;
 
   return (
-    <div className="flex flex-col h-full bg-gray-50">
+    <div className="flex flex-col h-full relative" style={{ backgroundColor: '#F6F8FA' }}>
+      {/* Green status dot at top left */}
+      <div className="absolute top-4 left-4 w-3 h-3 bg-green-500 rounded-full z-10"></div>
+      
       {!showChat ? (
         // Initial greeting view
         <>
@@ -233,11 +236,11 @@ export function NewChatPage() {
 
           {/* Input area */}
           <div className="pb-4 px-4">
-            <div className="max-w-4xl mx-auto">
-              <div className="bg-white rounded-xl p-3 flex gap-3 items-center shadow-sm">
+            <div className="max-w-4xl mx-auto space-y-3">
+              <div className="bg-white rounded-full border border-gray-200 shadow-sm flex items-center gap-3 p-4">
                 <input
                   type="text"
-                  className="flex-1 rounded-lg border border-gray-300 bg-gray-50 px-4 py-3 text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-yellow-400 text-base"
+                  className="flex-1 px-6 py-3 text-gray-800 placeholder-gray-500 focus:outline-none text-base border-0 bg-gray-100 rounded-full"
                   placeholder="Type here ....."
                   value={message}
                   onChange={(e) => setMessage(e.target.value)}
@@ -252,11 +255,20 @@ export function NewChatPage() {
                 <button
                   onClick={handleSend}
                   disabled={!message.trim() || startChat.isPending}
-                  className="bg-yellow-400 hover:bg-yellow-500 text-gray-800 p-4 rounded-full disabled:opacity-50 disabled:cursor-not-allowed transition shadow-sm flex-shrink-0"
+                  className="bg-yellow-300 hover:bg-yellow-400 p-3 rounded-full disabled:opacity-50 disabled:cursor-not-allowed transition flex-shrink-0"
                 >
-                  <Send className="h-5 w-5" />
+                  <ArrowUp className="h-5 w-5 text-gray-900" strokeWidth={2.5} fill="none" />
                 </button>
               </div>
+              
+              {/* Guest user login/signup prompt - text only */}
+              {isGuestUser() && (
+                <div className="text-center">
+                  <p className="text-sm text-gray-600">
+                    Don't lose your progress. Let's log in or sign up to save your thread
+                  </p>
+                </div>
+              )}
             </div>
           </div>
         </>
@@ -276,13 +288,14 @@ export function NewChatPage() {
                   className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}
                 >
                   <div
-                    className={`max-w-[80%] rounded-2xl px-4 py-3 shadow-sm ${
+                    className={`max-w-[80%] rounded-2xl px-4 py-3 ${
                       msg.role === "user"
-                        ? "bg-blue-500 text-white"
+                        ? "text-gray-800"
                         : msg.isError
                         ? "bg-red-50 text-red-800 border border-red-200"
-                        : "bg-white text-gray-800 border border-gray-200"
+                        : "text-gray-600"
                     }`}
+                    style={msg.role === "user" ? { backgroundColor: '#E0F2F7' } : {}}
                   >
                     <p className="whitespace-pre-wrap leading-relaxed">{msg.content}</p>
                     {msg.isError && msg.originalUserMessage && (
@@ -301,7 +314,7 @@ export function NewChatPage() {
               {/* Loading indicator */}
               {isLoading && (
                 <div className="flex justify-start">
-                  <div className="bg-white text-gray-800 border border-gray-200 rounded-2xl px-4 py-3 shadow-sm">
+                  <div className="text-gray-600 rounded-2xl px-4 py-3">
                     <div className="flex gap-1">
                       <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: "0ms" }}></div>
                       <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: "150ms" }}></div>
@@ -317,11 +330,11 @@ export function NewChatPage() {
 
           {/* Input area */}
           <div className="pb-4 px-4">
-            <div className="max-w-4xl mx-auto">
-              <div className="bg-white rounded-xl p-3 flex gap-3 items-center shadow-sm">
+            <div className="max-w-4xl mx-auto space-y-3">
+              <div className="bg-white rounded-full border border-gray-200 shadow-sm flex items-center gap-3 p-4">
                 <input
                   type="text"
-                  className="flex-1 rounded-lg border border-gray-300 bg-gray-50 px-4 py-3 text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-yellow-400 text-base"
+                  className="flex-1 px-6 py-3 text-gray-800 placeholder-gray-500 focus:outline-none text-base border-0 bg-gray-100 rounded-full"
                   placeholder="Type here ....."
                   value={message}
                   onChange={(e) => setMessage(e.target.value)}
@@ -336,11 +349,20 @@ export function NewChatPage() {
                 <button
                   onClick={handleSend}
                   disabled={!message.trim() || startChat.isPending || isLoading}
-                  className="bg-yellow-400 hover:bg-yellow-500 text-gray-800 p-4 rounded-full disabled:opacity-50 disabled:cursor-not-allowed transition shadow-sm flex-shrink-0"
+                  className="bg-yellow-300 hover:bg-yellow-400 p-3 rounded-full disabled:opacity-50 disabled:cursor-not-allowed transition flex-shrink-0"
                 >
-                  <Send className="h-5 w-5" />
+                  <ArrowUp className="h-5 w-5 text-gray-900" strokeWidth={2.5} fill="none" />
                 </button>
               </div>
+              
+              {/* Guest user login/signup prompt - text only */}
+              {isGuestUser() && (
+                <div className="text-center">
+                  <p className="text-sm text-gray-600">
+                    Don't lose your progress. Let's log in or sign up to save your thread
+                  </p>
+                </div>
+              )}
             </div>
           </div>
         </>

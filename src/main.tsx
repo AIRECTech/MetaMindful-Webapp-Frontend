@@ -3,6 +3,10 @@ import { createRoot } from "react-dom/client";
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import "./index.css";
+import { initDarkMode } from "./lib/darkMode";
+
+// Initialize dark mode before rendering
+initDarkMode();
 import App from "./App";
 import { LoginPage } from "./pages/auth/LoginPage";
 import { SignupPage } from "./pages/auth/SignupPage";
@@ -15,14 +19,14 @@ import { ChatPage } from "./pages/chat/ChatPage";
 import { NewChatPage } from "./pages/chat/NewChatPage";
 import { ProfilePage } from "./pages/profile/ProfilePage";
 import { SettingsPage } from "./pages/profile/SettingsPage";
-import { WelcomePage } from "./pages/WelcomePage";
-
+import { StartChatPage } from "./pages/chat/StartChatPage";
 const router = createBrowserRouter([
   { path: "/login", element: <LoginPage /> },
   { path: "/signup", element: <SignupPage /> },
   { path: "/forgot-password", element: <ForgotPasswordPage /> },
   { path: "/reset-password", element: <ResetPasswordPage /> },
   { path: "/verify-email", element: <VerifyEmailPage /> },
+  { path: "/start-chat", element: <StartChatPage /> },
   {
     path: "/",
     element: (
@@ -31,7 +35,7 @@ const router = createBrowserRouter([
       </RequireAuth>
     ),
     children: [
-      { index: true, element: <WelcomePage /> },
+      { index: true, element: <NewChatPage /> },
       { path: "threads", element: <ThreadsPage /> },
       { path: "chat/new", element: <NewChatPage /> },
       { path: "chat/:id", element: <ChatPage /> },

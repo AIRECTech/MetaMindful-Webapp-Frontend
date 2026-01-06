@@ -21,6 +21,12 @@ api.interceptors.response.use(
     // Check if response has error code in body
     if (response.data?.code && response.data.code !== 200) {
       const errorMessage = response.data.message || response.data.error?.message || "Request failed";
+      
+      // Handle 401 errors (invalid token, login again)
+      if (response.data.code === 401) {
+        handleUnauthorized();
+      }
+      
       // Create an error that will be caught by the error handler
       const error: any = new Error(errorMessage);
       error.response = {

@@ -1,7 +1,7 @@
 import { useMutation } from "@tanstack/react-query";
 import { useState } from "react";
 import { toast } from "react-hot-toast";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate, Link, useLocation } from "react-router-dom";
 import { api } from "../../lib/api";
 import { setTokens, getDeviceId, getAccessToken } from "../../lib/auth";
 import { extractErrorMessage } from "../../lib/errors";
@@ -9,6 +9,8 @@ import { Mail, Lock, Eye, EyeOff } from "lucide-react";
 
 export function SignupPage() {
   const navigate = useNavigate();
+  const location = useLocation();
+  const currentThreadId = (location.state as { threadId?: string })?.threadId;
   const [formData, setFormData] = useState({ email: "", password: "", confirmPassword: "" });
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -27,14 +29,19 @@ export function SignupPage() {
       const guestToken = getAccessToken();
       // Use email prefix as name (backend requires name field)
       const name = formData.email.split("@")[0] || "User";
+      const payload: any = {
+        name,
+        email: formData.email,
+        password: formData.password,
+        deviceId,
+      };
+      // Include currentThreadId if provided (for guest user migration)
+      if (currentThreadId) {
+        payload.currentThreadId = currentThreadId;
+      }
       const res = await api.post(
         "/auth/register",
-        {
-          name,
-          email: formData.email,
-          password: formData.password,
-          deviceId,
-        },
+        payload,
         {
           headers: guestToken ? { Authorization: `Bearer ${guestToken}` } : {},
         }
@@ -57,15 +64,20 @@ export function SignupPage() {
     mutationFn: async ({ provider, providerToken, email, name }: { provider: "google" | "apple"; providerToken: string; email?: string; name?: string }) => {
       const deviceId = getDeviceId();
       const guestToken = getAccessToken();
+      const payload: any = {
+        provider,
+        providerToken,
+        email,
+        name,
+        deviceId,
+      };
+      // Include currentThreadId if provided (for guest user migration)
+      if (currentThreadId) {
+        payload.currentThreadId = currentThreadId;
+      }
       const res = await api.post(
         "/auth/social",
-        {
-          provider,
-          providerToken,
-          email,
-          name,
-          deviceId,
-        },
+        payload,
         {
           headers: guestToken ? { Authorization: `Bearer ${guestToken}` } : {},
         }

@@ -1,6 +1,6 @@
 import { useMutation } from "@tanstack/react-query";
 import { useState, useEffect, useRef } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { ArrowUp } from "lucide-react";
 import { api } from "../../lib/api";
 import { extractErrorMessage } from "../../lib/errors";
@@ -172,42 +172,47 @@ export function NewChatPage() {
   const showChat = messages.length > 0 || isLoading;
 
   return (
-    <div className="flex flex-col h-full relative" style={{ backgroundColor: '#F6F8FA' }}>
+    <div className="flex flex-col h-full relative bg-gray-50 dark:bg-gray-900">
       {/* Green status dot at top left */}
       <div className="absolute top-4 left-4 w-3 h-3 bg-green-500 rounded-full z-10"></div>
       
       {!showChat ? (
         // Initial greeting view
         <>
-          <div className="flex-1 flex items-center justify-center px-4 pb-24">
+          <div className="flex-1 flex items-center justify-center px-4">
             <div className="text-center max-w-4xl w-full">
               {/* Greeting text */}
-              <h2 className="text-3xl md:text-4xl font-normal text-gray-700 mb-12 leading-relaxed">
+              <h2 className="text-3xl md:text-4xl font-normal text-gray-700 dark:text-gray-300 leading-relaxed">
                 Hi, im Metamindful, how are you feeling right now?
               </h2>
-              
+            </div>
+          </div>
+
+          {/* Input area with suggestions */}
+          <div className="pb-4 px-4">
+            <div className="max-w-4xl mx-auto space-y-3">
               {/* Suggested prompts */}
-              <div className="flex flex-col items-center gap-4">
+              <div className="flex flex-col items-center gap-3">
                 {/* First row */}
                 <div className="flex flex-wrap gap-3 justify-center">
                   <button
                     onClick={() => handleSuggestionClick(suggestions[0])}
                     disabled={startChat.isPending}
-                    className="px-5 py-3 bg-blue-100 text-gray-700 rounded-xl border border-blue-200 hover:bg-blue-200 text-base font-normal transition disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="px-5 py-3 bg-blue-100 dark:bg-blue-900/30 text-gray-700 dark:text-gray-300 rounded-xl border border-blue-200 dark:border-blue-800 hover:bg-blue-200 dark:hover:bg-blue-900/50 text-base font-normal transition disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {suggestions[0]}
                   </button>
                   <button
                     onClick={() => handleSuggestionClick(suggestions[1])}
                     disabled={startChat.isPending}
-                    className="px-5 py-3 bg-blue-100 text-gray-700 rounded-xl border border-blue-200 hover:bg-blue-200 text-base font-normal transition disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="px-5 py-3 bg-blue-100 dark:bg-blue-900/30 text-gray-700 dark:text-gray-300 rounded-xl border border-blue-200 dark:border-blue-800 hover:bg-blue-200 dark:hover:bg-blue-900/50 text-base font-normal transition disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {suggestions[1]}
                   </button>
                   <button
                     onClick={() => handleSuggestionClick(suggestions[2])}
                     disabled={startChat.isPending}
-                    className="px-5 py-3 bg-blue-100 text-gray-700 rounded-xl border border-blue-200 hover:bg-blue-200 text-base font-normal transition disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="px-5 py-3 bg-blue-100 dark:bg-blue-900/30 text-gray-700 dark:text-gray-300 rounded-xl border border-blue-200 dark:border-blue-800 hover:bg-blue-200 dark:hover:bg-blue-900/50 text-base font-normal transition disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {suggestions[2]}
                   </button>
@@ -218,29 +223,24 @@ export function NewChatPage() {
                   <button
                     onClick={() => handleSuggestionClick(suggestions[3])}
                     disabled={startChat.isPending}
-                    className="px-5 py-3 bg-blue-100 text-gray-700 rounded-xl border border-blue-200 hover:bg-blue-200 text-base font-normal transition disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="px-5 py-3 bg-blue-100 dark:bg-blue-900/30 text-gray-700 dark:text-gray-300 rounded-xl border border-blue-200 dark:border-blue-800 hover:bg-blue-200 dark:hover:bg-blue-900/50 text-base font-normal transition disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {suggestions[3]}
                   </button>
                   <button
                     onClick={() => handleSuggestionClick(suggestions[4])}
                     disabled={startChat.isPending}
-                    className="px-5 py-3 bg-blue-100 text-gray-700 rounded-xl border border-blue-200 hover:bg-blue-200 text-base font-normal transition disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="px-5 py-3 bg-blue-100 dark:bg-blue-900/30 text-gray-700 dark:text-gray-300 rounded-xl border border-blue-200 dark:border-blue-800 hover:bg-blue-200 dark:hover:bg-blue-900/50 text-base font-normal transition disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {suggestions[4]}
                   </button>
                 </div>
               </div>
-            </div>
-          </div>
 
-          {/* Input area */}
-          <div className="pb-4 px-4">
-            <div className="max-w-4xl mx-auto space-y-3">
-              <div className="bg-white rounded-full border border-gray-200 shadow-sm flex items-center gap-3 p-4">
+              <div className="bg-white dark:bg-gray-800 rounded-full border border-gray-200 dark:border-gray-700 shadow-sm flex items-center gap-3 p-4">
                 <input
                   type="text"
-                  className="flex-1 px-6 py-3 text-gray-800 placeholder-gray-500 focus:outline-none text-base border-0 bg-gray-100 rounded-full"
+                  className="flex-1 px-6 py-3 text-gray-800 dark:text-gray-200 placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none text-base border-0 bg-gray-100 dark:bg-gray-700 rounded-full"
                   placeholder="Type here ....."
                   value={message}
                   onChange={(e) => setMessage(e.target.value)}
@@ -264,8 +264,24 @@ export function NewChatPage() {
               {/* Guest user login/signup prompt - text only */}
               {isGuestUser() && (
                 <div className="text-center">
-                  <p className="text-sm text-gray-600">
-                    Don't lose your progress. Let's log in or sign up to save your thread
+                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                    Don't lose your progress. Let's{" "}
+                    <Link 
+                      to="/login" 
+                      state={{ threadId: threadId || undefined }}
+                      className="underline text-gray-800 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-200"
+                    >
+                      log in
+                    </Link>{" "}
+                    or{" "}
+                    <Link 
+                      to="/signup" 
+                      state={{ threadId: threadId || undefined }}
+                      className="underline text-gray-800 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-200"
+                    >
+                      sign up
+                    </Link>{" "}
+                    to save your thread
                   </p>
                 </div>
               )}
@@ -280,7 +296,7 @@ export function NewChatPage() {
             <div className="max-w-4xl mx-auto px-4 py-6 space-y-6">
               {/* Centered header */}
               <div className="text-center mb-8">
-                <h1 className="text-2xl font-bold text-gray-800 mb-1">New Chat</h1>
+                <h1 className="text-2xl font-bold text-gray-800 dark:text-gray-200 mb-1">New Chat</h1>
               </div>
               {messages.map((msg, index) => (
                 <div
@@ -290,19 +306,18 @@ export function NewChatPage() {
                   <div
                     className={`max-w-[80%] rounded-2xl px-4 py-3 ${
                       msg.role === "user"
-                        ? "text-gray-800"
+                        ? "text-gray-800 dark:text-gray-200 bg-blue-100 dark:bg-blue-900/30"
                         : msg.isError
-                        ? "bg-red-50 text-red-800 border border-red-200"
-                        : "text-gray-600"
+                        ? "bg-red-50 dark:bg-red-900/30 text-red-800 dark:text-red-300 border border-red-200 dark:border-red-800"
+                        : "text-gray-600 dark:text-gray-300"
                     }`}
-                    style={msg.role === "user" ? { backgroundColor: '#E0F2F7' } : {}}
                   >
                     <p className="whitespace-pre-wrap leading-relaxed">{msg.content}</p>
                     {msg.isError && msg.originalUserMessage && (
                       <button
                         onClick={() => handleRetry(msg.originalUserMessage!)}
                         disabled={startChat.isPending || isLoading}
-                        className="mt-3 px-4 py-2 bg-red-100 hover:bg-red-200 text-red-800 rounded-lg text-sm font-medium transition disabled:opacity-50 disabled:cursor-not-allowed border border-red-300"
+                        className="mt-3 px-4 py-2 bg-red-100 dark:bg-red-900/30 hover:bg-red-200 dark:hover:bg-red-900/50 text-red-800 dark:text-red-300 rounded-lg text-sm font-medium transition disabled:opacity-50 disabled:cursor-not-allowed border border-red-300 dark:border-red-800"
                       >
                         Try again
                       </button>
@@ -314,11 +329,11 @@ export function NewChatPage() {
               {/* Loading indicator */}
               {isLoading && (
                 <div className="flex justify-start">
-                  <div className="text-gray-600 rounded-2xl px-4 py-3">
+                  <div className="text-gray-600 dark:text-gray-400 rounded-2xl px-4 py-3">
                     <div className="flex gap-1">
-                      <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: "0ms" }}></div>
-                      <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: "150ms" }}></div>
-                      <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: "300ms" }}></div>
+                      <div className="w-2 h-2 bg-gray-400 dark:bg-gray-500 rounded-full animate-bounce" style={{ animationDelay: "0ms" }}></div>
+                      <div className="w-2 h-2 bg-gray-400 dark:bg-gray-500 rounded-full animate-bounce" style={{ animationDelay: "150ms" }}></div>
+                      <div className="w-2 h-2 bg-gray-400 dark:bg-gray-500 rounded-full animate-bounce" style={{ animationDelay: "300ms" }}></div>
                     </div>
                   </div>
                 </div>
@@ -331,10 +346,10 @@ export function NewChatPage() {
           {/* Input area */}
           <div className="pb-4 px-4">
             <div className="max-w-4xl mx-auto space-y-3">
-              <div className="bg-white rounded-full border border-gray-200 shadow-sm flex items-center gap-3 p-4">
+              <div className="bg-white dark:bg-gray-800 rounded-full border border-gray-200 dark:border-gray-700 shadow-sm flex items-center gap-3 p-4">
                 <input
                   type="text"
-                  className="flex-1 px-6 py-3 text-gray-800 placeholder-gray-500 focus:outline-none text-base border-0 bg-gray-100 rounded-full"
+                  className="flex-1 px-6 py-3 text-gray-800 dark:text-gray-200 placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none text-base border-0 bg-gray-100 dark:bg-gray-700 rounded-full"
                   placeholder="Type here ....."
                   value={message}
                   onChange={(e) => setMessage(e.target.value)}
@@ -358,8 +373,24 @@ export function NewChatPage() {
               {/* Guest user login/signup prompt - text only */}
               {isGuestUser() && (
                 <div className="text-center">
-                  <p className="text-sm text-gray-600">
-                    Don't lose your progress. Let's log in or sign up to save your thread
+                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                    Don't lose your progress. Let's{" "}
+                    <Link 
+                      to="/login" 
+                      state={{ threadId: threadId || undefined }}
+                      className="underline text-gray-800 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-200"
+                    >
+                      log in
+                    </Link>{" "}
+                    or{" "}
+                    <Link 
+                      to="/signup" 
+                      state={{ threadId: threadId || undefined }}
+                      className="underline text-gray-800 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-200"
+                    >
+                      sign up
+                    </Link>{" "}
+                    to save your thread
                   </p>
                 </div>
               )}

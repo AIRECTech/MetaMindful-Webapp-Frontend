@@ -11,6 +11,7 @@ export function LoginPage() {
   const navigate = useNavigate();
   const location = useLocation();
   const redirectTo = (location.state as { from?: string })?.from ?? "/";
+  const currentThreadId = (location.state as { threadId?: string })?.threadId;
   const [credentials, setCredentials] = useState({ email: "", password: "" });
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
@@ -18,7 +19,17 @@ export function LoginPage() {
 
   const login = useMutation({
     mutationFn: async () => {
-      const res = await api.post("/auth/login", credentials);
+      const deviceId = getDeviceId();
+      const payload: any = {
+        email: credentials.email,
+        password: credentials.password,
+        deviceId,
+      };
+      // Include currentThreadId if provided (for guest user migration)
+      if (currentThreadId) {
+        payload.currentThreadId = currentThreadId;
+      }
+      const res = await api.post("/auth/login", payload);
       return res.data;
     },
     onSuccess: (data) => {
@@ -55,13 +66,18 @@ export function LoginPage() {
   const socialLogin = useMutation({
     mutationFn: async ({ provider, providerToken, email, name }: { provider: "google" | "apple"; providerToken: string; email?: string; name?: string }) => {
       const deviceId = getDeviceId();
-      const res = await api.post("/auth/social", {
+      const payload: any = {
         provider,
         providerToken,
         email,
         name,
         deviceId,
-      });
+      };
+      // Include currentThreadId if provided (for guest user migration)
+      if (currentThreadId) {
+        payload.currentThreadId = currentThreadId;
+      }
+      const res = await api.post("/auth/social", payload);
       return res.data;
     },
     onSuccess: (data) => {

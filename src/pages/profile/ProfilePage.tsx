@@ -14,28 +14,33 @@ export function ProfilePage() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center h-96">
-        <div className="text-muted-foreground">Loading profile...</div>
+      <div className="flex items-center justify-center min-h-full p-6">
+        <div className="text-center">
+          <div className="text-muted-foreground">Loading profile...</div>
+        </div>
       </div>
     );
   }
 
   if (!user) {
     return (
-      <div className="flex items-center justify-center h-96">
-        <div className="text-muted-foreground">Failed to load profile</div>
+      <div className="flex items-center justify-center min-h-full p-6">
+        <div className="text-center">
+          <div className="text-muted-foreground">Failed to load profile</div>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold">Profile</h1>
-        <p className="text-muted-foreground mt-1">View your profile information</p>
-      </div>
+    <div className="flex items-center justify-center min-h-full p-6">
+      <div className="w-full max-w-2xl space-y-6">
+        <div>
+          <h1 className="text-3xl font-bold">Profile</h1>
+          <p className="text-muted-foreground mt-1">View your profile information</p>
+        </div>
 
-      <Card>
+        <Card>
         <div className="space-y-6">
           <div className="flex items-center gap-4">
             <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center">
@@ -75,6 +80,7 @@ export function ProfilePage() {
           </div>
         </div>
       </Card>
+      </div>
     </div>
   );
 }

@@ -15,7 +15,7 @@ export function SettingsPage() {
   });
   const [activeTab, setActiveTab] = useState<"profile" | "password">("profile");
 
-  const { data: user } = useQuery({
+  const { data: user, isLoading: isLoadingUser } = useQuery({
     queryKey: ["user", "me"],
     queryFn: async () => {
       const res = await api.get("/users/me");
@@ -73,12 +73,23 @@ export function SettingsPage() {
     },
   });
 
-  return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold">Settings</h1>
-        <p className="text-muted-foreground mt-1">Manage your account settings</p>
+  if (isLoadingUser) {
+    return (
+      <div className="flex items-center justify-center min-h-full p-6">
+        <div className="text-center">
+          <div className="text-muted-foreground">Loading settings...</div>
+        </div>
       </div>
+    );
+  }
+
+  return (
+    <div className="flex items-center justify-center min-h-full p-6">
+      <div className="w-full max-w-2xl space-y-6">
+        <div>
+          <h1 className="text-3xl font-bold">Settings</h1>
+          <p className="text-muted-foreground mt-1">Manage your account settings</p>
+        </div>
 
       <div className="flex gap-4 border-b border-border">
         <button
@@ -139,9 +150,6 @@ export function SettingsPage() {
             >
               {updateProfile.isPending ? "Saving..." : "Save Changes"}
             </button>
-            <p className="text-xs text-muted-foreground">
-              Note: Profile update requires a backend endpoint (PUT /users/me) to be implemented.
-            </p>
           </form>
         </Card>
       )}
@@ -194,12 +202,10 @@ export function SettingsPage() {
             >
               {changePassword.isPending ? "Changing..." : "Change Password"}
             </button>
-            <p className="text-xs text-muted-foreground">
-              Note: Password change requires a backend endpoint (PUT /users/me/password) to be implemented.
-            </p>
           </form>
         </Card>
       )}
+      </div>
     </div>
   );
 }

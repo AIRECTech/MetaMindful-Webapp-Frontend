@@ -136,6 +136,7 @@ export const handleUnauthorized = () => {
  * Ensures user has a valid token. If not authenticated, generates a guest token.
  * Returns a promise that resolves when token is available.
  * For guest users (without login), always ensures a guest token exists.
+ * Validates existing tokens by calling the profile API before using them.
  */
 export const ensureToken = async (): Promise<void> => {
   console.log("[ensureToken] Starting token check...");
@@ -153,7 +154,7 @@ export const ensureToken = async (): Promise<void> => {
       console.log("[ensureToken] Response data:", responseData);
       
       if (responseData.accessToken) {
-        setTokens(responseData.accessToken, responseData.refreshToken);
+        setTokens(responseData.accessToken, responseData.refreshToken, true);
         console.log("[ensureToken] Guest token generated and stored successfully");
         console.log("[ensureToken] Token stored:", responseData.accessToken.substring(0, 20) + "...");
       } else {
@@ -167,17 +168,60 @@ export const ensureToken = async (): Promise<void> => {
     return;
   }
 
-  // Token exists - check if it's a guest token
-  console.log("[ensureToken] Token exists, decoding to check type...");
+  // Token exists - validate it
+  console.log("[ensureToken] Token exists, validating...");
   const decoded = decodeToken(existingToken);
   console.log("[ensureToken] Decoded token:", decoded);
   
-  if (decoded && (decoded.type === "guest" || decoded.sub === "guest")) {
-    console.log("[ensureToken] Guest token found, using existing token");
-    return;
+  if (!decoded) {
+    console.log("[ensureToken] Token cannot be decoded, generating new guest token");
+    clearTokens();
+    // Fall through to generate new token
+  } else {
+    // Check if token is expired
+    const now = Math.floor(Date.now() / 1000);
+    if (decoded.exp && decoded.exp < now) {
+      console.log("[ensureToken] Token is expired, generating new guest token");
+      clearTokens();
+      // Fall through to generate new token
+    } else {
+      // Token is not expired, check if it's guest or real user
+      const isGuest = decoded.type === "guest" || decoded.sub === "guest";
+      
+      if (isGuest) {
+        // For guest tokens, if not expired, they're valid
+        console.log("[ensureToken] Guest token is valid (not expired), using existing token");
+        localStorage.setItem(USER_IS_GUEST_KEY, "true");
+        return;
+      } else {
+        // For real user tokens, if not expired, they're valid
+        // Don't call /users/me - let the actual API calls handle 401 errors
+        console.log("[ensureToken] Real user token is valid (not expired), using existing token");
+        localStorage.setItem(USER_IS_GUEST_KEY, "false");
+        return;
+      }
+    }
   }
 
-  // Have a real user token, use it
-  console.log("[ensureToken] Real user token found, using existing token");
-  return;
+  // If we reach here, token was invalid - generate new guest token
+  try {
+    const deviceId = getDeviceId();
+    console.log("[ensureToken] Generating new guest token with deviceId:", deviceId);
+    const res = await unauthenticatedApi.post("/auth/guest-token", { deviceId });
+    console.log("[ensureToken] Guest token API response:", res.data);
+    const responseData = res.data.data || res.data;
+    console.log("[ensureToken] Response data:", responseData);
+    
+    if (responseData.accessToken) {
+      setTokens(responseData.accessToken, responseData.refreshToken, true);
+      console.log("[ensureToken] Guest token generated and stored successfully");
+      console.log("[ensureToken] Token stored:", responseData.accessToken.substring(0, 20) + "...");
+    } else {
+      console.error("[ensureToken] No accessToken in response:", responseData);
+      throw new Error("No access token in guest token response");
+    }
+  } catch (error) {
+    console.error("[ensureToken] Failed to generate guest token:", error);
+    throw error;
+  }
 };

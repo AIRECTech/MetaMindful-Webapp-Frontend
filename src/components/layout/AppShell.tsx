@@ -1,7 +1,6 @@
 import type { PropsWithChildren } from "react";
 import { Toaster } from "react-hot-toast";
 import { Sidebar } from "./Sidebar";
-import { Topbar } from "./Topbar";
 import { isRealUser } from "../../lib/auth";
 
 export function AppShell({ children }: PropsWithChildren) {
@@ -13,7 +12,6 @@ export function AppShell({ children }: PropsWithChildren) {
       <div className="flex h-full">
         {showSidebar ? <Sidebar /> : null}
         <div className="flex-1 flex flex-col overflow-hidden">
-          <Topbar />
           <main className="flex-1 overflow-hidden">{children}</main>
         </div>
       </div>

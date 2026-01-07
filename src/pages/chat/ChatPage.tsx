@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState, useEffect, useRef } from "react";
-import { useParams, useNavigate, Link } from "react-router-dom";
+import { useParams, useNavigate, Link, useLocation } from "react-router-dom";
 import { toast } from "react-hot-toast";
 import { ArrowUp } from "lucide-react";
 import { api } from "../../lib/api";
@@ -26,14 +26,37 @@ export function ChatPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const location = useLocation();
   const [message, setMessage] = useState("");
   const [isSending, setIsSending] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const isGuest = isGuestUser();
+  const hasAutoSentRef = useRef(false);
   
   // For guest users, manage messages in local state instead of fetching thread
   const [guestMessages, setGuestMessages] = useState<Message[]>([]);
-  const [guestThreadTitle] = useState<string>("New Chat");
+  const [guestThreadTitle, setGuestThreadTitle] = useState<string>("New Chat");
+
+  const state = (location.state || {}) as {
+    bootstrapThread?: Thread;
+    autoSendText?: string;
+  };
+
+  // If we navigated here from NewChatPage, we can prefill the cache and avoid /threads/:id
+  useEffect(() => {
+    if (!id) return;
+    if (!state.bootstrapThread) return;
+    if (state.bootstrapThread.threadId !== id) return;
+
+    queryClient.setQueryData(["thread", id], state.bootstrapThread);
+
+    if (isGuest) {
+      setGuestMessages(state.bootstrapThread.messages || []);
+      setGuestThreadTitle(state.bootstrapThread.title || "New Chat");
+    }
+  }, [id, isGuest, queryClient, state.bootstrapThread]);
+
+  const hasCachedThread = !!(id && queryClient.getQueryData(["thread", id]));
 
   const { data: thread, isLoading } = useQuery({
     queryKey: ["thread", id],
@@ -43,7 +66,11 @@ export function ChatPage() {
       const res = await api.get(`/threads/${id}`);
       return res.data.data as Thread;
     },
-    enabled: !!id && !isGuestUser(), // Don't fetch thread details for guest users
+    initialData: () => {
+      if (!id) return undefined;
+      return queryClient.getQueryData(["thread", id]) as Thread | undefined;
+    },
+    enabled: !!id && !isGuestUser() && !hasCachedThread, // Don't fetch if already bootstrapped/cached
     // Only fetch once on mount, don't refetch automatically
     refetchOnWindowFocus: false,
     refetchOnReconnect: false,
@@ -66,36 +93,67 @@ export function ChatPage() {
       return res.data.data;
     },
     onSuccess: (data) => {
+      console.log("[ChatPage] sendMessage.onSuccess: received data:", data);
       // Update thread data from chat API response instead of refetching
-      if (data && thread) {
-        // Update thread title if changed
-        if (data.title_name && data.title_name !== thread.title) {
-          queryClient.setQueryData(["thread", id], (old: Thread | undefined) => {
-            if (!old) return old;
-            return { ...old, title: data.title_name };
-          });
-        }
-        
-        // Add assistant message to the thread
-        queryClient.setQueryData(["thread", id], (old: Thread | undefined) => {
-          if (!old) return old;
-          
-          // Add assistant message if available
+      if (data) {
+        if (isGuest) {
+          // For guest users, update local state
           if (data.assistantMessage) {
-            const newMessages: Message[] = [
-              ...old.messages,
-              {
-                id: `temp-assistant-${Date.now()}`,
-                role: "assistant",
-                content: data.assistantMessage,
-                createdAt: new Date().toISOString(),
-              },
-            ];
-            return { ...old, messages: newMessages };
+            console.log("[ChatPage] sendMessage.onSuccess: adding assistant message to guestMessages:", data.assistantMessage);
+            setGuestMessages((prev) => {
+              const newMessages: Message[] = [
+                ...prev,
+                {
+                  id: `temp-assistant-${Date.now()}`,
+                  role: "assistant" as const,
+                  content: data.assistantMessage,
+                  createdAt: new Date().toISOString(),
+                },
+              ];
+              console.log("[ChatPage] sendMessage.onSuccess: updated guestMessages:", newMessages);
+              return newMessages;
+            });
+          } else {
+            console.warn("[ChatPage] sendMessage.onSuccess: no assistantMessage in response for guest");
           }
           
-          return old;
-        });
+          // Update title if changed
+          if (data.title_name && data.title_name !== guestThreadTitle) {
+            setGuestThreadTitle(data.title_name);
+          }
+        } else {
+          // For authenticated users, update query cache
+          if (thread) {
+            // Update thread title if changed
+            if (data.title_name && data.title_name !== thread.title) {
+              queryClient.setQueryData(["thread", id], (old: Thread | undefined) => {
+                if (!old) return old;
+                return { ...old, title: data.title_name };
+              });
+            }
+            
+            // Add assistant message to the thread
+            queryClient.setQueryData(["thread", id], (old: Thread | undefined) => {
+              if (!old) return old;
+              
+              // Add assistant message if available
+              if (data.assistantMessage) {
+                const newMessages: Message[] = [
+                  ...old.messages,
+                  {
+                    id: `temp-assistant-${Date.now()}`,
+                    role: "assistant",
+                    content: data.assistantMessage,
+                    createdAt: new Date().toISOString(),
+                  },
+                ];
+                return { ...old, messages: newMessages };
+              }
+              
+              return old;
+            });
+          }
+        }
       }
       
       // Only invalidate threads list (for sidebar) if user is not a guest
@@ -153,28 +211,35 @@ export function ChatPage() {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [thread?.messages, guestMessages]);
 
-  const handleSend = () => {
-    const trimmedMessage = message.trim();
-    if (!trimmedMessage || sendMessage.isPending || isSending) return;
-    
-    // Clear input immediately
-    setMessage("");
-    
+  const sendText = (text: string) => {
+    const trimmedMessage = text.trim();
+    if (!trimmedMessage || sendMessage.isPending || isSending) {
+      console.log("[ChatPage] sendText: skipping - trimmed:", trimmedMessage, "pending:", sendMessage.isPending, "sending:", isSending);
+      return;
+    }
+
+    console.log("[ChatPage] sendText: sending message:", trimmedMessage, "isGuest:", isGuest);
+
     if (isGuest) {
-      // For guest users, add user message to local state
-      setGuestMessages((prev) => [
-        ...prev,
-        {
-          id: `temp-user-${Date.now()}`,
-          role: "user",
-          content: trimmedMessage,
-          createdAt: new Date().toISOString(),
-        },
-      ]);
+      setGuestMessages((prev) => {
+        const newMessages: Message[] = [
+          ...prev,
+          {
+            id: `temp-user-${Date.now()}`,
+            role: "user" as const,
+            content: trimmedMessage,
+            createdAt: new Date().toISOString(),
+          },
+        ];
+        console.log("[ChatPage] sendText: updated guestMessages:", newMessages);
+        return newMessages;
+      });
     } else {
-      // For authenticated users, add user message to thread immediately
       queryClient.setQueryData(["thread", id], (old: Thread | undefined) => {
-        if (!old) return old;
+        if (!old) {
+          console.warn("[ChatPage] sendText: no thread data in cache");
+          return old;
+        }
         const newMessages: Message[] = [
           ...old.messages,
           {
@@ -184,15 +249,72 @@ export function ChatPage() {
             createdAt: new Date().toISOString(),
           },
         ];
+        console.log("[ChatPage] sendText: updated thread messages:", newMessages);
         return { ...old, messages: newMessages };
       });
     }
-    
+
     setIsSending(true);
-    
-    // Send message (will clear pending state on success/error)
+    console.log("[ChatPage] sendText: calling sendMessage.mutate");
     sendMessage.mutate(trimmedMessage);
   };
+
+  const handleSend = () => {
+    const trimmedMessage = message.trim();
+    if (!trimmedMessage) return;
+    setMessage("");
+    sendText(trimmedMessage);
+  };
+
+  // Auto-send the first user message when coming from NewChatPage
+  useEffect(() => {
+    if (!id) {
+      console.log("[ChatPage] Auto-send: no id");
+      return;
+    }
+    if (!state.autoSendText) {
+      console.log("[ChatPage] Auto-send: no autoSendText");
+      return;
+    }
+    if (hasAutoSentRef.current) {
+      console.log("[ChatPage] Auto-send: already sent");
+      return;
+    }
+    
+    console.log("[ChatPage] Auto-send: setting up auto-send for:", state.autoSendText, "isGuest:", isGuest);
+    
+    // Ensure bootstrap thread is set up first (especially for guest users)
+    const checkAndSend = () => {
+      if (isGuest) {
+        // For guest users, wait until guestMessages are set (should have at least the greeting)
+        if (guestMessages.length === 0) {
+          console.log("[ChatPage] Auto-send: waiting for guestMessages to be set...");
+          setTimeout(checkAndSend, 50);
+          return;
+        }
+        console.log("[ChatPage] Auto-send: guestMessages ready, count:", guestMessages.length);
+      } else {
+        // For authenticated users, wait until thread is cached
+        const cachedThread = queryClient.getQueryData(["thread", id]);
+        if (!cachedThread) {
+          console.log("[ChatPage] Auto-send: waiting for thread to be cached...");
+          setTimeout(checkAndSend, 50);
+          return;
+        }
+        console.log("[ChatPage] Auto-send: thread cached");
+      }
+      
+      // Now we can send
+      console.log("[ChatPage] Auto-send: calling sendText");
+      hasAutoSentRef.current = true;
+      sendText(state.autoSendText!);
+    };
+    
+    // Start checking after a short delay to let bootstrap complete
+    const timer = setTimeout(checkAndSend, 200);
+    
+    return () => clearTimeout(timer);
+  }, [id, state.autoSendText, state.bootstrapThread, isGuest, guestMessages.length, queryClient]);
 
   // For guest users, don't show loading or error - use local state
   if (!isGuest && isLoading) {

@@ -10,7 +10,7 @@ import { Mail, Lock, Eye, EyeOff } from "lucide-react";
 export function LoginPage() {
   const navigate = useNavigate();
   const location = useLocation();
-  const redirectTo = (location.state as { from?: string })?.from ?? "/";
+  const redirectTo = (location.state as { from?: string })?.from ?? "/chat/new";
   const currentThreadId = (location.state as { threadId?: string })?.threadId;
   const [credentials, setCredentials] = useState({ email: "", password: "" });
   const [showPassword, setShowPassword] = useState(false);

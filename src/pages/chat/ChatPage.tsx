@@ -56,6 +56,8 @@ export function ChatPage() {
     }
   }, [id, isGuest, queryClient, state.bootstrapThread]);
 
+  // Check if we have bootstrap data from navigation state
+  const hasBootstrapData = !!(state.bootstrapThread && state.bootstrapThread.threadId === id);
   const hasCachedThread = !!(id && queryClient.getQueryData(["thread", id]));
 
   const { data: thread, isLoading } = useQuery({
@@ -68,17 +70,40 @@ export function ChatPage() {
     },
     initialData: () => {
       if (!id) return undefined;
+      // Use bootstrap data if available, otherwise check cache
+      if (hasBootstrapData && state.bootstrapThread) {
+        return state.bootstrapThread;
+      }
       return queryClient.getQueryData(["thread", id]) as Thread | undefined;
     },
-    enabled: !!id && !isGuestUser() && !hasCachedThread, // Don't fetch if already bootstrapped/cached
-    // Only fetch once on mount, don't refetch automatically
+    // Fetch if:
+    // 1. We have an id
+    // 2. We don't have bootstrap data (direct page load/reload)
+    // 3. We don't have cached data
+    // Note: For guest users, we still fetch on page reload to get the thread data
+    enabled: !!id && !hasBootstrapData && !hasCachedThread,
+    // Allow refetch on mount if there's no data (for page reloads)
     refetchOnWindowFocus: false,
     refetchOnReconnect: false,
-    refetchOnMount: false, // Don't refetch when component remounts
+    refetchOnMount: !hasCachedThread && !hasBootstrapData, // Refetch on mount if no cached/bootstrap data
     refetchInterval: false, // Don't refetch on interval
-    staleTime: Infinity, // Never consider data stale, so it won't refetch
+    staleTime: Infinity, // Never consider data stale, so it won't refetch automatically
     gcTime: Infinity, // Keep data in cache forever
   });
+
+  // When thread data is loaded (from API or cache), update guest state if needed
+  useEffect(() => {
+    if (!id) return;
+    if (!isGuest) return;
+    if (!thread) return;
+    
+    // Only update if guestMessages is empty (page reload scenario)
+    if (guestMessages.length === 0 && thread.messages && thread.messages.length > 0) {
+      console.log("[ChatPage] Loading thread data into guest state:", thread);
+      setGuestMessages(thread.messages);
+      setGuestThreadTitle(thread.title || "New Chat");
+    }
+  }, [id, isGuest, thread, guestMessages.length]);
 
   const sendMessage = useMutation({
     mutationFn: async (text: string) => {
@@ -316,16 +341,31 @@ export function ChatPage() {
     return () => clearTimeout(timer);
   }, [id, state.autoSendText, state.bootstrapThread, isGuest, guestMessages.length, queryClient]);
 
-  // For guest users, don't show loading or error - use local state
-  if (!isGuest && isLoading) {
+  // Use guest messages for guest users, thread messages for authenticated users
+  const displayMessages = isGuest ? guestMessages : (thread?.messages || []);
+  const displayTitle = isGuest ? guestThreadTitle : (thread?.title || "New Chat");
+  const displayDesc = isGuest ? undefined : thread?.desc;
+
+  // Show loading indicator while fetching thread data
+  if (isLoading && !hasBootstrapData && displayMessages.length === 0) {
     return (
-      <div className="flex items-center justify-center h-96">
-        <div className="text-gray-500">Loading chat...</div>
+      <div className="flex flex-col h-full relative bg-gray-50 dark:bg-gray-900">
+        <div className="flex-1 flex items-center justify-center">
+          <div className="text-center">
+            <div className="flex items-center justify-center gap-2 mb-4">
+              <div className="w-2 h-2 bg-gray-400 dark:bg-gray-500 rounded-full animate-bounce" style={{ animationDelay: "0ms" }}></div>
+              <div className="w-2 h-2 bg-gray-400 dark:bg-gray-500 rounded-full animate-bounce" style={{ animationDelay: "150ms" }}></div>
+              <div className="w-2 h-2 bg-gray-400 dark:bg-gray-500 rounded-full animate-bounce" style={{ animationDelay: "300ms" }}></div>
+            </div>
+            <p className="text-gray-500 dark:text-gray-400">Loading chat...</p>
+          </div>
+        </div>
       </div>
     );
   }
 
-  if (!isGuest && !thread) {
+  // Show error state for authenticated users if thread not found
+  if (!isGuest && !thread && !isLoading && !hasBootstrapData) {
     return (
       <div className="flex items-center justify-center h-96">
         <div className="text-center">
@@ -340,11 +380,6 @@ export function ChatPage() {
       </div>
     );
   }
-  
-  // Use guest messages for guest users, thread messages for authenticated users
-  const displayMessages = isGuest ? guestMessages : (thread?.messages || []);
-  const displayTitle = isGuest ? guestThreadTitle : (thread?.title || "New Chat");
-  const displayDesc = isGuest ? undefined : thread?.desc;
 
   return (
     <div className="flex flex-col h-full relative bg-gray-50 dark:bg-gray-900">
@@ -357,9 +392,18 @@ export function ChatPage() {
               <p className="text-sm text-gray-600 dark:text-gray-400">{displayDesc}</p>
             )}
           </div>
-          {displayMessages.length === 0 ? (
+          {displayMessages.length === 0 && !isLoading ? (
             <div className="text-center text-gray-500 dark:text-gray-400 py-12">
               <p>Start a conversation by sending a message below.</p>
+            </div>
+          ) : displayMessages.length === 0 && isLoading ? (
+            <div className="text-center py-12">
+              <div className="flex items-center justify-center gap-2 mb-4">
+                <div className="w-2 h-2 bg-gray-400 dark:bg-gray-500 rounded-full animate-bounce" style={{ animationDelay: "0ms" }}></div>
+                <div className="w-2 h-2 bg-gray-400 dark:bg-gray-500 rounded-full animate-bounce" style={{ animationDelay: "150ms" }}></div>
+                <div className="w-2 h-2 bg-gray-400 dark:bg-gray-500 rounded-full animate-bounce" style={{ animationDelay: "300ms" }}></div>
+              </div>
+              <p className="text-gray-500 dark:text-gray-400">Loading messages...</p>
             </div>
           ) : (
             <>

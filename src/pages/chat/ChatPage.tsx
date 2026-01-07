@@ -16,6 +16,7 @@ interface Message {
 
 interface Thread {
   id: string;
+  threadId: string; // externalThreadId (UUID)
   title: string;
   desc?: string;
   messages: Message[];
@@ -28,6 +29,11 @@ export function ChatPage() {
   const [message, setMessage] = useState("");
   const [isSending, setIsSending] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const isGuest = isGuestUser();
+  
+  // For guest users, manage messages in local state instead of fetching thread
+  const [guestMessages, setGuestMessages] = useState<Message[]>([]);
+  const [guestThreadTitle] = useState<string>("New Chat");
 
   const { data: thread, isLoading } = useQuery({
     queryKey: ["thread", id],
@@ -37,10 +43,14 @@ export function ChatPage() {
       const res = await api.get(`/threads/${id}`);
       return res.data.data as Thread;
     },
-    enabled: !!id,
+    enabled: !!id && !isGuestUser(), // Don't fetch thread details for guest users
     // Only fetch once on mount, don't refetch automatically
     refetchOnWindowFocus: false,
     refetchOnReconnect: false,
+    refetchOnMount: false, // Don't refetch when component remounts
+    refetchInterval: false, // Don't refetch on interval
+    staleTime: Infinity, // Never consider data stale, so it won't refetch
+    gcTime: Infinity, // Keep data in cache forever
   });
 
   const sendMessage = useMutation({
@@ -98,19 +108,32 @@ export function ChatPage() {
     onError: (error: any) => {
       const errorMessage = extractErrorMessage(error, "Failed to send message");
       
-      // Remove the last user message on error (the one we just added)
-      queryClient.setQueryData(["thread", id], (old: Thread | undefined) => {
-        if (!old) return old;
-        // Remove the last message if it's a temp user message
-        const newMessages = old.messages.filter((msg, index) => {
-          // Keep all messages except the last temp user message
-          if (index === old.messages.length - 1 && msg.id?.startsWith("temp-user-")) {
-            return false;
-          }
-          return true;
+      if (isGuest) {
+        // For guest users, remove the last user message from local state
+        setGuestMessages((prev) => {
+          return prev.filter((msg, index) => {
+            // Keep all messages except the last temp user message
+            if (index === prev.length - 1 && msg.id?.startsWith("temp-user-")) {
+              return false;
+            }
+            return true;
+          });
         });
-        return { ...old, messages: newMessages };
-      });
+      } else {
+        // For authenticated users, remove the last user message on error
+        queryClient.setQueryData(["thread", id], (old: Thread | undefined) => {
+          if (!old) return old;
+          // Remove the last message if it's a temp user message
+          const newMessages = old.messages.filter((msg, index) => {
+            // Keep all messages except the last temp user message
+            if (index === old.messages.length - 1 && msg.id?.startsWith("temp-user-")) {
+              return false;
+            }
+            return true;
+          });
+          return { ...old, messages: newMessages };
+        });
+      }
       
       setIsSending(false);
       
@@ -128,7 +151,7 @@ export function ChatPage() {
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [thread?.messages]);
+  }, [thread?.messages, guestMessages]);
 
   const handleSend = () => {
     const trimmedMessage = message.trim();
@@ -137,20 +160,33 @@ export function ChatPage() {
     // Clear input immediately
     setMessage("");
     
-    // Add user message to thread immediately
-    queryClient.setQueryData(["thread", id], (old: Thread | undefined) => {
-      if (!old) return old;
-      const newMessages: Message[] = [
-        ...old.messages,
+    if (isGuest) {
+      // For guest users, add user message to local state
+      setGuestMessages((prev) => [
+        ...prev,
         {
           id: `temp-user-${Date.now()}`,
           role: "user",
           content: trimmedMessage,
           createdAt: new Date().toISOString(),
         },
-      ];
-      return { ...old, messages: newMessages };
-    });
+      ]);
+    } else {
+      // For authenticated users, add user message to thread immediately
+      queryClient.setQueryData(["thread", id], (old: Thread | undefined) => {
+        if (!old) return old;
+        const newMessages: Message[] = [
+          ...old.messages,
+          {
+            id: `temp-user-${Date.now()}`,
+            role: "user",
+            content: trimmedMessage,
+            createdAt: new Date().toISOString(),
+          },
+        ];
+        return { ...old, messages: newMessages };
+      });
+    }
     
     setIsSending(true);
     
@@ -158,7 +194,8 @@ export function ChatPage() {
     sendMessage.mutate(trimmedMessage);
   };
 
-  if (isLoading) {
+  // For guest users, don't show loading or error - use local state
+  if (!isGuest && isLoading) {
     return (
       <div className="flex items-center justify-center h-96">
         <div className="text-gray-500">Loading chat...</div>
@@ -166,7 +203,7 @@ export function ChatPage() {
     );
   }
 
-  if (!thread) {
+  if (!isGuest && !thread) {
     return (
       <div className="flex items-center justify-center h-96">
         <div className="text-center">
@@ -181,28 +218,30 @@ export function ChatPage() {
       </div>
     );
   }
+  
+  // Use guest messages for guest users, thread messages for authenticated users
+  const displayMessages = isGuest ? guestMessages : (thread?.messages || []);
+  const displayTitle = isGuest ? guestThreadTitle : (thread?.title || "New Chat");
+  const displayDesc = isGuest ? undefined : thread?.desc;
 
   return (
     <div className="flex flex-col h-full relative bg-gray-50 dark:bg-gray-900">
-      {/* Green status dot at top left */}
-      <div className="absolute top-4 left-4 w-3 h-3 bg-green-500 rounded-full z-10"></div>
-      
       <div className="flex-1 overflow-y-auto">
         <div className="max-w-4xl mx-auto px-4 py-6 space-y-6">
           {/* Centered header */}
           <div className="text-center mb-8">
-            <h1 className="text-2xl font-bold text-gray-800 dark:text-gray-200 mb-1">{thread.title}</h1>
-            {thread.desc && thread.desc !== "None" && (
-              <p className="text-sm text-gray-600 dark:text-gray-400">{thread.desc}</p>
+            <h1 className="text-2xl font-bold text-gray-800 dark:text-gray-200 mb-1">{displayTitle}</h1>
+            {displayDesc && displayDesc !== "None" && (
+              <p className="text-sm text-gray-600 dark:text-gray-400">{displayDesc}</p>
             )}
           </div>
-          {thread.messages.length === 0 ? (
+          {displayMessages.length === 0 ? (
             <div className="text-center text-gray-500 dark:text-gray-400 py-12">
               <p>Start a conversation by sending a message below.</p>
             </div>
           ) : (
             <>
-              {thread.messages.map((msg) => (
+              {displayMessages.map((msg) => (
                 <div
                   key={msg.id}
                   className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}

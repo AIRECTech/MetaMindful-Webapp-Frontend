@@ -5,13 +5,14 @@ import { useState, useRef, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "../../lib/api";
 import { useLocation } from "react-router-dom";
-import { clearTokens, isRealUser, isAuthenticated } from "../../lib/auth";
+import { clearTokens, isRealUser, isAuthenticated, isGuestUser } from "../../lib/auth";
 import { extractErrorMessage } from "../../lib/errors";
 import { toast } from "react-hot-toast";
 import { getDarkMode, toggleDarkMode as toggleDarkModeUtil } from "../../lib/darkMode";
 
 interface Thread {
   id: string;
+  threadId: string; // externalThreadId (UUID)
   title: string;
   createdAt: string;
   updatedAt: string;
@@ -66,8 +67,8 @@ export function Sidebar() {
 
   // Update thread mutation
   const updateThread = useMutation({
-    mutationFn: async ({ id, title }: { id: string; title: string }) => {
-      const res = await api.put(`/threads/${id}`, { title });
+    mutationFn: async ({ threadId, title }: { threadId: string; title: string }) => {
+      const res = await api.put(`/threads/${threadId}`, { title });
       return res.data.data;
     },
     onSuccess: () => {
@@ -83,8 +84,8 @@ export function Sidebar() {
 
   // Delete thread mutation
   const deleteThread = useMutation({
-    mutationFn: async (id: string) => {
-      await api.delete(`/threads/${id}`);
+    mutationFn: async (threadId: string) => {
+      await api.delete(`/threads/${threadId}`);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["threads"] });
@@ -102,7 +103,7 @@ export function Sidebar() {
 
   // Handle start editing
   const handleStartEdit = (thread: Thread) => {
-    setEditingThreadId(thread.id);
+    setEditingThreadId(thread.threadId || thread.id); // Use threadId (externalThreadId) for editing
     setEditingTitle(thread.title);
     setShowMenuThreadId(null);
     setTimeout(() => {
@@ -114,7 +115,7 @@ export function Sidebar() {
   // Handle save edit
   const handleSaveEdit = () => {
     if (editingThreadId && editingTitle.trim()) {
-      updateThread.mutate({ id: editingThreadId, title: editingTitle.trim() });
+      updateThread.mutate({ threadId: editingThreadId, title: editingTitle.trim() });
     } else {
       setEditingThreadId(null);
       setEditingTitle("");
@@ -183,12 +184,14 @@ export function Sidebar() {
     navigate("/login");
   };
 
+  const isGuest = isGuestUser();
+
   return (
-    <aside className="hidden lg:flex w-64 flex-col border-r border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900">
+    <aside className="hidden lg:flex w-64 flex-col border-r border-gray-200 dark:border-gray-700">
       {/* Logo at top */}
-          <div className="p-4 border-b border-gray-200 dark:border-gray-700">
+      <div className="p-4 border-b border-gray-200 dark:border-gray-700">
         <div 
-          className="flex items-center cursor-pointer"
+          className="flex items-center gap-3 cursor-pointer"
           onClick={() => navigate("/")}
         >
           <img 
@@ -196,6 +199,12 @@ export function Sidebar() {
             alt="MetaMindful" 
             className="h-8 w-auto"
           />
+          <div className="flex flex-col">
+            <span className="text-lg font-bold text-gray-800 dark:text-gray-200">MetaMindful</span>
+            {isGuest && (
+              <span className="text-xs text-gray-500 dark:text-gray-400">Guest mode</span>
+            )}
+          </div>
         </div>
       </div>
 
@@ -219,18 +228,18 @@ export function Sidebar() {
                   key={thread.id}
                   className={cn(
                     "group relative flex items-center gap-2 rounded-lg transition",
-                    currentThreadId === thread.id
+                    currentThreadId === (thread.threadId || thread.id)
                       ? "bg-gray-100 dark:bg-gray-800"
                       : "hover:bg-gray-50 dark:hover:bg-gray-800"
                   )}
-                  onMouseEnter={() => setHoveredThreadId(thread.id)}
+                  onMouseEnter={() => setHoveredThreadId(thread.threadId || thread.id)}
                   onMouseLeave={() => {
                     if (!showMenuThreadId) {
                       setHoveredThreadId(null);
                     }
                   }}
                 >
-                  {editingThreadId === thread.id ? (
+                  {editingThreadId === (thread.threadId || thread.id) ? (
                     // Edit mode
                     <div className="flex-1 flex items-center gap-2 px-3 py-2">
                       <input
@@ -267,10 +276,10 @@ export function Sidebar() {
                     // Normal mode
                     <>
                       <button
-                        onClick={() => navigate(`/chat/${thread.id}`)}
+                        onClick={() => navigate(`/chat/${thread.threadId || thread.id}`)}
                         className={cn(
                           "flex-1 flex flex-col gap-1 px-3 py-2 text-sm transition text-left min-w-0",
-                          currentThreadId === thread.id
+                          currentThreadId === (thread.threadId || thread.id)
                             ? "text-gray-900 dark:text-gray-100 font-medium"
                             : "text-gray-600 dark:text-gray-400"
                         )}
@@ -292,12 +301,13 @@ export function Sidebar() {
                       </button>
                       
                       {/* Menu button - show on hover */}
-                      {hoveredThreadId === thread.id && (
-                        <div className="relative" data-thread-menu={thread.id}>
+                      {hoveredThreadId === (thread.threadId || thread.id) && (
+                        <div className="relative" data-thread-menu={thread.threadId || thread.id}>
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
-                              setShowMenuThreadId(showMenuThreadId === thread.id ? null : thread.id);
+                              const threadIdentifier = thread.threadId || thread.id;
+                              setShowMenuThreadId(showMenuThreadId === threadIdentifier ? null : threadIdentifier);
                             }}
                             className="p-1 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 rounded mr-2"
                           >
@@ -305,7 +315,7 @@ export function Sidebar() {
                           </button>
                           
                           {/* Dropdown menu */}
-                          {showMenuThreadId === thread.id && (
+                          {showMenuThreadId === (thread.threadId || thread.id) && (
                             <div className="absolute right-0 top-full mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg z-50 min-w-[120px]">
                               <button
                                 onClick={(e) => {
@@ -320,7 +330,7 @@ export function Sidebar() {
                               <button
                                 onClick={(e) => {
                                   e.stopPropagation();
-                                  handleDelete(thread.id);
+                                  handleDelete(thread.threadId || thread.id);
                                 }}
                                 className="w-full flex items-center gap-2 px-3 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-b-lg"
                                 disabled={deleteThread.isPending}

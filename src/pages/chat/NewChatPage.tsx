@@ -173,9 +173,6 @@ export function NewChatPage() {
 
   return (
     <div className="flex flex-col h-full relative bg-gray-50 dark:bg-gray-900">
-      {/* Green status dot at top left */}
-      <div className="absolute top-4 left-4 w-3 h-3 bg-green-500 rounded-full z-10"></div>
-      
       {!showChat ? (
         // Initial greeting view
         <>

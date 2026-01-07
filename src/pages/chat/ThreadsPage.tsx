@@ -8,6 +8,7 @@ import { extractErrorMessage } from "../../lib/errors";
 
 interface Thread {
   id: string;
+  threadId: string; // externalThreadId (UUID)
   title: string;
   desc?: string;
   next_action?: string;
@@ -42,7 +43,7 @@ export function ThreadsPage() {
       queryClient.invalidateQueries({ queryKey: ["threads"] });
       setNewThreadTitle("");
       setSelectedTags([]);
-      navigate(`/chat/${thread.id}`);
+      navigate(`/chat/${thread.threadId || thread.id}`);
     },
     onError: (error) => {
       toast.error(extractErrorMessage(error, "Failed to create thread"));
@@ -91,14 +92,14 @@ export function ThreadsPage() {
               <div
                 key={thread.id}
                 className="bg-blue-50 border border-blue-100 rounded-xl p-5 hover:shadow-md transition cursor-pointer"
-                onClick={() => navigate(`/chat/${thread.id}`)}
+                onClick={() => navigate(`/chat/${thread.threadId || thread.id}`)}
               >
                 <div className="flex items-start justify-between gap-3 mb-3">
                   <h3 className="text-lg font-semibold text-gray-800 flex-1">{thread.title}</h3>
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
-                      navigate(`/chat/${thread.id}`);
+                      navigate(`/chat/${thread.threadId || thread.id}`);
                     }}
                     className="text-gray-400 hover:text-gray-600"
                   >
@@ -126,7 +127,7 @@ export function ThreadsPage() {
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
-                      navigate(`/chat/${thread.id}`);
+                      navigate(`/chat/${thread.threadId || thread.id}`);
                     }}
                     className="w-full text-left bg-yellow-400 hover:bg-yellow-500 text-gray-800 font-medium px-4 py-2 rounded-lg text-sm transition"
                   >

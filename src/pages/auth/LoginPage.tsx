@@ -109,7 +109,9 @@ export function LoginPage() {
         toast.error("Failed to get access token");
         return;
       }
-      setTokens(responseData.accessToken, responseData.refreshToken, true);
+      // Use isGuest from API response if available, otherwise default to true for guest-token endpoint
+      const isGuest = responseData.user?.isGuest ?? true;
+      setTokens(responseData.accessToken, responseData.refreshToken, isGuest);
       toast.success("Signed in as guest");
       navigate(redirectTo, { replace: true });
     },

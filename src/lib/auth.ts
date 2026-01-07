@@ -73,18 +73,30 @@ export const setTokens = (access: string, refresh?: string, isGuest?: boolean) =
     console.log("[setTokens] Refresh token stored in localStorage with key:", REFRESH_TOKEN_KEY);
   }
   
-  // Store guest status if provided
+  // Store guest status - use parameter if provided (from API response), otherwise try to infer from token
+  // Note: Guest tokens can have type: "access" and a numeric sub, so we can't reliably detect from token alone
   if (isGuest !== undefined) {
+    // Use the isGuest parameter from API response (most reliable)
     localStorage.setItem(USER_IS_GUEST_KEY, String(isGuest));
-    console.log("[setTokens] User isGuest status stored:", isGuest);
+    console.log("[setTokens] User isGuest status stored (from parameter):", isGuest);
+  } else {
+    // Fallback: try to detect from token (only if parameter not provided)
+    const decoded = decodeToken(access);
+    if (decoded) {
+      // Try to detect guest status from token
+      // Note: This is less reliable since guest tokens may have type: "access"
+      const tokenIsGuest = decoded.type === "guest" || decoded.sub === "guest";
+      localStorage.setItem(USER_IS_GUEST_KEY, String(tokenIsGuest));
+      console.log("[setTokens] User isGuest status stored (detected from token):", tokenIsGuest, "(type:", decoded.type, ", sub:", decoded.sub, ")");
+    }
   }
   
   // Verify token was stored
   const storedToken = localStorage.getItem(ACCESS_TOKEN_KEY);
   console.log("[setTokens] Verification - stored token exists:", !!storedToken);
   if (storedToken) {
-    const decoded = decodeToken(storedToken);
-    console.log("[setTokens] Stored token decoded:", decoded ? { type: decoded.type, sub: decoded.sub } : "failed to decode");
+    const decodedStored = decodeToken(storedToken);
+    console.log("[setTokens] Stored token decoded:", decodedStored ? { type: decodedStored.type, sub: decodedStored.sub } : "failed to decode");
   }
 };
 
@@ -154,8 +166,10 @@ export const ensureToken = async (): Promise<void> => {
       console.log("[ensureToken] Response data:", responseData);
       
       if (responseData.accessToken) {
-        setTokens(responseData.accessToken, responseData.refreshToken, true);
-        console.log("[ensureToken] Guest token generated and stored successfully");
+        // Use isGuest from API response if available, otherwise default to true for guest-token endpoint
+        const isGuest = responseData.user?.isGuest ?? true;
+        setTokens(responseData.accessToken, responseData.refreshToken, isGuest);
+        console.log("[ensureToken] Guest token generated and stored successfully, isGuest:", isGuest);
         console.log("[ensureToken] Token stored:", responseData.accessToken.substring(0, 20) + "...");
       } else {
         console.error("[ensureToken] No accessToken in response:", responseData);
@@ -185,18 +199,23 @@ export const ensureToken = async (): Promise<void> => {
       clearTokens();
       // Fall through to generate new token
     } else {
-      // Token is not expired, check if it's guest or real user
-      const isGuest = decoded.type === "guest" || decoded.sub === "guest";
+      // Token is not expired, check stored guest status
+      // Note: We can't detect guest status from token structure alone (guest tokens have type: "access")
+      // So we rely on the stored USER_IS_GUEST_KEY value that was set when tokens were stored
+      const storedIsGuest = localStorage.getItem(USER_IS_GUEST_KEY);
+      const isGuest = storedIsGuest === "true";
       
       if (isGuest) {
         // For guest tokens, if not expired, they're valid
         console.log("[ensureToken] Guest token is valid (not expired), using existing token");
+        // Ensure guest status is set
         localStorage.setItem(USER_IS_GUEST_KEY, "true");
         return;
       } else {
         // For real user tokens, if not expired, they're valid
         // Don't call /users/me - let the actual API calls handle 401 errors
         console.log("[ensureToken] Real user token is valid (not expired), using existing token");
+        // Ensure real user status is set
         localStorage.setItem(USER_IS_GUEST_KEY, "false");
         return;
       }
@@ -213,8 +232,10 @@ export const ensureToken = async (): Promise<void> => {
     console.log("[ensureToken] Response data:", responseData);
     
     if (responseData.accessToken) {
-      setTokens(responseData.accessToken, responseData.refreshToken, true);
-      console.log("[ensureToken] Guest token generated and stored successfully");
+      // Use isGuest from API response if available, otherwise default to true for guest-token endpoint
+      const isGuest = responseData.user?.isGuest ?? true;
+      setTokens(responseData.accessToken, responseData.refreshToken, isGuest);
+      console.log("[ensureToken] Guest token generated and stored successfully, isGuest:", isGuest);
       console.log("[ensureToken] Token stored:", responseData.accessToken.substring(0, 20) + "...");
     } else {
       console.error("[ensureToken] No accessToken in response:", responseData);

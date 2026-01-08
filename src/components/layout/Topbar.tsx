@@ -1,27 +1,19 @@
 import { LogOut, Moon, Sun } from "lucide-react";
 import { NotificationBell } from "../NotificationBell";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { api } from "../../lib/api";
-import { clearTokens, isGuestUser, isAuthenticated } from "../../lib/auth";
+import { clearTokens, isAuthenticated } from "../../lib/auth";
 import { toast } from "react-hot-toast";
 import { getDarkMode, toggleDarkMode as toggleDarkModeUtil } from "../../lib/darkMode";
-import { LoginPopup } from "../LoginPopup";
-import { SignupPopup } from "../SignupPopup";
 
 export function Topbar() {
   const navigate = useNavigate();
-  const params = useParams();
   const authenticated = isAuthenticated();
-  const isGuest = isGuestUser();
-  // Get threadId from URL params if on a chat page
-  const threadId = params.id;
   
   const [darkMode, setDarkMode] = useState(() => {
     return getDarkMode();
   });
-  const [showLoginPopup, setShowLoginPopup] = useState(false);
-  const [showSignupPopup, setShowSignupPopup] = useState(false);
 
   // Sync dark mode state with DOM changes
   useEffect(() => {
@@ -74,9 +66,6 @@ export function Topbar() {
         />
         <div className="flex flex-col items-start">
           <span className="text-lg font-bold text-gray-800 dark:text-gray-200">MetaMindful</span>
-          {isGuest && (
-            <span className="text-xs text-gray-500 dark:text-gray-400">Guest mode</span>
-          )}
         </div>
       </button>
       <div className="flex items-center gap-3">
@@ -93,24 +82,8 @@ export function Topbar() {
           )}
         </button>
         
-        {isGuest ? (
-          // Guest users: Show login and signup buttons
-          <>
-            <button
-              onClick={() => setShowLoginPopup(true)}
-              className="px-4 py-2 bg-white dark:bg-gray-800 border-2 border-yellow-400 text-gray-800 dark:text-gray-200 font-medium rounded-lg text-sm transition hover:bg-gray-50 dark:hover:bg-gray-700"
-            >
-              Log in
-            </button>
-            <button
-              onClick={() => setShowSignupPopup(true)}
-              className="px-4 py-2 bg-yellow-400 hover:bg-yellow-500 text-gray-800 font-medium rounded-lg text-sm transition"
-            >
-              Sign up
-            </button>
-          </>
-        ) : authenticated ? (
-          // Real authenticated users: Show notifications and sign out
+        {authenticated ? (
+          // Authenticated users: Show notifications and sign out
           <>
             <NotificationBell />
             <button
@@ -122,7 +95,7 @@ export function Topbar() {
             </button>
           </>
         ) : (
-          // Not authenticated and not guest (edge case)
+          // Not authenticated (edge case - should not happen in AppShell)
           <button
             onClick={() => navigate("/signup")}
             className="px-4 py-2 bg-yellow-400 hover:bg-yellow-500 text-gray-800 font-medium rounded-lg text-sm transition"
@@ -131,32 +104,6 @@ export function Topbar() {
           </button>
         )}
       </div>
-
-      {/* Popups */}
-      <LoginPopup
-        isOpen={showLoginPopup}
-        onClose={() => {
-          setShowLoginPopup(false);
-          setShowSignupPopup(false);
-        }}
-        currentThreadId={threadId || undefined}
-        onSwitchToSignup={() => {
-          setShowLoginPopup(false);
-          setShowSignupPopup(true);
-        }}
-      />
-      <SignupPopup
-        isOpen={showSignupPopup}
-        onClose={() => {
-          setShowLoginPopup(false);
-          setShowSignupPopup(false);
-        }}
-        currentThreadId={threadId || undefined}
-        onSwitchToLogin={() => {
-          setShowSignupPopup(false);
-          setShowLoginPopup(true);
-        }}
-      />
     </header>
   );
 }

@@ -2,16 +2,45 @@ import { initializeApp, getApps, type FirebaseApp } from "firebase/app";
 import { getMessaging, getToken, onMessage, type Messaging, isSupported } from "firebase/messaging";
 
 // Firebase web app configuration
-// TODO: Replace with your actual Firebase web app config from Firebase Console
-// You can find this in Firebase Console > Project Settings > General > Your apps > Web app
+// Get from Firebase Console > Project Settings > General > Your apps > Web app
 const firebaseConfig = {
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY || "your-api-key",
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY || "",
   authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || "metamindful.firebaseapp.com",
   projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || "metamindful",
   storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || "metamindful.appspot.com",
-  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || "your-sender-id",
-  appId: import.meta.env.VITE_FIREBASE_APP_ID || "your-app-id",
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || "",
+  appId: import.meta.env.VITE_FIREBASE_APP_ID || "",
 };
+
+// Validate Firebase config
+function validateFirebaseConfig() {
+  const required: Array<keyof typeof firebaseConfig> = ['apiKey', 'messagingSenderId', 'appId'];
+  const missing: string[] = [];
+  
+  required.forEach(key => {
+    const value = firebaseConfig[key];
+    if (!value || 
+        value === '' || 
+        value === 'your-api-key' || 
+        value === 'your-sender-id' || 
+        value === 'your-app-id' ||
+        value.includes('your-') ||
+        value.includes('placeholder')) {
+      missing.push(key);
+    }
+  });
+  
+  if (missing.length > 0) {
+    console.error('Firebase configuration is missing or invalid. Missing:', missing);
+    console.error('Please set the following environment variables in your .env file:');
+    missing.forEach(key => {
+      const envKey = 'VITE_FIREBASE_' + key.toUpperCase().replace(/([A-Z])/g, '_$1');
+      console.error(`  ${envKey}`);
+    });
+    return false;
+  }
+  return true;
+}
 
 // Initialize Firebase
 let app: FirebaseApp | null = null;
@@ -22,11 +51,22 @@ export function initializeFirebase(): FirebaseApp | null {
     return app;
   }
 
+  // Validate config before initializing
+  if (!validateFirebaseConfig()) {
+    console.warn("Firebase not initialized due to missing configuration");
+    return null;
+  }
+
   const apps = getApps();
   if (apps.length > 0) {
     app = apps[0];
   } else {
-    app = initializeApp(firebaseConfig);
+    try {
+      app = initializeApp(firebaseConfig);
+    } catch (error) {
+      console.error("Failed to initialize Firebase:", error);
+      return null;
+    }
   }
 
   return app;
@@ -63,6 +103,12 @@ const vapidKey = import.meta.env.VITE_FIREBASE_VAPID_KEY || "";
  */
 export async function requestNotificationPermission(): Promise<string | null> {
   try {
+    // Validate Firebase config first
+    if (!validateFirebaseConfig()) {
+      console.warn("Firebase config is invalid. Cannot request notification permission.");
+      return null;
+    }
+
     if (typeof window === "undefined" || !("Notification" in window)) {
       console.warn("This browser does not support notifications");
       return null;
@@ -79,7 +125,21 @@ export async function requestNotificationPermission(): Promise<string | null> {
       return null;
     }
 
-    const token = await getToken(messagingInstance, { vapidKey });
+    // Validate VAPID key
+    if (!vapidKey || vapidKey === "your-vapid-key-here") {
+      console.error("VAPID key is missing. Please set VITE_FIREBASE_VAPID_KEY in your .env file");
+      return null;
+    }
+
+    // Get service worker registration
+    const swRegistration = serviceWorkerRegistration || await navigator.serviceWorker.ready;
+    
+    // Get FCM token with service worker registration
+    const token = await getToken(messagingInstance, { 
+      vapidKey,
+      serviceWorkerRegistration: swRegistration,
+    });
+    
     if (token) {
       console.log("FCM token obtained:", token);
       return token;
@@ -87,8 +147,11 @@ export async function requestNotificationPermission(): Promise<string | null> {
       console.warn("No FCM token available");
       return null;
     }
-  } catch (error) {
+  } catch (error: any) {
     console.error("Error getting FCM token:", error);
+    if (error?.code === "installations/request-failed") {
+      console.error("Firebase API key is invalid. Please check your VITE_FIREBASE_API_KEY in .env file");
+    }
     return null;
   }
 }
@@ -134,6 +197,9 @@ export function getNotificationPermission(): NotificationPermission {
   return Notification.permission;
 }
 
+// Store service worker registration globally
+let serviceWorkerRegistration: ServiceWorkerRegistration | null = null;
+
 /**
  * Register service worker for background notifications
  */
@@ -141,6 +207,11 @@ export async function registerServiceWorker(): Promise<ServiceWorkerRegistration
   if (typeof window === "undefined" || !("serviceWorker" in navigator)) {
     console.warn("Service workers are not supported in this browser");
     return null;
+  }
+
+  // Return existing registration if already registered
+  if (serviceWorkerRegistration) {
+    return serviceWorkerRegistration;
   }
 
   try {
@@ -154,33 +225,48 @@ export async function registerServiceWorker(): Promise<ServiceWorkerRegistration
     const readyRegistration = await navigator.serviceWorker.ready;
     console.log("Service Worker ready:", readyRegistration);
 
-    // Send Firebase config to service worker
-    // Try active first, then waiting, then installing
-    const worker = registration.active || registration.waiting || registration.installing;
-    if (worker) {
-      worker.postMessage({
-        type: "FIREBASE_CONFIG",
-        config: firebaseConfig,
-      });
-      console.log("Firebase config sent to service worker");
+    // Store registration globally
+    serviceWorkerRegistration = readyRegistration;
+
+    // Only send config if it's valid
+    if (validateFirebaseConfig()) {
+      // Send Firebase config to service worker
+      // Try active first, then waiting, then installing
+      const worker = registration.active || registration.waiting || registration.installing;
+      if (worker) {
+        worker.postMessage({
+          type: "FIREBASE_CONFIG",
+          config: firebaseConfig,
+        });
+        console.log("Firebase config sent to service worker");
+      } else {
+        // If no worker is available yet, wait a bit and try again
+        setTimeout(() => {
+          const worker = registration.active || registration.waiting || registration.installing;
+          if (worker) {
+            worker.postMessage({
+              type: "FIREBASE_CONFIG",
+              config: firebaseConfig,
+            });
+            console.log("Firebase config sent to service worker (delayed)");
+          }
+        }, 1000);
+      }
     } else {
-      // If no worker is available yet, wait a bit and try again
-      setTimeout(() => {
-        const worker = registration.active || registration.waiting || registration.installing;
-        if (worker) {
-          worker.postMessage({
-            type: "FIREBASE_CONFIG",
-            config: firebaseConfig,
-          });
-          console.log("Firebase config sent to service worker (delayed)");
-        }
-      }, 1000);
+      console.warn("Firebase config is invalid. Not sending to service worker.");
     }
 
-    return registration;
+    return readyRegistration;
   } catch (error) {
     console.error("Service Worker registration failed:", error);
     return null;
   }
+}
+
+/**
+ * Get the registered service worker
+ */
+export function getServiceWorkerRegistration(): ServiceWorkerRegistration | null {
+  return serviceWorkerRegistration;
 }
 

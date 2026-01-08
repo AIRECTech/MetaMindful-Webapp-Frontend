@@ -6,7 +6,7 @@ import { ArrowUp } from "lucide-react";
 import { api } from "../../lib/api";
 import { extractErrorMessage } from "../../lib/errors";
 import { ensureToken, isGuestUser } from "../../lib/auth";
-import { Topbar } from "../../components/layout/Topbar";
+import { GuestTopbar } from "../../components/layout/GuestTopbar";
 import { LoginPopup } from "../../components/LoginPopup";
 import { SignupPopup } from "../../components/SignupPopup";
 import { Toaster } from "react-hot-toast";
@@ -589,14 +589,14 @@ export function ChatPage() {
     </div>
   );
 
-  // For guest users, wrap with Topbar and Toaster
+  // For guest users, wrap with GuestTopbar and Toaster
   if (isGuest) {
     return (
       <>
         <div className="h-screen bg-background text-foreground overflow-hidden">
           <Toaster position="top-right" toastOptions={{ duration: 4000 }} />
           <div className="flex h-full flex-col">
-            <Topbar />
+            <GuestTopbar />
             <main className="flex-1 overflow-hidden">{chatContent}</main>
           </div>
         </div>

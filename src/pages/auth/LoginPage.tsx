@@ -101,19 +101,95 @@ export function LoginPage() {
     navigate("/guest", { replace: true });
   };
 
-  // Handle Google OAuth
-  const handleGoogleLogin = async () => {
-    // TODO: Integrate Google OAuth SDK
-    // For now, this is a placeholder - you'll need to integrate @react-oauth/google or similar
-    // Example:
-    // const response = await googleOAuth.signIn();
-    // socialLogin.mutate({
-    //   provider: "google",
-    //   providerToken: response.credential,
-    //   email: response.email,
-    //   name: response.name,
-    // });
-    toast.error("Google login not yet configured. Please use email/password or continue as guest.");
+  // Handle Google OAuth - use popup flow
+  const handleGoogleLogin = () => {
+    console.log("Google login button clicked");
+    const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID || '';
+    console.log("Google Client ID:", clientId ? "Found" : "Not found");
+    if (!clientId) {
+      toast.error("Google Client ID not configured. Please check your .env file.");
+      console.error("VITE_GOOGLE_CLIENT_ID is not set in environment variables");
+      return;
+    }
+    
+    const redirectUri = `${window.location.origin}/auth/google/callback`;
+    const scope = 'openid email profile';
+    const nonce = Math.random().toString(36).substring(2, 15);
+    const state = Math.random().toString(36).substring(2, 15);
+    
+    // Store state and nonce for verification
+    sessionStorage.setItem('google_oauth_state', state);
+    sessionStorage.setItem('google_oauth_nonce', nonce);
+    sessionStorage.setItem('google_oauth_redirect', redirectTo);
+    if (currentThreadId) {
+      sessionStorage.setItem('google_oauth_threadId', currentThreadId);
+    }
+    
+    // Use implicit flow to get ID token directly via popup
+    const width = 500;
+    const height = 600;
+    const left = (window.screen.width - width) / 2;
+    const top = (window.screen.height - height) / 2;
+    
+    const googleAuthUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${encodeURIComponent(clientId)}&response_type=id_token&redirect_uri=${encodeURIComponent(redirectUri)}&scope=${encodeURIComponent(scope)}&nonce=${encodeURIComponent(nonce)}&state=${encodeURIComponent(state)}`;
+    
+    console.log("Opening Google OAuth popup:", googleAuthUrl);
+    const popup = window.open(
+      googleAuthUrl,
+      'Google Sign In',
+      `width=${width},height=${height},left=${left},top=${top}`
+    );
+    
+    if (!popup) {
+      toast.error("Popup blocked. Please allow popups for this site.");
+      console.error("Popup was blocked by browser");
+      return;
+    }
+    
+    // Listen for message from popup
+    const messageListener = (event: MessageEvent) => {
+      if (event.origin !== window.location.origin) return;
+      
+      if (event.data.type === 'GOOGLE_OAUTH_SUCCESS' && event.data.id_token) {
+        window.removeEventListener('message', messageListener);
+        popup?.close();
+        
+        // Verify state
+        const storedState = sessionStorage.getItem('google_oauth_state');
+        if (event.data.state !== storedState) {
+          toast.error("Security error: Invalid state");
+          return;
+        }
+        
+        // Send token to backend
+        socialLogin.mutate({
+          provider: "google",
+          providerToken: event.data.id_token,
+          email: undefined,
+          name: undefined,
+        });
+        
+        // Clean up
+        sessionStorage.removeItem('google_oauth_state');
+        sessionStorage.removeItem('google_oauth_nonce');
+        sessionStorage.removeItem('google_oauth_redirect');
+        sessionStorage.removeItem('google_oauth_threadId');
+      } else if (event.data.type === 'GOOGLE_OAUTH_ERROR') {
+        window.removeEventListener('message', messageListener);
+        popup?.close();
+        toast.error("Google login failed");
+      }
+    };
+    
+    window.addEventListener('message', messageListener);
+    
+    // Check if popup was closed
+    const checkClosed = setInterval(() => {
+      if (popup?.closed) {
+        clearInterval(checkClosed);
+        window.removeEventListener('message', messageListener);
+      }
+    }, 1000);
   };
 
   // Handle Apple OAuth

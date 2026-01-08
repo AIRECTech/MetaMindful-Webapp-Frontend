@@ -1,4 +1,5 @@
-import { Bell, LogOut, Moon, Sun } from "lucide-react";
+import { LogOut, Moon, Sun } from "lucide-react";
+import { NotificationBell } from "../NotificationBell";
 import { useNavigate, useParams } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { api } from "../../lib/api";
@@ -111,9 +112,7 @@ export function Topbar() {
         ) : authenticated ? (
           // Real authenticated users: Show notifications and sign out
           <>
-            <button className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800 transition">
-              <Bell className="h-4 w-4 text-gray-700 dark:text-gray-300" />
-            </button>
+            <NotificationBell />
             <button
               onClick={logout}
               className="inline-flex items-center gap-2 rounded-full border border-gray-200 dark:border-gray-700 px-3 py-1 text-sm font-medium hover:bg-gray-100 dark:hover:bg-gray-800 transition text-gray-700 dark:text-gray-300"

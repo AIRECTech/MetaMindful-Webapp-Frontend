@@ -9,7 +9,7 @@ import { ensureToken } from "../../lib/auth";
 import { ChatPage } from "./ChatPage";
 import { LoginPopup } from "../../components/LoginPopup";
 import { SignupPopup } from "../../components/SignupPopup";
-import { Topbar } from "../../components/layout/Topbar";
+import { GuestTopbar } from "../../components/layout/GuestTopbar";
 import { Toaster } from "react-hot-toast";
 
 const suggestions = [
@@ -182,7 +182,7 @@ export function GuestChatPage() {
       <div className="h-screen bg-background text-foreground overflow-hidden">
         <Toaster position="top-right" toastOptions={{ duration: 4000 }} />
         <div className="flex h-full flex-col">
-          <Topbar />
+          <GuestTopbar />
           <div className="flex-1 flex flex-col relative bg-gray-50 dark:bg-gray-900 overflow-hidden">
             {/* Initial greeting view */}
             <div className="flex-1 flex items-center justify-center px-4">
@@ -264,20 +264,21 @@ export function GuestChatPage() {
                   </button>
                 </div>
 
-                {/* Guest user login/signup buttons */}
-                <div className="flex items-center justify-center gap-3 mt-4">
-                  <button
-                    onClick={() => setShowLoginPopup(true)}
-                    className="px-5 py-2 text-sm font-semibold text-gray-800 dark:text-gray-200 bg-blue-500 hover:bg-blue-600 text-white rounded-xl transition"
-                  >
-                    Log in
-                  </button>
-                  <button
-                    onClick={() => setShowSignupPopup(true)}
-                    className="px-5 py-2 text-sm font-semibold text-gray-800 bg-yellow-400 hover:bg-yellow-500 rounded-xl transition"
-                  >
-                    Sign up
-                  </button>
+                {/* Guest user message */}
+                <div className="text-center mt-4">
+                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                    Don't lose your chat history. <button
+                      onClick={() => setShowLoginPopup(true)}
+                      className="text-blue-600 dark:text-blue-400 hover:underline font-medium"
+                    >
+                      Log in
+                    </button> or <button
+                      onClick={() => setShowSignupPopup(true)}
+                      className="text-blue-600 dark:text-blue-400 hover:underline font-medium"
+                    >
+                      Sign up
+                    </button> to save your conversations.
+                  </p>
                 </div>
               </div>
             </div>

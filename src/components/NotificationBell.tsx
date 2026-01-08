@@ -1,7 +1,8 @@
 import { Bell } from "lucide-react";
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { getUnreadCount, markNotificationRead, markAllNotificationsRead, getNotifications, type Notification } from "../lib/notifications";
+import { getUnreadCount, markNotificationRead, markAllNotificationsRead, getNotifications, type Notification, type NotificationListResponse } from "../lib/notifications";
+import { isGuestUser } from "../lib/auth";
 import { toast } from "react-hot-toast";
 
 export function NotificationBell() {
@@ -9,17 +10,21 @@ export function NotificationBell() {
   const queryClient = useQueryClient();
 
   // Fetch unread count
-  const { data: unreadCount = 0 } = useQuery({
+  const { data: unreadCount = 0, error: unreadCountError } = useQuery<number>({
     queryKey: ["notifications", "unread-count"],
     queryFn: getUnreadCount,
     refetchInterval: 30000, // Refetch every 30 seconds
+    retry: 1, // Only retry once on failure
   });
 
   // Fetch all notifications when dropdown is open (to show both read and unread)
-  const { data: notificationsData, isLoading } = useQuery({
+  const { data: notificationsData, isLoading, error: notificationsError, isError, refetch } = useQuery<NotificationListResponse>({
     queryKey: ["notifications", "list"],
     queryFn: () => getNotifications(1, 20),
     enabled: isOpen,
+    retry: 1, // Only retry once on failure
+    staleTime: 0, // Always fetch fresh data when dropdown opens
+    refetchOnWindowFocus: false, // Don't refetch on window focus
   });
   
   const notifications = notificationsData?.data || [];
@@ -47,7 +52,10 @@ export function NotificationBell() {
 
     // Navigate based on notification type
     if (notification.data?.threadId) {
-      window.location.href = `/user/chat/${notification.data.threadId}`;
+      // Check if user is guest to determine correct route
+      const isGuest = isGuestUser();
+      const route = isGuest ? `/guest/${notification.data.threadId}` : `/user/chat/${notification.data.threadId}`;
+      window.location.href = route;
     }
     setIsOpen(false);
   };
@@ -97,6 +105,23 @@ export function NotificationBell() {
               {isLoading ? (
                 <div className="p-4 text-center text-gray-500 dark:text-gray-400">
                   Loading...
+                </div>
+              ) : (notificationsError || unreadCountError || isError) ? (
+                <div className="p-4 text-center">
+                  <p className="text-sm text-red-600 dark:text-red-400">
+                    Failed to load notifications
+                  </p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                    {notificationsError?.message || unreadCountError?.message || "Unknown error"}
+                  </p>
+                  <button
+                    onClick={() => {
+                      refetch();
+                    }}
+                    className="mt-2 text-sm text-blue-600 dark:text-blue-400 hover:underline"
+                  >
+                    Retry
+                  </button>
                 </div>
               ) : notifications.length > 0 ? (
                 <div className="divide-y divide-gray-200 dark:divide-gray-700">

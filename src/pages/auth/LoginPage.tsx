@@ -10,7 +10,7 @@ import { Mail, Lock, Eye, EyeOff } from "lucide-react";
 export function LoginPage() {
   const navigate = useNavigate();
   const location = useLocation();
-  const redirectTo = (location.state as { from?: string })?.from ?? "/chat/new";
+  const redirectTo = (location.state as { from?: string })?.from ?? "/user/chat/new";
   const currentThreadId = (location.state as { threadId?: string })?.threadId;
   const [credentials, setCredentials] = useState({ email: "", password: "" });
   const [showPassword, setShowPassword] = useState(false);
@@ -96,30 +96,10 @@ export function LoginPage() {
     },
   });
 
-  const guestLogin = useMutation({
-    mutationFn: async () => {
-      const deviceId = getDeviceId();
-      const res = await api.post("/auth/guest-token", { deviceId });
-      return res.data;
-    },
-    onSuccess: (data) => {
-      const responseData = data.data || data;
-      if (!responseData.accessToken) {
-        console.error("No accessToken in response:", responseData);
-        toast.error("Failed to get access token");
-        return;
-      }
-      // Use isGuest from API response if available, otherwise default to true for guest-token endpoint
-      const isGuest = responseData.user?.isGuest ?? true;
-      setTokens(responseData.accessToken, responseData.refreshToken, isGuest);
-      toast.success("Signed in as guest");
-      navigate(redirectTo, { replace: true });
-    },
-    onError: (error) => {
-      const message = extractErrorMessage(error, "Failed to sign in as guest");
-      toast.error(message);
-    },
-  });
+  const handleGuestLogin = () => {
+    // Navigate to /guest route which will generate token and create thread
+    navigate("/guest", { replace: true });
+  };
 
   // Handle Google OAuth
   const handleGoogleLogin = async () => {
@@ -299,11 +279,10 @@ export function LoginPage() {
             {/* Continue as Guest Button */}
             <button
               type="button"
-              onClick={() => guestLogin.mutate()}
-              className="w-full rounded-xl border-2 border-yellow-400 bg-white px-5 py-3 text-sm font-semibold text-gray-800 transition hover:bg-gray-50 disabled:opacity-50"
-              disabled={guestLogin.isPending}
+              onClick={handleGuestLogin}
+              className="w-full rounded-xl border-2 border-yellow-400 bg-white px-5 py-3 text-sm font-semibold text-gray-800 transition hover:bg-gray-50"
             >
-              {guestLogin.isPending ? "Signing in..." : "Continue as Guest"}
+              Continue as Guest
             </button>
           </form>
 

@@ -6,6 +6,10 @@ import { ArrowUp } from "lucide-react";
 import { api } from "../../lib/api";
 import { extractErrorMessage } from "../../lib/errors";
 import { ensureToken, isGuestUser } from "../../lib/auth";
+import { Topbar } from "../../components/layout/Topbar";
+import { LoginPopup } from "../../components/LoginPopup";
+import { SignupPopup } from "../../components/SignupPopup";
+import { Toaster } from "react-hot-toast";
 
 interface Message {
   id: string;
@@ -20,6 +24,8 @@ interface Thread {
   title: string;
   desc?: string;
   messages: Message[];
+  chatCount?: number;
+  chatLimit?: number;
 }
 
 export function ChatPage() {
@@ -36,6 +42,11 @@ export function ChatPage() {
   // For guest users, manage messages in local state instead of fetching thread
   const [guestMessages, setGuestMessages] = useState<Message[]>([]);
   const [guestThreadTitle, setGuestThreadTitle] = useState<string>("New Chat");
+  const [guestChatCount, setGuestChatCount] = useState<number>(0);
+  const [guestChatLimit, setGuestChatLimit] = useState<number | null>(null);
+  const [showLimitPopup, setShowLimitPopup] = useState(false);
+  const [showLoginPopup, setShowLoginPopup] = useState(false);
+  const [showSignupPopup, setShowSignupPopup] = useState(false);
 
   const state = (location.state || {}) as {
     bootstrapThread?: Thread;
@@ -53,6 +64,13 @@ export function ChatPage() {
     if (isGuest) {
       setGuestMessages(state.bootstrapThread.messages || []);
       setGuestThreadTitle(state.bootstrapThread.title || "New Chat");
+      // Initialize chat count and limit from bootstrap thread if available
+      if (state.bootstrapThread.chatCount !== undefined) {
+        setGuestChatCount(state.bootstrapThread.chatCount);
+      }
+      if (state.bootstrapThread.chatLimit !== undefined) {
+        setGuestChatLimit(state.bootstrapThread.chatLimit);
+      }
     }
   }, [id, isGuest, queryClient, state.bootstrapThread]);
 
@@ -103,6 +121,14 @@ export function ChatPage() {
       setGuestMessages(thread.messages);
       setGuestThreadTitle(thread.title || "New Chat");
     }
+    
+    // Update chat count and limit from thread data
+    if (thread.chatCount !== undefined) {
+      setGuestChatCount(thread.chatCount);
+    }
+    if (thread.chatLimit !== undefined) {
+      setGuestChatLimit(thread.chatLimit);
+    }
   }, [id, isGuest, thread, guestMessages.length]);
 
   const sendMessage = useMutation({
@@ -145,6 +171,21 @@ export function ChatPage() {
           // Update title if changed
           if (data.title_name && data.title_name !== guestThreadTitle) {
             setGuestThreadTitle(data.title_name);
+          }
+          
+          // Update chat count from API response if available, otherwise increment
+          if (data.chatCount !== undefined) {
+            setGuestChatCount(data.chatCount);
+          } else {
+            setGuestChatCount((prev) => prev + 1);
+          }
+          if (data.chatLimit !== undefined) {
+            setGuestChatLimit(data.chatLimit);
+          }
+          
+          // Update URL to /guest/:threadId if this is the first message and we're on /guest
+          if (isGuest && data.threadId && window.location.pathname === "/guest") {
+            navigate(`/guest/${data.threadId}`, { replace: true });
           }
         } else {
           // For authenticated users, update query cache
@@ -240,6 +281,12 @@ export function ChatPage() {
     const trimmedMessage = text.trim();
     if (!trimmedMessage || sendMessage.isPending || isSending) {
       console.log("[ChatPage] sendText: skipping - trimmed:", trimmedMessage, "pending:", sendMessage.isPending, "sending:", isSending);
+      return;
+    }
+
+    // Check chat limit for guest users
+    if (isGuest && guestChatLimit !== null && guestChatCount >= guestChatLimit) {
+      setShowLimitPopup(true);
       return;
     }
 
@@ -371,7 +418,7 @@ export function ChatPage() {
         <div className="text-center">
           <p className="text-gray-500 mb-4">Thread not found</p>
           <button
-            onClick={() => navigate("/threads")}
+            onClick={() => navigate("/user/threads")}
             className="text-blue-600 hover:underline"
           >
             Back to threads
@@ -381,7 +428,7 @@ export function ChatPage() {
     );
   }
 
-  return (
+  const chatContent = (
     <div className="flex flex-col h-full relative bg-gray-50 dark:bg-gray-900">
       <div className="flex-1 overflow-y-auto">
         <div className="max-w-4xl mx-auto px-4 py-6 space-y-6">
@@ -475,7 +522,7 @@ export function ChatPage() {
               <p className="text-sm text-gray-600 dark:text-gray-400">
                 Don't lose your progress. Let's{" "}
                 <Link 
-                  to="/login" 
+                  to="/" 
                   state={{ threadId: id }}
                   className="underline text-gray-800 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-200"
                 >
@@ -495,6 +542,92 @@ export function ChatPage() {
           )}
         </div>
       </div>
+
+      {/* Chat Limit Popup */}
+      {showLimitPopup && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white dark:bg-gray-800 rounded-xl p-6 max-w-md w-full mx-4 shadow-xl">
+            <h2 className="text-2xl font-bold text-gray-800 dark:text-gray-200 mb-4">
+              Chat Limit Reached
+            </h2>
+            <p className="text-gray-600 dark:text-gray-400 mb-6">
+              You've reached the limit of {guestChatLimit} messages for guest users. 
+              Please log in or sign up to continue chatting, or continue as guest to start a new thread.
+            </p>
+            <div className="flex flex-col gap-3">
+              <button
+                onClick={() => {
+                  setShowLimitPopup(false);
+                  setShowLoginPopup(true);
+                }}
+                className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-4 rounded-lg transition"
+              >
+                Log In
+              </button>
+              <button
+                onClick={() => {
+                  setShowLimitPopup(false);
+                  setShowSignupPopup(true);
+                }}
+                className="w-full bg-green-600 hover:bg-green-700 text-white font-medium py-3 px-4 rounded-lg transition"
+              >
+                Sign Up
+              </button>
+              <button
+                onClick={() => {
+                  setShowLimitPopup(false);
+                  navigate(isGuest ? "/guest" : "/user/chat/new");
+                }}
+                className="w-full bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-200 font-medium py-3 px-4 rounded-lg transition"
+              >
+                Continue as Guest (New Thread)
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
+
+  // For guest users, wrap with Topbar and Toaster
+  if (isGuest) {
+    return (
+      <>
+        <div className="h-screen bg-background text-foreground overflow-hidden">
+          <Toaster position="top-right" toastOptions={{ duration: 4000 }} />
+          <div className="flex h-full flex-col">
+            <Topbar />
+            <main className="flex-1 overflow-hidden">{chatContent}</main>
+          </div>
+        </div>
+        <LoginPopup
+          isOpen={showLoginPopup}
+          onClose={() => {
+            setShowLoginPopup(false);
+            setShowSignupPopup(false);
+          }}
+          currentThreadId={id}
+          onSwitchToSignup={() => {
+            setShowLoginPopup(false);
+            setShowSignupPopup(true);
+          }}
+        />
+        <SignupPopup
+          isOpen={showSignupPopup}
+          onClose={() => {
+            setShowLoginPopup(false);
+            setShowSignupPopup(false);
+          }}
+          currentThreadId={id}
+          onSwitchToLogin={() => {
+            setShowSignupPopup(false);
+            setShowLoginPopup(true);
+          }}
+        />
+      </>
+    );
+  }
+
+  // For authenticated users, return content directly (AppShell will wrap it)
+  return chatContent;
 }

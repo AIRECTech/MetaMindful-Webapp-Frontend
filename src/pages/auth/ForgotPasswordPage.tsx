@@ -55,7 +55,7 @@ export function ForgotPasswordPage() {
 
             <div className="space-y-4">
               <Link
-                to="/login"
+                to="/"
                 className="block w-full rounded-xl bg-yellow-400 px-5 py-3 text-center text-sm font-semibold text-gray-800 transition hover:bg-yellow-500"
               >
                 Back to Login
@@ -139,7 +139,7 @@ export function ForgotPasswordPage() {
 
           <p className="mt-6 text-center text-sm text-gray-600">
             Remember your password?{" "}
-            <Link to="/login" className="font-medium text-gray-800 hover:underline">
+            <Link to="/" className="font-medium text-gray-800 hover:underline">
               Log in
             </Link>
           </p>

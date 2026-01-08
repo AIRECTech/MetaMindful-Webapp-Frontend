@@ -93,7 +93,7 @@ export function Sidebar() {
       toast.success("Thread deleted successfully");
       // If we deleted the current thread, navigate to new chat
       if (currentThreadId === showMenuThreadId) {
-        navigate("/chat/new");
+        navigate("/user/chat/new");
       }
     },
     onError: (error: Error) => {
@@ -181,7 +181,7 @@ export function Sidebar() {
     }
     // Clear tokens and redirect to login
     clearTokens();
-    navigate("/login");
+    navigate("/");
   };
 
   const isGuest = isGuestUser();
@@ -213,7 +213,7 @@ export function Sidebar() {
         <div className="p-2">
           {/* New Thread button */}
           <button
-            onClick={() => navigate("/chat/new")}
+            onClick={() => navigate("/user/chat/new")}
             className="w-full flex items-center gap-3 px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 transition text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
           >
             <Plus className="h-4 w-4" />
@@ -276,7 +276,7 @@ export function Sidebar() {
                     // Normal mode
                     <>
                       <button
-                        onClick={() => navigate(`/chat/${thread.threadId || thread.id}`)}
+                        onClick={() => navigate(`/user/chat/${thread.threadId || thread.id}`)}
                         className={cn(
                           "flex-1 flex flex-col gap-1 px-3 py-2 text-sm transition text-left min-w-0",
                           currentThreadId === (thread.threadId || thread.id)

@@ -4,8 +4,9 @@ import { useState, useEffect } from "react";
 import { api } from "../../lib/api";
 import { clearTokens, isGuestUser, isAuthenticated } from "../../lib/auth";
 import { toast } from "react-hot-toast";
-import { Link } from "react-router-dom";
 import { getDarkMode, toggleDarkMode as toggleDarkModeUtil } from "../../lib/darkMode";
+import { LoginPopup } from "../LoginPopup";
+import { SignupPopup } from "../SignupPopup";
 
 export function Topbar() {
   const navigate = useNavigate();
@@ -18,6 +19,8 @@ export function Topbar() {
   const [darkMode, setDarkMode] = useState(() => {
     return getDarkMode();
   });
+  const [showLoginPopup, setShowLoginPopup] = useState(false);
+  const [showSignupPopup, setShowSignupPopup] = useState(false);
 
   // Sync dark mode state with DOM changes
   useEffect(() => {
@@ -50,24 +53,31 @@ export function Topbar() {
     }
     clearTokens();
     toast.success("Logged out successfully");
-    navigate("/login", { replace: true });
+    navigate("/", { replace: true });
+  };
+
+  const handleLogoClick = () => {
+    navigate("/");
   };
 
   return (
     <header className="flex items-center justify-between px-4 py-3">
-      <div className="flex items-center gap-3">
+      <button
+        onClick={handleLogoClick}
+        className="flex items-center gap-3 hover:opacity-80 transition-opacity cursor-pointer"
+      >
         <img 
           src="/logo.png" 
           alt="MetaMindful" 
           className="h-8 w-auto"
         />
-        <div className="flex flex-col">
+        <div className="flex flex-col items-start">
           <span className="text-lg font-bold text-gray-800 dark:text-gray-200">MetaMindful</span>
           {isGuest && (
             <span className="text-xs text-gray-500 dark:text-gray-400">Guest mode</span>
           )}
         </div>
-      </div>
+      </button>
       <div className="flex items-center gap-3">
         {/* Dark mode toggle - show for all users including guests */}
         <button
@@ -85,20 +95,18 @@ export function Topbar() {
         {isGuest ? (
           // Guest users: Show login and signup buttons
           <>
-            <Link
-              to="/login"
-              state={{ threadId: threadId || undefined }}
+            <button
+              onClick={() => setShowLoginPopup(true)}
               className="px-4 py-2 bg-white dark:bg-gray-800 border-2 border-yellow-400 text-gray-800 dark:text-gray-200 font-medium rounded-lg text-sm transition hover:bg-gray-50 dark:hover:bg-gray-700"
             >
               Log in
-            </Link>
-            <Link
-              to="/signup"
-              state={{ threadId: threadId || undefined }}
+            </button>
+            <button
+              onClick={() => setShowSignupPopup(true)}
               className="px-4 py-2 bg-yellow-400 hover:bg-yellow-500 text-gray-800 font-medium rounded-lg text-sm transition"
             >
               Sign up
-            </Link>
+            </button>
           </>
         ) : authenticated ? (
           // Real authenticated users: Show notifications and sign out
@@ -116,14 +124,40 @@ export function Topbar() {
           </>
         ) : (
           // Not authenticated and not guest (edge case)
-          <Link
-            to="/signup"
+          <button
+            onClick={() => navigate("/signup")}
             className="px-4 py-2 bg-yellow-400 hover:bg-yellow-500 text-gray-800 font-medium rounded-lg text-sm transition"
           >
             Sign up
-          </Link>
+          </button>
         )}
       </div>
+
+      {/* Popups */}
+      <LoginPopup
+        isOpen={showLoginPopup}
+        onClose={() => {
+          setShowLoginPopup(false);
+          setShowSignupPopup(false);
+        }}
+        currentThreadId={threadId || undefined}
+        onSwitchToSignup={() => {
+          setShowLoginPopup(false);
+          setShowSignupPopup(true);
+        }}
+      />
+      <SignupPopup
+        isOpen={showSignupPopup}
+        onClose={() => {
+          setShowLoginPopup(false);
+          setShowSignupPopup(false);
+        }}
+        currentThreadId={threadId || undefined}
+        onSwitchToLogin={() => {
+          setShowSignupPopup(false);
+          setShowLoginPopup(true);
+        }}
+      />
     </header>
   );
 }

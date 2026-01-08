@@ -112,7 +112,7 @@ export function StartChatPage() {
         // Guest users should stay on /start-chat
         if (!isGuestUser()) {
           setTimeout(() => {
-            navigate(`/chat/${data.threadId}`);
+            navigate(`/user/chat/${data.threadId}`);
           }, 500);
         }
       } else {
@@ -233,7 +233,7 @@ export function StartChatPage() {
                   <p className="text-sm text-gray-600 dark:text-gray-400">
                     Don't lose your progress. Let's{" "}
                     <Link 
-                      to="/login" 
+                      to="/" 
                       state={{ threadId: threadId || undefined }}
                       className="underline text-gray-800 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-200"
                     >
@@ -342,7 +342,7 @@ export function StartChatPage() {
                   <p className="text-sm text-gray-600 dark:text-gray-400">
                     Don't lose your progress. Let's{" "}
                     <Link 
-                      to="/login" 
+                      to="/" 
                       state={{ threadId: threadId || undefined }}
                       className="underline text-gray-800 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-200"
                     >

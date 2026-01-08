@@ -43,7 +43,7 @@ export function ThreadsPage() {
       queryClient.invalidateQueries({ queryKey: ["threads"] });
       setNewThreadTitle("");
       setSelectedTags([]);
-      navigate(`/chat/${thread.threadId || thread.id}`);
+      navigate(`/user/chat/${thread.threadId || thread.id}`);
     },
     onError: (error) => {
       toast.error(extractErrorMessage(error, "Failed to create thread"));
@@ -99,7 +99,7 @@ export function ThreadsPage() {
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
-                      navigate(`/chat/${thread.threadId || thread.id}`);
+                      navigate(`/user/chat/${thread.threadId || thread.id}`);
                     }}
                     className="text-gray-400 hover:text-gray-600"
                   >
@@ -127,7 +127,7 @@ export function ThreadsPage() {
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
-                      navigate(`/chat/${thread.threadId || thread.id}`);
+                      navigate(`/user/chat/${thread.threadId || thread.id}`);
                     }}
                     className="w-full text-left bg-yellow-400 hover:bg-yellow-500 text-gray-800 font-medium px-4 py-2 rounded-lg text-sm transition"
                   >

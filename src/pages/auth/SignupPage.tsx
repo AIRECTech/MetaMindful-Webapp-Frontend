@@ -271,7 +271,7 @@ export function SignupPage() {
           {/* Already Have an Account Link */}
           <p className="mt-6 text-center text-sm text-gray-600">
             Already have an account?{" "}
-            <Link to="/login" className="font-medium text-gray-800 hover:underline">
+            <Link to="/" className="font-medium text-gray-800 hover:underline">
               Log in
             </Link>
           </p>

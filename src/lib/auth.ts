@@ -139,8 +139,8 @@ export const isRealUser = (): boolean => {
 
 export const handleUnauthorized = () => {
   clearTokens();
-  if (window.location.pathname !== "/login" && window.location.pathname !== "/signup") {
-    window.location.href = "/login";
+  if (window.location.pathname !== "/" && window.location.pathname !== "/signup") {
+    window.location.href = "/";
   }
 };
 

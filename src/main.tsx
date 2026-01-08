@@ -1,6 +1,6 @@
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
-import { createBrowserRouter, RouterProvider } from "react-router-dom";
+import { createBrowserRouter, RouterProvider, Navigate } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import "./index.css";
 import { initDarkMode } from "./lib/darkMode";
@@ -20,15 +20,21 @@ import { NewChatPage } from "./pages/chat/NewChatPage";
 import { ProfilePage } from "./pages/profile/ProfilePage";
 import { SettingsPage } from "./pages/profile/SettingsPage";
 import { StartChatPage } from "./pages/chat/StartChatPage";
+import { GuestChatPage } from "./pages/chat/GuestChatPage";
+
 const router = createBrowserRouter([
-  { path: "/login", element: <LoginPage /> },
+  { path: "/", element: <LoginPage /> },
   { path: "/signup", element: <SignupPage /> },
   { path: "/forgot-password", element: <ForgotPasswordPage /> },
   { path: "/reset-password", element: <ResetPasswordPage /> },
   { path: "/verify-email", element: <VerifyEmailPage /> },
   { path: "/start-chat", element: <StartChatPage /> },
+  // Guest routes
+  { path: "/guest", element: <GuestChatPage /> },
+  { path: "/guest/:id", element: <GuestChatPage /> },
+  // Authenticated user routes
   {
-    path: "/",
+    path: "/user",
     element: (
       <RequireAuth>
         <App />
@@ -43,6 +49,8 @@ const router = createBrowserRouter([
       { path: "settings", element: <SettingsPage /> },
     ],
   },
+  // Catch-all route for 404 - redirect to root
+  { path: "*", element: <Navigate to="/" replace /> },
 ]);
 
 const queryClient = new QueryClient();

@@ -2,7 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-hot-toast";
-import { Eye, EyeOff } from "lucide-react";
+import { Eye, EyeOff, Star } from "lucide-react";
 import { Card } from "../../components/ui/Card";
 import { api } from "../../lib/api";
 import { extractErrorMessage } from "../../lib/errors";
@@ -17,12 +17,26 @@ export function SettingsPage() {
     newPassword: "",
     confirmPassword: "",
   });
-  const [activeTab, setActiveTab] = useState<"profile" | "password" | "danger">("profile");
+  const [activeTab, setActiveTab] = useState<"profile" | "password" | "feedback" | "contact" | "danger">("profile");
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deleteConfirmText, setDeleteConfirmText] = useState("");
   const [showCurrentPassword, setShowCurrentPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  
+  // Feedback form state
+  const [feedbackForm, setFeedbackForm] = useState({
+    rating: 0,
+    comment: "",
+  });
+  
+  // Contact form state
+  const [contactForm, setContactForm] = useState({
+    name: "",
+    email: "",
+    subject: "",
+    message: "",
+  });
 
   const { data: user, isLoading: isLoadingUser } = useQuery({
     queryKey: ["user", "me"],
@@ -35,6 +49,11 @@ export function SettingsPage() {
   useEffect(() => {
     if (user) {
       setProfileForm({ name: user.name || "" });
+      setContactForm((prev) => ({
+        ...prev,
+        name: user.name || "",
+        email: user.email || "",
+      }));
     }
   }, [user]);
 
@@ -94,6 +113,53 @@ export function SettingsPage() {
     },
   });
 
+  const submitFeedback = useMutation({
+    mutationFn: async () => {
+      if (feedbackForm.rating === 0 && !feedbackForm.comment.trim()) {
+        throw new Error("Please provide a rating or comment");
+      }
+      const res = await api.post("/feedback", {
+        type: "general",
+        stars: feedbackForm.rating > 0 ? feedbackForm.rating : null,
+        comment: feedbackForm.comment.trim() || null,
+      });
+      return res.data;
+    },
+    onSuccess: () => {
+      setFeedbackForm({ rating: 0, comment: "" });
+      toast.success("Feedback submitted successfully! Thank you for your input.");
+    },
+    onError: (error) => {
+      toast.error(extractErrorMessage(error, "Failed to submit feedback"));
+    },
+  });
+
+  const submitContact = useMutation({
+    mutationFn: async () => {
+      if (!contactForm.name.trim() || !contactForm.email.trim() || !contactForm.message.trim()) {
+        throw new Error("Name, email, and message are required");
+      }
+      const res = await api.post("/contact", {
+        name: contactForm.name.trim(),
+        email: contactForm.email.trim(),
+        subject: contactForm.subject.trim() || undefined,
+        message: contactForm.message.trim(),
+      });
+      return res.data;
+    },
+    onSuccess: () => {
+      setContactForm((prev) => ({
+        ...prev,
+        subject: "",
+        message: "",
+      }));
+      toast.success("Message sent successfully! We'll get back to you soon.");
+    },
+    onError: (error) => {
+      toast.error(extractErrorMessage(error, "Failed to send message"));
+    },
+  });
+
   const deleteAccount = useMutation({
     mutationFn: async () => {
       if (deleteConfirmText !== "DELETE") {
@@ -150,6 +216,26 @@ export function SettingsPage() {
               }`}
             >
               Change Password
+            </button>
+            <button
+              onClick={() => setActiveTab("feedback")}
+              className={`pb-2 px-4 font-medium ${
+                activeTab === "feedback"
+                  ? "border-b-2 border-primary text-primary"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              Feedback
+            </button>
+            <button
+              onClick={() => setActiveTab("contact")}
+              className={`pb-2 px-4 font-medium ${
+                activeTab === "contact"
+                  ? "border-b-2 border-primary text-primary"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              Contact Us
             </button>
             <button
               onClick={() => setActiveTab("danger")}
@@ -276,6 +362,133 @@ export function SettingsPage() {
               className="rounded-full bg-primary px-5 py-2 text-sm font-semibold text-white disabled:opacity-50"
             >
               {changePassword.isPending ? "Changing..." : "Change Password"}
+            </button>
+          </form>
+        </Card>
+      )}
+
+      {activeTab === "feedback" && (
+        <Card title="Feedback">
+          <form
+            className="space-y-4"
+            onSubmit={(e) => {
+              e.preventDefault();
+              submitFeedback.mutate();
+            }}
+          >
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Rating (Optional)</label>
+              <div className="flex gap-2">
+                {[1, 2, 3, 4, 5].map((star) => (
+                  <button
+                    key={star}
+                    type="button"
+                    onClick={() => setFeedbackForm((prev) => ({ ...prev, rating: star }))}
+                    className={`p-2 rounded-lg transition ${
+                      feedbackForm.rating >= star
+                        ? "text-yellow-400 bg-yellow-50 dark:bg-yellow-900/20"
+                        : "text-gray-300 hover:text-yellow-300"
+                    }`}
+                  >
+                    <Star
+                      className={`h-6 w-6 ${feedbackForm.rating >= star ? "fill-current" : ""}`}
+                    />
+                  </button>
+                ))}
+              </div>
+              {feedbackForm.rating > 0 && (
+                <p className="text-xs text-muted-foreground">
+                  {feedbackForm.rating} out of 5 stars
+                </p>
+              )}
+            </div>
+
+            <label className="space-y-1 text-sm font-medium">
+              Comments
+              <textarea
+                className="w-full rounded-xl border border-border bg-background px-3 py-2 min-h-[120px] resize-y"
+                value={feedbackForm.comment}
+                onChange={(e) => setFeedbackForm((prev) => ({ ...prev, comment: e.target.value }))}
+                placeholder="Share your thoughts, suggestions, or feedback..."
+              />
+            </label>
+
+            <p className="text-xs text-muted-foreground">
+              {feedbackForm.rating === 0 && !feedbackForm.comment.trim()
+                ? "Please provide a rating or comment"
+                : "Thank you for your feedback!"}
+            </p>
+
+            <button
+              type="submit"
+              disabled={submitFeedback.isPending || (feedbackForm.rating === 0 && !feedbackForm.comment.trim())}
+              className="rounded-full bg-primary px-5 py-2 text-sm font-semibold text-white disabled:opacity-50"
+            >
+              {submitFeedback.isPending ? "Submitting..." : "Submit Feedback"}
+            </button>
+          </form>
+        </Card>
+      )}
+
+      {activeTab === "contact" && (
+        <Card title="Contact Us">
+          <form
+            className="space-y-4"
+            onSubmit={(e) => {
+              e.preventDefault();
+              submitContact.mutate();
+            }}
+          >
+            <label className="space-y-1 text-sm font-medium">
+              Name
+              <input
+                type="text"
+                className="w-full rounded-xl border border-border bg-background px-3 py-2"
+                value={contactForm.name}
+                onChange={(e) => setContactForm((prev) => ({ ...prev, name: e.target.value }))}
+                required
+              />
+            </label>
+
+            <label className="space-y-1 text-sm font-medium">
+              Email
+              <input
+                type="email"
+                className="w-full rounded-xl border border-border bg-background px-3 py-2"
+                value={contactForm.email}
+                onChange={(e) => setContactForm((prev) => ({ ...prev, email: e.target.value }))}
+                required
+              />
+            </label>
+
+            <label className="space-y-1 text-sm font-medium">
+              Subject (Optional)
+              <input
+                type="text"
+                className="w-full rounded-xl border border-border bg-background px-3 py-2"
+                value={contactForm.subject}
+                onChange={(e) => setContactForm((prev) => ({ ...prev, subject: e.target.value }))}
+                placeholder="What is this regarding?"
+              />
+            </label>
+
+            <label className="space-y-1 text-sm font-medium">
+              Message
+              <textarea
+                className="w-full rounded-xl border border-border bg-background px-3 py-2 min-h-[150px] resize-y"
+                value={contactForm.message}
+                onChange={(e) => setContactForm((prev) => ({ ...prev, message: e.target.value }))}
+                placeholder="How can we help you?"
+                required
+              />
+            </label>
+
+            <button
+              type="submit"
+              disabled={submitContact.isPending || !contactForm.name.trim() || !contactForm.email.trim() || !contactForm.message.trim()}
+              className="rounded-full bg-primary px-5 py-2 text-sm font-semibold text-white disabled:opacity-50"
+            >
+              {submitContact.isPending ? "Sending..." : "Send Message"}
             </button>
           </form>
         </Card>

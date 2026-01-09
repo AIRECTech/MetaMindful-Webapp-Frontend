@@ -36,7 +36,9 @@ export function ChatPage() {
   const [message, setMessage] = useState("");
   const [isSending, setIsSending] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const isGuest = isGuestUser();
+  // Check if user is guest by auth status OR by route path (/guest/:id)
+  const isGuestRoute = location.pathname.startsWith("/guest");
+  const isGuest = isGuestUser() || isGuestRoute;
   const hasAutoSentRef = useRef(false);
   
   // For guest users, manage messages in local state instead of fetching thread
@@ -420,12 +422,13 @@ export function ChatPage() {
   const displayTitle = isGuest ? guestThreadTitle : (thread?.title || "New Chat");
   const displayDesc = isGuest ? undefined : thread?.desc;
 
-  // Hide disclaimer after first user message is sent
+  // Hide disclaimer after 2 user messages are sent
   useEffect(() => {
     if (displayMessages.length > 0) {
-      // Check if there's at least one user message
-      const hasUserMessage = displayMessages.some(msg => msg.role === "user");
-      if (hasUserMessage && showDisclaimer) {
+      // Count user messages
+      const userMessageCount = displayMessages.filter(msg => msg.role === "user").length;
+      // Hide disclaimer after 2 user messages
+      if (userMessageCount >= 2 && showDisclaimer) {
         setShowDisclaimer(false);
       }
     }
@@ -586,26 +589,20 @@ export function ChatPage() {
           </div>
           
           {/* Guest user login/signup prompt - text only */}
-          {isGuestUser() && (
-            <div className="text-center">
+          {isGuest && (
+            <div className="text-center mt-4">
               <p className="text-sm text-gray-600 dark:text-gray-400">
-                Don't lose your progress. Let's{" "}
-                <Link 
-                  to="/" 
-                  state={{ threadId: id }}
-                  className="underline text-gray-800 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-200"
+                Don't lose your chat history. <button
+                  onClick={() => setShowLoginPopup(true)}
+                  className="text-blue-600 dark:text-blue-400 hover:underline font-medium"
                 >
-                  log in
-                </Link>{" "}
-                or{" "}
-                <Link 
-                  to="/signup" 
-                  state={{ threadId: id }}
-                  className="underline text-gray-800 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-200"
+                  Log in
+                </button> or <button
+                  onClick={() => setShowSignupPopup(true)}
+                  className="text-blue-600 dark:text-blue-400 hover:underline font-medium"
                 >
-                  sign up
-                </Link>{" "}
-                to save your thread
+                  Sign up
+                </button> to save your conversations.
               </p>
             </div>
           )}

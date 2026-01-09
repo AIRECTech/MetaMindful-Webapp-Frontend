@@ -2,7 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-hot-toast";
-import { Eye, EyeOff, Star } from "lucide-react";
+import { Eye, EyeOff, Star, Calendar } from "lucide-react";
 import { Card } from "../../components/ui/Card";
 import { api } from "../../lib/api";
 import { extractErrorMessage } from "../../lib/errors";
@@ -45,6 +45,18 @@ export function SettingsPage() {
       return res.data.data;
     },
   });
+
+  // Fetch user's feedbacks
+  const { data: feedbacksData, isLoading: isLoadingFeedbacks } = useQuery({
+    queryKey: ["feedbacks", "general"],
+    queryFn: async () => {
+      const res = await api.get("/feedback?type=general&pageSize=50");
+      return res.data.data;
+    },
+    enabled: activeTab === "feedback", // Only fetch when feedback tab is active
+  });
+
+  const feedbacks = feedbacksData?.data || [];
 
   useEffect(() => {
     if (user) {
@@ -127,6 +139,7 @@ export function SettingsPage() {
     },
     onSuccess: () => {
       setFeedbackForm({ rating: 0, comment: "" });
+      queryClient.invalidateQueries({ queryKey: ["feedbacks"] });
       toast.success("Feedback submitted successfully! Thank you for your input.");
     },
     onError: (error) => {
@@ -368,66 +381,130 @@ export function SettingsPage() {
       )}
 
       {activeTab === "feedback" && (
-        <Card title="Feedback">
-          <form
-            className="space-y-4"
-            onSubmit={(e) => {
-              e.preventDefault();
-              submitFeedback.mutate();
-            }}
-          >
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Rating (Optional)</label>
-              <div className="flex gap-2">
-                {[1, 2, 3, 4, 5].map((star) => (
-                  <button
-                    key={star}
-                    type="button"
-                    onClick={() => setFeedbackForm((prev) => ({ ...prev, rating: star }))}
-                    className={`p-2 rounded-lg transition ${
-                      feedbackForm.rating >= star
-                        ? "text-yellow-400 bg-yellow-50 dark:bg-yellow-900/20"
-                        : "text-gray-300 hover:text-yellow-300"
-                    }`}
+        <div className="space-y-6">
+          <Card title="Submit Feedback">
+            <form
+              className="space-y-4"
+              onSubmit={(e) => {
+                e.preventDefault();
+                submitFeedback.mutate();
+              }}
+            >
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Rating (Optional)</label>
+                <div className="flex gap-2">
+                  {[1, 2, 3, 4, 5].map((star) => (
+                    <button
+                      key={star}
+                      type="button"
+                      onClick={() => setFeedbackForm((prev) => ({ ...prev, rating: star }))}
+                      className={`p-2 rounded-lg transition ${
+                        feedbackForm.rating >= star
+                          ? "text-yellow-400 bg-yellow-50 dark:bg-yellow-900/20"
+                          : "text-gray-300 hover:text-yellow-300"
+                      }`}
+                    >
+                      <Star
+                        className={`h-6 w-6 ${feedbackForm.rating >= star ? "fill-current" : ""}`}
+                      />
+                    </button>
+                  ))}
+                </div>
+                {feedbackForm.rating > 0 && (
+                  <p className="text-xs text-muted-foreground">
+                    {feedbackForm.rating} out of 5 stars
+                  </p>
+                )}
+              </div>
+
+              <label className="space-y-1 text-sm font-medium">
+                Comments
+                <textarea
+                  className="w-full rounded-xl border border-border bg-background px-3 py-2 min-h-[120px] resize-y"
+                  value={feedbackForm.comment}
+                  onChange={(e) => setFeedbackForm((prev) => ({ ...prev, comment: e.target.value }))}
+                  placeholder="Share your thoughts, suggestions, or feedback..."
+                />
+              </label>
+
+              <p className="text-xs text-muted-foreground">
+                {feedbackForm.rating === 0 && !feedbackForm.comment.trim()
+                  ? "Please provide a rating or comment"
+                  : "Thank you for your feedback!"}
+              </p>
+
+              <button
+                type="submit"
+                disabled={submitFeedback.isPending || (feedbackForm.rating === 0 && !feedbackForm.comment.trim())}
+                className="rounded-full bg-primary px-5 py-2 text-sm font-semibold text-white disabled:opacity-50"
+              >
+                {submitFeedback.isPending ? "Submitting..." : "Submit Feedback"}
+              </button>
+            </form>
+          </Card>
+
+          <Card title="Your Feedback History">
+            {isLoadingFeedbacks ? (
+              <div className="text-center py-8">
+                <div className="text-muted-foreground">Loading feedbacks...</div>
+              </div>
+            ) : feedbacks.length === 0 ? (
+              <div className="text-center py-8">
+                <p className="text-muted-foreground">No feedback submitted yet.</p>
+                <p className="text-sm text-muted-foreground mt-2">Submit your first feedback above!</p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {feedbacks.map((feedback: any) => (
+                  <div
+                    key={feedback.id}
+                    className="border border-border rounded-xl p-4 bg-background hover:bg-muted/50 transition"
                   >
-                    <Star
-                      className={`h-6 w-6 ${feedbackForm.rating >= star ? "fill-current" : ""}`}
-                    />
-                  </button>
+                    <div className="flex items-start justify-between mb-2">
+                      <div className="flex items-center gap-2">
+                        {feedback.stars && (
+                          <div className="flex items-center gap-1">
+                            {[1, 2, 3, 4, 5].map((star) => (
+                              <Star
+                                key={star}
+                                className={`h-4 w-4 ${
+                                  star <= feedback.stars
+                                    ? "text-yellow-400 fill-current"
+                                    : "text-gray-300"
+                                }`}
+                              />
+                            ))}
+                          </div>
+                        )}
+                        <span className="text-xs font-medium text-muted-foreground uppercase">
+                          {feedback.type}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                        <Calendar className="h-3 w-3" />
+                        <span>
+                          {new Date(feedback.createdAt).toLocaleDateString("en-US", {
+                            year: "numeric",
+                            month: "short",
+                            day: "numeric",
+                          })}
+                        </span>
+                      </div>
+                    </div>
+                    {feedback.comment && (
+                      <p className="text-sm text-foreground mt-2 whitespace-pre-wrap">
+                        {feedback.comment}
+                      </p>
+                    )}
+                    {!feedback.stars && !feedback.comment && (
+                      <p className="text-sm text-muted-foreground italic">No details provided</p>
+                    )}
+                  </div>
                 ))}
               </div>
-              {feedbackForm.rating > 0 && (
-                <p className="text-xs text-muted-foreground">
-                  {feedbackForm.rating} out of 5 stars
-                </p>
-              )}
-            </div>
-
-            <label className="space-y-1 text-sm font-medium">
-              Comments
-              <textarea
-                className="w-full rounded-xl border border-border bg-background px-3 py-2 min-h-[120px] resize-y"
-                value={feedbackForm.comment}
-                onChange={(e) => setFeedbackForm((prev) => ({ ...prev, comment: e.target.value }))}
-                placeholder="Share your thoughts, suggestions, or feedback..."
-              />
-            </label>
-
-            <p className="text-xs text-muted-foreground">
-              {feedbackForm.rating === 0 && !feedbackForm.comment.trim()
-                ? "Please provide a rating or comment"
-                : "Thank you for your feedback!"}
-            </p>
-
-            <button
-              type="submit"
-              disabled={submitFeedback.isPending || (feedbackForm.rating === 0 && !feedbackForm.comment.trim())}
-              className="rounded-full bg-primary px-5 py-2 text-sm font-semibold text-white disabled:opacity-50"
-            >
-              {submitFeedback.isPending ? "Submitting..." : "Submit Feedback"}
-            </button>
-          </form>
-        </Card>
+            )}
+          </Card>
+        </div>
       )}
 
       {activeTab === "contact" && (

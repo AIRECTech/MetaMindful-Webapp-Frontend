@@ -1,6 +1,6 @@
 import { useNavigate, useParams } from "react-router-dom";
 import { cn } from "../../lib/utils";
-import { MessageSquare, User, Settings, Plus, Moon, Sun, LogOut, Edit2, Trash2, MoreVertical, X, Check } from "lucide-react";
+import { MessageSquare, Settings, Plus, Moon, Sun, LogOut, Edit2, Trash2, MoreVertical, X, Check } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "../../lib/api";
@@ -358,21 +358,8 @@ export function Sidebar() {
       {/* Divider */}
       <div className="border-t border-gray-200 dark:border-gray-700"></div>
 
-      {/* Bottom section: Profile, Theme, Settings, Logout */}
+      {/* Bottom section: Theme, Settings, Logout */}
       <div className="p-2 space-y-1">
-        <button
-          onClick={() => navigate("/profile")}
-          className={cn(
-            "w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition",
-            location.pathname === "/profile"
-              ? "bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-gray-100 font-medium"
-              : "text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800"
-          )}
-        >
-          <User className="h-4 w-4" />
-          Profile
-        </button>
-
         <button
           onClick={toggleDarkMode}
           className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 transition"
@@ -391,10 +378,10 @@ export function Sidebar() {
         </button>
 
         <button
-          onClick={() => navigate("/settings")}
+          onClick={() => navigate("/user/settings")}
           className={cn(
             "w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition",
-            location.pathname === "/settings"
+            location.pathname === "/user/settings"
               ? "bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-gray-100 font-medium"
               : "text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800"
           )}

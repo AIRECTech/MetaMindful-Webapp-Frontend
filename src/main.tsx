@@ -18,6 +18,7 @@ import { ForgotPasswordPage } from "./pages/auth/ForgotPasswordPage";
 import { ResetPasswordPage } from "./pages/auth/ResetPasswordPage";
 import { VerifyEmailPage } from "./pages/auth/VerifyEmailPage";
 import { RequireAuth } from "./components/RequireAuth";
+import { RedirectIfAuth } from "./components/RedirectIfAuth";
 import { ThreadsPage } from "./pages/chat/ThreadsPage";
 import { ChatPage } from "./pages/chat/ChatPage";
 import { NewChatPage } from "./pages/chat/NewChatPage";
@@ -28,8 +29,22 @@ import { GuestChatPage } from "./pages/chat/GuestChatPage";
 import { GoogleCallbackPage } from "./pages/auth/GoogleCallbackPage";
 
 const router = createBrowserRouter([
-  { path: "/", element: <LoginPage /> },
-  { path: "/signup", element: <SignupPage /> },
+  { 
+    path: "/", 
+    element: (
+      <RedirectIfAuth>
+        <LoginPage />
+      </RedirectIfAuth>
+    ) 
+  },
+  { 
+    path: "/signup", 
+    element: (
+      <RedirectIfAuth>
+        <SignupPage />
+      </RedirectIfAuth>
+    ) 
+  },
   { path: "/forgot-password", element: <ForgotPasswordPage /> },
   { path: "/reset-password", element: <ResetPasswordPage /> },
   { path: "/verify-email", element: <VerifyEmailPage /> },

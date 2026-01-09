@@ -2,7 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState, useEffect, useRef } from "react";
 import { useParams, useNavigate, Link, useLocation } from "react-router-dom";
 import { toast } from "react-hot-toast";
-import { ArrowUp, X } from "lucide-react";
+import { ArrowUp, X, RefreshCw } from "lucide-react";
 import { api } from "../../lib/api";
 import { extractErrorMessage } from "../../lib/errors";
 import { ensureToken, isGuestUser } from "../../lib/auth";
@@ -16,6 +16,8 @@ interface Message {
   role: "user" | "assistant";
   content: string;
   createdAt: string;
+  isError?: boolean;
+  originalUserMessage?: string; // Store the original user message for retry
 }
 
 interface Thread {
@@ -49,6 +51,7 @@ export function ChatPage() {
   const [showLimitPopup, setShowLimitPopup] = useState(false);
   const [showLoginPopup, setShowLoginPopup] = useState(false);
   const [showSignupPopup, setShowSignupPopup] = useState(false);
+  const [lastFailedMessage, setLastFailedMessage] = useState<string | null>(null); // Store last failed message for retry
   // Only show disclaimer for guest users
   const [showDisclaimer, setShowDisclaimer] = useState(() => {
     // Only show for guest users on initial load
@@ -219,21 +222,20 @@ export function ChatPage() {
         } else {
           // For authenticated users, update query cache
           if (thread) {
-            // Update thread title if changed
-            if (data.title_name && data.title_name !== thread.title) {
-              queryClient.setQueryData(["thread", id], (old: Thread | undefined) => {
-                if (!old) return old;
-                return { ...old, title: data.title_name };
-              });
-            }
-            
-            // Add assistant message to the thread
+            // Update thread detail cache (title and/or messages)
             queryClient.setQueryData(["thread", id], (old: Thread | undefined) => {
               if (!old) return old;
               
+              const updated = { ...old };
+              
+              // Update title if changed
+              if (data.title_name && data.title_name !== thread.title) {
+                updated.title = data.title_name;
+              }
+              
               // Add assistant message if available
               if (data.assistantMessage) {
-                const newMessages: Message[] = [
+                updated.messages = [
                   ...old.messages,
                   {
                     id: `temp-assistant-${Date.now()}`,
@@ -242,11 +244,26 @@ export function ChatPage() {
                     createdAt: new Date().toISOString(),
                   },
                 ];
-                return { ...old, messages: newMessages };
               }
               
-              return old;
+              return updated;
             });
+            
+            // If title changed, also update the thread in the threads list cache
+            if (data.title_name && data.title_name !== thread.title) {
+              queryClient.setQueryData(["threads"], (old: any) => {
+                if (!old || !Array.isArray(old)) return old;
+                return old.map((t: any) => {
+                  if (t.threadId === id || t.id === id) {
+                    return { ...t, title: data.title_name };
+                  }
+                  return t;
+                });
+              });
+              
+              // Invalidate threads list to ensure it refetches with updated title
+              queryClient.invalidateQueries({ queryKey: ["threads"] });
+            }
           }
         }
       }
@@ -258,33 +275,65 @@ export function ChatPage() {
       }
       setIsSending(false);
     },
-    onError: (error: any) => {
+    onError: (error: any, variables: string) => {
       const errorMessage = extractErrorMessage(error, "Failed to send message");
       
+      // Store the failed message for retry (use the message that was sent)
+      const failedMessage = variables || lastFailedMessage || message.trim();
+      setLastFailedMessage(failedMessage);
+      
       if (isGuest) {
-        // For guest users, remove the last user message from local state
+        // For guest users, add error message instead of removing user message
         setGuestMessages((prev) => {
-          return prev.filter((msg, index) => {
-            // Keep all messages except the last temp user message
+          // Remove the last temp user message
+          const filtered = prev.filter((msg, index) => {
             if (index === prev.length - 1 && msg.id?.startsWith("temp-user-")) {
               return false;
             }
             return true;
           });
+          
+          // Add error message
+          return [
+            ...filtered,
+            {
+              id: `error-${Date.now()}`,
+              role: "assistant" as const,
+              content: errorMessage.includes("ECONNRESET") || errorMessage.includes("502") || errorMessage.includes("Failed to communicate")
+                ? "Failed to communicate with external API: " + errorMessage
+                : errorMessage,
+              createdAt: new Date().toISOString(),
+              isError: true,
+              originalUserMessage: failedMessage,
+            },
+          ];
         });
       } else {
-        // For authenticated users, remove the last user message on error
+        // For authenticated users, add error message to thread
         queryClient.setQueryData(["thread", id], (old: Thread | undefined) => {
           if (!old) return old;
-          // Remove the last message if it's a temp user message
-          const newMessages = old.messages.filter((msg, index) => {
-            // Keep all messages except the last temp user message
+          
+          // Remove the last temp user message
+          const filteredMessages = old.messages.filter((msg, index) => {
             if (index === old.messages.length - 1 && msg.id?.startsWith("temp-user-")) {
               return false;
             }
             return true;
           });
-          return { ...old, messages: newMessages };
+          
+          // Add error message
+          const errorMsg: Message = {
+            id: `error-${Date.now()}`,
+            role: "assistant",
+            content: errorMessage.includes("ECONNRESET") || errorMessage.includes("502") || errorMessage.includes("Failed to communicate")
+              ? "Failed to communicate with external API: " + errorMessage
+              : errorMessage,
+            createdAt: new Date().toISOString(),
+            isError: true,
+            originalUserMessage: failedMessage,
+          };
+          
+          return { ...old, messages: [...filteredMessages, errorMsg] };
         });
       }
       
@@ -294,10 +343,9 @@ export function ChatPage() {
       if (error.response?.status === 401 || error.response?.data?.code === 401) {
         // Redirect is handled by interceptor, just show message
         toast.error("Session expired. Please log in again.");
-      } else if (errorMessage.includes("ECONNRESET") || errorMessage.includes("502") || errorMessage.includes("Failed to communicate")) {
-        toast.error("Failed to communicate with server. Please try again.");
       } else {
-        toast.error(errorMessage);
+        // Error is already shown in chat, just show a brief toast
+        toast.error("Message failed to send");
       }
     },
   });
@@ -321,7 +369,15 @@ export function ChatPage() {
 
     console.log("[ChatPage] sendText: sending message:", trimmedMessage, "isGuest:", isGuest);
 
+    // Store message for potential retry
+    setLastFailedMessage(trimmedMessage);
+    
     if (isGuest) {
+      // Remove any previous error messages
+      setGuestMessages((prev) => {
+        return prev.filter((msg) => !msg.isError);
+      });
+      
       setGuestMessages((prev) => {
         const newMessages: Message[] = [
           ...prev,
@@ -336,6 +392,12 @@ export function ChatPage() {
         return newMessages;
       });
     } else {
+      // Remove any previous error messages
+      queryClient.setQueryData(["thread", id], (old: Thread | undefined) => {
+        if (!old) return old;
+        const filteredMessages = old.messages.filter((msg) => !msg.isError);
+        return { ...old, messages: filteredMessages };
+      });
       queryClient.setQueryData(["thread", id], (old: Thread | undefined) => {
         if (!old) {
           console.warn("[ChatPage] sendText: no thread data in cache");
@@ -504,10 +566,35 @@ export function ChatPage() {
                     className={`max-w-[80%] rounded-2xl px-4 py-3 ${
                       msg.role === "user"
                         ? "text-gray-800 dark:text-gray-200 bg-blue-100 dark:bg-blue-900/30"
+                        : msg.isError
+                        ? "bg-red-50 dark:bg-red-900/30 text-red-800 dark:text-red-300 border border-red-200 dark:border-red-800"
                         : "text-gray-600 dark:text-gray-300"
                     }`}
                   >
                     <p className="whitespace-pre-wrap leading-relaxed">{msg.content}</p>
+                    {msg.isError && msg.originalUserMessage && (
+                      <button
+                        onClick={() => {
+                          if (!msg.originalUserMessage) return;
+                          // Remove error message and retry
+                          if (isGuest) {
+                            setGuestMessages((prev) => prev.filter((m) => m.id !== msg.id));
+                          } else {
+                            queryClient.setQueryData(["thread", id], (old: Thread | undefined) => {
+                              if (!old) return old;
+                              return { ...old, messages: old.messages.filter((m) => m.id !== msg.id) };
+                            });
+                          }
+                          // Retry sending the message
+                          sendText(msg.originalUserMessage);
+                        }}
+                        disabled={sendMessage.isPending || isSending}
+                        className="mt-3 flex items-center gap-2 px-4 py-2 bg-red-100 dark:bg-red-900/30 hover:bg-red-200 dark:hover:bg-red-900/50 text-red-800 dark:text-red-300 rounded-lg text-sm font-medium transition disabled:opacity-50 disabled:cursor-not-allowed border border-red-300 dark:border-red-800"
+                      >
+                        <RefreshCw className="h-4 w-4" />
+                        Try again
+                      </button>
+                    )}
                   </div>
                 </div>
               ))}

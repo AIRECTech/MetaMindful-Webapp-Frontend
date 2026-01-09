@@ -2,7 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-hot-toast";
-import { Eye, EyeOff, Star, Calendar } from "lucide-react";
+import { Star, Calendar } from "lucide-react";
 import { Card } from "../../components/ui/Card";
 import { api } from "../../lib/api";
 import { extractErrorMessage } from "../../lib/errors";
@@ -11,18 +11,9 @@ import { clearTokens } from "../../lib/auth";
 export function SettingsPage() {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
-  const [profileForm, setProfileForm] = useState({ name: "" });
-  const [passwordForm, setPasswordForm] = useState({
-    currentPassword: "",
-    newPassword: "",
-    confirmPassword: "",
-  });
-  const [activeTab, setActiveTab] = useState<"profile" | "password" | "feedback" | "contact" | "danger">("profile");
+  const [activeTab, setActiveTab] = useState<"feedback" | "contact" | "danger">("feedback");
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deleteConfirmText, setDeleteConfirmText] = useState("");
-  const [showCurrentPassword, setShowCurrentPassword] = useState(false);
-  const [showNewPassword, setShowNewPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   
   // Feedback form state
   const [feedbackForm, setFeedbackForm] = useState({
@@ -60,7 +51,6 @@ export function SettingsPage() {
 
   useEffect(() => {
     if (user) {
-      setProfileForm({ name: user.name || "" });
       setContactForm((prev) => ({
         ...prev,
         name: user.name || "",
@@ -68,62 +58,6 @@ export function SettingsPage() {
       }));
     }
   }, [user]);
-
-  const updateProfile = useMutation({
-    mutationFn: async () => {
-      const res = await api.put("/users/me", profileForm);
-      return res.data.data;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["user", "me"] });
-      toast.success("Profile updated successfully");
-    },
-    onError: (error) => {
-      toast.error(extractErrorMessage(error, "Failed to update profile"));
-    },
-  });
-
-  const changePassword = useMutation({
-    mutationFn: async () => {
-      if (passwordForm.newPassword !== passwordForm.confirmPassword) {
-        throw new Error("Passwords do not match");
-      }
-      if (passwordForm.newPassword.length < 8) {
-        throw new Error("Password must be at least 8 characters");
-      }
-      try {
-        const res = await api.put("/users/me/password", {
-          currentPassword: passwordForm.currentPassword,
-          newPassword: passwordForm.newPassword,
-        });
-        return res.data;
-      } catch (error: any) {
-        // Check if it's a 401 error (wrong password) - don't logout for password change
-        if (error.response?.status === 401 || error.response?.data?.code === 401 || error.skipLogout) {
-          // For password change, a 401 means wrong current password, not invalid session
-          // Throw a specific error that won't trigger logout
-          const err = new Error(error.response?.data?.message || error.message || "Current password is incorrect");
-          (err as any).skipLogout = true;
-          throw err;
-        }
-        throw error;
-      }
-    },
-    onSuccess: () => {
-      setPasswordForm({ currentPassword: "", newPassword: "", confirmPassword: "" });
-      setShowCurrentPassword(false);
-      setShowNewPassword(false);
-      setShowConfirmPassword(false);
-      toast.success("Password changed successfully");
-    },
-    onError: (error: any) => {
-      // Only show error toast, don't logout
-      const message = error.skipLogout 
-        ? error.message 
-        : extractErrorMessage(error, "Failed to change password");
-      toast.error(message);
-    },
-  });
 
   const submitFeedback = useMutation({
     mutationFn: async () => {
@@ -196,8 +130,9 @@ export function SettingsPage() {
 
 
   return (
-    <div className="flex items-center justify-center min-h-full p-6">
-      <div className="w-full max-w-2xl space-y-6">
+    <div className="h-full overflow-y-auto">
+      <div className="flex items-start justify-center min-h-full p-6">
+        <div className="w-full max-w-2xl space-y-6">
         <div>
           <h1 className="text-3xl font-bold">Settings</h1>
           <p className="text-muted-foreground mt-1">Manage your account settings</p>
@@ -210,26 +145,6 @@ export function SettingsPage() {
       ) : (
         <>
           <div className="flex gap-4 border-b border-border">
-            <button
-              onClick={() => setActiveTab("profile")}
-              className={`pb-2 px-4 font-medium ${
-                activeTab === "profile"
-                  ? "border-b-2 border-primary text-primary"
-                  : "text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              Profile
-            </button>
-            <button
-              onClick={() => setActiveTab("password")}
-              className={`pb-2 px-4 font-medium ${
-                activeTab === "password"
-                  ? "border-b-2 border-primary text-primary"
-                  : "text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              Change Password
-            </button>
             <button
               onClick={() => setActiveTab("feedback")}
               className={`pb-2 px-4 font-medium ${
@@ -262,125 +177,7 @@ export function SettingsPage() {
             </button>
           </div>
 
-          {activeTab === "profile" && (
-            <Card title="Update Profile">
-              <form
-                className="space-y-4"
-                onSubmit={(e) => {
-                  e.preventDefault();
-                  updateProfile.mutate();
-                }}
-              >
-                <label className="space-y-1 text-sm font-medium">
-                  Name
-                  <input
-                    type="text"
-                    className="w-full rounded-xl border border-border bg-background px-3 py-2"
-                    value={profileForm.name}
-                    onChange={(e) => setProfileForm((prev) => ({ ...prev, name: e.target.value }))}
-                    required
-                  />
-                </label>
-                <div className="space-y-1 text-sm font-medium">
-                  <label className="text-sm font-medium text-muted-foreground">Email</label>
-                  <div className="w-full rounded-xl border border-border bg-muted px-3 py-2 text-muted-foreground">
-                    {user?.email || "N/A"}
-                  </div>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    Email cannot be changed. Contact support if you need to update your email address.
-                  </p>
-                </div>
-                <button
-                  type="submit"
-                  disabled={updateProfile.isPending}
-                  className="rounded-full bg-primary px-5 py-2 text-sm font-semibold text-white disabled:opacity-50"
-                >
-                  {updateProfile.isPending ? "Saving..." : "Save Changes"}
-                </button>
-              </form>
-            </Card>
-          )}
-
-          {activeTab === "password" && (
-        <Card title="Change Password">
-          <form
-            className="space-y-4"
-            onSubmit={(e) => {
-              e.preventDefault();
-              changePassword.mutate();
-            }}
-          >
-            <label className="space-y-1 text-sm font-medium relative">
-              Current Password
-              <div className="relative">
-                <input
-                  type={showCurrentPassword ? "text" : "password"}
-                  className="w-full rounded-xl border border-border bg-background px-3 py-2 pr-10"
-                  value={passwordForm.currentPassword}
-                  onChange={(e) => setPasswordForm((prev) => ({ ...prev, currentPassword: e.target.value }))}
-                  required
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowCurrentPassword(!showCurrentPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
-                >
-                  {showCurrentPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                </button>
-              </div>
-            </label>
-            <label className="space-y-1 text-sm font-medium relative">
-              New Password
-              <div className="relative">
-                <input
-                  type={showNewPassword ? "text" : "password"}
-                  className="w-full rounded-xl border border-border bg-background px-3 py-2 pr-10"
-                  value={passwordForm.newPassword}
-                  onChange={(e) => setPasswordForm((prev) => ({ ...prev, newPassword: e.target.value }))}
-                  required
-                  minLength={8}
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowNewPassword(!showNewPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
-                >
-                  {showNewPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                </button>
-              </div>
-            </label>
-            <label className="space-y-1 text-sm font-medium relative">
-              Confirm New Password
-              <div className="relative">
-                <input
-                  type={showConfirmPassword ? "text" : "password"}
-                  className="w-full rounded-xl border border-border bg-background px-3 py-2 pr-10"
-                  value={passwordForm.confirmPassword}
-                  onChange={(e) => setPasswordForm((prev) => ({ ...prev, confirmPassword: e.target.value }))}
-                  required
-                  minLength={8}
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
-                >
-                  {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                </button>
-              </div>
-            </label>
-            <button
-              type="submit"
-              disabled={changePassword.isPending}
-              className="rounded-full bg-primary px-5 py-2 text-sm font-semibold text-white disabled:opacity-50"
-            >
-              {changePassword.isPending ? "Changing..." : "Change Password"}
-            </button>
-          </form>
-        </Card>
-      )}
-
-      {activeTab === "feedback" && (
+          {activeTab === "feedback" && (
         <div className="space-y-6">
           <Card title="Submit Feedback">
             <form
@@ -628,6 +425,7 @@ export function SettingsPage() {
       )}
         </>
       )}
+        </div>
       </div>
     </div>
   );

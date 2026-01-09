@@ -11,7 +11,7 @@ import { clearTokens } from "../../lib/auth";
 export function SettingsPage() {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
-  const [profileForm, setProfileForm] = useState({ name: "", email: "" });
+  const [profileForm, setProfileForm] = useState({ name: "" });
   const [passwordForm, setPasswordForm] = useState({
     currentPassword: "",
     newPassword: "",
@@ -34,7 +34,7 @@ export function SettingsPage() {
 
   useEffect(() => {
     if (user) {
-      setProfileForm({ name: user.name, email: user.email });
+      setProfileForm({ name: user.name || "" });
     }
   }, [user]);
 
@@ -182,16 +182,15 @@ export function SettingsPage() {
                     required
                   />
                 </label>
-                <label className="space-y-1 text-sm font-medium">
-                  Email
-                  <input
-                    type="email"
-                    className="w-full rounded-xl border border-border bg-background px-3 py-2"
-                    value={profileForm.email}
-                    onChange={(e) => setProfileForm((prev) => ({ ...prev, email: e.target.value }))}
-                    required
-                  />
-                </label>
+                <div className="space-y-1 text-sm font-medium">
+                  <label className="text-sm font-medium text-muted-foreground">Email</label>
+                  <div className="w-full rounded-xl border border-border bg-muted px-3 py-2 text-muted-foreground">
+                    {user?.email || "N/A"}
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Email cannot be changed. Contact support if you need to update your email address.
+                  </p>
+                </div>
                 <button
                   type="submit"
                   disabled={updateProfile.isPending}

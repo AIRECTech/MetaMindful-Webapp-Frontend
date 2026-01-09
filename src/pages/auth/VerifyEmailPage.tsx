@@ -1,13 +1,15 @@
 import { useMutation } from "@tanstack/react-query";
 import { useState } from "react";
 import { toast } from "react-hot-toast";
-import { Link, useSearchParams } from "react-router-dom";
+import { Link, useSearchParams, useNavigate } from "react-router-dom";
 import { api } from "../../lib/api";
 import { extractErrorMessage } from "../../lib/errors";
 
 export function VerifyEmailPage() {
   const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
   const emailFromQuery = searchParams.get("email");
+  const threadIdFromQuery = searchParams.get("threadId");
   const [email, setEmail] = useState(emailFromQuery || "");
   const [code, setCode] = useState("");
   const [isVerified, setIsVerified] = useState(false);
@@ -23,6 +25,16 @@ export function VerifyEmailPage() {
     onSuccess: () => {
       setIsVerified(true);
       toast.success("Email verified successfully!");
+      // If threadId is provided, redirect to login with threadId so user can log in and continue chat
+      // After login, they'll be redirected to the thread
+      if (threadIdFromQuery) {
+        setTimeout(() => {
+          navigate("/", { 
+            state: { threadId: threadIdFromQuery },
+            replace: true 
+          });
+        }, 1500);
+      }
     },
     onError: (error: any) => {
       const message = extractErrorMessage(error, "Verification failed");
@@ -70,12 +82,27 @@ export function VerifyEmailPage() {
               </p>
             </div>
 
-            <Link
-              to="/"
-              className="block w-full rounded-xl bg-yellow-400 px-5 py-3 text-center text-sm font-semibold text-gray-800 transition hover:bg-yellow-500"
-            >
-              Go to Login
-            </Link>
+            {threadIdFromQuery ? (
+              <div className="text-center">
+                <p className="mb-4 text-sm text-gray-600">
+                  Redirecting you to log in and continue your conversation...
+                </p>
+                <Link
+                  to="/"
+                  state={{ threadId: threadIdFromQuery }}
+                  className="block w-full rounded-xl bg-yellow-400 px-5 py-3 text-center text-sm font-semibold text-gray-800 transition hover:bg-yellow-500"
+                >
+                  Go to Login
+                </Link>
+              </div>
+            ) : (
+              <Link
+                to="/"
+                className="block w-full rounded-xl bg-yellow-400 px-5 py-3 text-center text-sm font-semibold text-gray-800 transition hover:bg-yellow-500"
+              >
+                Go to Login
+              </Link>
+            )}
           </div>
         </div>
       </div>

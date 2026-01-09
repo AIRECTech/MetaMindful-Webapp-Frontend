@@ -54,7 +54,12 @@ export function LoginPage() {
       
       setTokens(responseData.accessToken, responseData.refreshToken, false);
       toast.success("Welcome back!");
-      navigate(redirectTo, { replace: true });
+      // If currentThreadId is provided, redirect to that thread, otherwise use redirectTo
+      if (currentThreadId) {
+        window.location.href = `/user/chat/${currentThreadId}`;
+      } else {
+        navigate(redirectTo, { replace: true });
+      }
     },
     onError: (error) => {
       const message = extractErrorMessage(error, "Invalid credentials");
@@ -88,7 +93,12 @@ export function LoginPage() {
       }
       setTokens(responseData.accessToken, responseData.refreshToken, false);
       toast.success("Welcome back!");
-      navigate(redirectTo, { replace: true });
+      // If currentThreadId is provided, redirect to that thread, otherwise use redirectTo
+      if (currentThreadId) {
+        window.location.href = `/user/chat/${currentThreadId}`;
+      } else {
+        navigate(redirectTo, { replace: true });
+      }
     },
     onError: (error) => {
       const message = extractErrorMessage(error, "Social login failed");

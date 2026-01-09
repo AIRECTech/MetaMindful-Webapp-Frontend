@@ -56,7 +56,10 @@ export function SignupPopup({ isOpen, onClose, currentThreadId, onSuccess, onSwi
     onSuccess: () => {
       toast.success("Registration successful! Please verify your email.");
       onClose();
-      navigate(`/verify-email?email=${encodeURIComponent(formData.email)}`, { replace: true });
+      const verifyUrl = currentThreadId
+        ? `/verify-email?email=${encodeURIComponent(formData.email)}&threadId=${encodeURIComponent(currentThreadId)}`
+        : `/verify-email?email=${encodeURIComponent(formData.email)}`;
+      navigate(verifyUrl, { replace: true });
     },
     onError: (error) => {
       const message = extractErrorMessage(error, "Registration failed");

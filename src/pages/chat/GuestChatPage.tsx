@@ -1,6 +1,6 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { useState, useEffect, useRef } from "react";
-import { useParams, useNavigate, Link } from "react-router-dom";
+import { useParams, useNavigate, Link, useSearchParams } from "react-router-dom";
 import { toast } from "react-hot-toast";
 import { ArrowUp, X } from "lucide-react";
 import { api } from "../../lib/api";
@@ -41,6 +41,8 @@ interface ThreadResponseMessage {
 export function GuestChatPage() {
   const { id } = useParams<{ id?: string }>();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const queryMessage = searchParams.get("q"); // Get message from query parameter
   const [message, setMessage] = useState("");
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -49,8 +51,9 @@ export function GuestChatPage() {
   const [threadDesc, setThreadDesc] = useState<string | null>(null);
   const [showLoginPopup, setShowLoginPopup] = useState(false);
   const [showSignupPopup, setShowSignupPopup] = useState(false);
-  const [showDisclaimer, setShowDisclaimer] = useState(true);
+  const [showDisclaimer, setShowDisclaimer] = useState(true); // Always show for guest users
   const hasCreatedThreadRef = useRef(false);
+  const hasAutoSentQueryMessageRef = useRef(false); // Track if we've auto-sent the query message
 
   // Generate guest token and create thread on page load
   const generateToken = useQuery({
@@ -99,6 +102,22 @@ export function GuestChatPage() {
       createThread.mutate();
     }
   }, [generateToken.isSuccess, threadId, createThread, id]);
+
+  // Handle query parameter message: auto-fill and auto-send after thread is created
+  useEffect(() => {
+    if (queryMessage && threadId && !hasAutoSentQueryMessageRef.current && !isLoading && messages.length > 0) {
+      hasAutoSentQueryMessageRef.current = true;
+      // Set the message in the input and navigate to chat with auto-send
+      const trimmedQueryMessage = queryMessage.trim();
+      if (trimmedQueryMessage) {
+        // Remove query parameter from URL
+        searchParams.delete("q");
+        setSearchParams(searchParams, { replace: true });
+        // Navigate to chat page with the message to auto-send
+        navigateToChatWithFirstUserMessage(trimmedQueryMessage);
+      }
+    }
+  }, [queryMessage, threadId, isLoading, messages.length, searchParams, setSearchParams]);
 
   const navigateToChatWithFirstUserMessage = (userMessage: string) => {
     if (!threadId) return;

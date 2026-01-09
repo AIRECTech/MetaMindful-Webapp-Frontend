@@ -47,7 +47,11 @@ export function ChatPage() {
   const [showLimitPopup, setShowLimitPopup] = useState(false);
   const [showLoginPopup, setShowLoginPopup] = useState(false);
   const [showSignupPopup, setShowSignupPopup] = useState(false);
-  const [showDisclaimer, setShowDisclaimer] = useState(true);
+  // Only show disclaimer for guest users
+  const [showDisclaimer, setShowDisclaimer] = useState(() => {
+    // Only show for guest users on initial load
+    return isGuestUser();
+  });
 
   const state = (location.state || {}) as {
     bootstrapThread?: Thread;
@@ -77,38 +81,60 @@ export function ChatPage() {
 
   // Check if we have bootstrap data from navigation state
   const hasBootstrapData = !!(state.bootstrapThread && state.bootstrapThread.threadId === id);
-  const hasCachedThread = !!(id && queryClient.getQueryData(["thread", id]));
+  const cachedThread = id ? queryClient.getQueryData(["thread", id]) as Thread | undefined : undefined;
+  
+  // After window.location.href (full page reload), router state is lost and React Query cache is cleared
+  // So hasBootstrapData is always false and cache is empty, which means we always fetch
+  // Only skip fetching if we have bootstrap data (from router state, not cache)
+  // After signup/login with window.location.href, there's no bootstrap data, so we always fetch
+  const shouldFetch = !!id && !hasBootstrapData;
 
   const { data: thread, isLoading } = useQuery({
     queryKey: ["thread", id],
     queryFn: async () => {
       // Ensure token before fetching thread
       await ensureToken();
+      console.log("[ChatPage] Fetching thread with ID:", id);
       const res = await api.get(`/threads/${id}`);
+      console.log("[ChatPage] Thread fetched:", res.data.data);
       return res.data.data as Thread;
     },
     initialData: () => {
+      // Only use bootstrap data if available (from router state)
+      // Don't use cache here - let the query always fetch fresh data after signup/login (window.location.href)
       if (!id) return undefined;
-      // Use bootstrap data if available, otherwise check cache
       if (hasBootstrapData && state.bootstrapThread) {
         return state.bootstrapThread;
       }
-      return queryClient.getQueryData(["thread", id]) as Thread | undefined;
+      // After window.location.href, no bootstrap data, so return undefined to trigger fetch
+      return undefined;
     },
     // Fetch if:
     // 1. We have an id
-    // 2. We don't have bootstrap data (direct page load/reload)
-    // 3. We don't have cached data
-    // Note: For guest users, we still fetch on page reload to get the thread data
-    enabled: !!id && !hasBootstrapData && !hasCachedThread,
-    // Allow refetch on mount if there's no data (for page reloads)
+    // 2. We don't have bootstrap data (from router state) - always false after window.location.href
+    // Note: After signup/login with window.location.href, router state is lost, cache is cleared, so we always fetch
+    enabled: shouldFetch,
+    // Always refetch on mount if we should fetch (after full page reload)
     refetchOnWindowFocus: false,
     refetchOnReconnect: false,
-    refetchOnMount: !hasCachedThread && !hasBootstrapData, // Refetch on mount if no cached/bootstrap data
+    refetchOnMount: shouldFetch, // Always refetch on mount if no bootstrap data
     refetchInterval: false, // Don't refetch on interval
-    staleTime: Infinity, // Never consider data stale, so it won't refetch automatically
+    staleTime: hasBootstrapData ? Infinity : 0, // If bootstrap data, never stale; otherwise always stale to allow refetch
     gcTime: Infinity, // Keep data in cache forever
   });
+
+  // Debug logging
+  useEffect(() => {
+    console.log("[ChatPage] Query state:", {
+      id,
+      hasBootstrapData,
+      hasCachedThread: !!cachedThread,
+      shouldFetch,
+      enabled: shouldFetch,
+      isLoading,
+      thread: thread ? { id: thread.id, threadId: thread.threadId, messageCount: thread.messages?.length } : null,
+    });
+  }, [id, hasBootstrapData, cachedThread, shouldFetch, isLoading, thread]);
 
   // When thread data is loaded (from API or cache), update guest state if needed
   useEffect(() => {
@@ -393,6 +419,17 @@ export function ChatPage() {
   const displayMessages = isGuest ? guestMessages : (thread?.messages || []);
   const displayTitle = isGuest ? guestThreadTitle : (thread?.title || "New Chat");
   const displayDesc = isGuest ? undefined : thread?.desc;
+
+  // Hide disclaimer after first user message is sent
+  useEffect(() => {
+    if (displayMessages.length > 0) {
+      // Check if there's at least one user message
+      const hasUserMessage = displayMessages.some(msg => msg.role === "user");
+      if (hasUserMessage && showDisclaimer) {
+        setShowDisclaimer(false);
+      }
+    }
+  }, [displayMessages, showDisclaimer]);
 
   // Show loading indicator while fetching thread data
   if (isLoading && !hasBootstrapData && displayMessages.length === 0) {

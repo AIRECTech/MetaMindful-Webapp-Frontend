@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-hot-toast";
+import { Eye, EyeOff } from "lucide-react";
 import { Card } from "../../components/ui/Card";
 import { api } from "../../lib/api";
 import { extractErrorMessage } from "../../lib/errors";
@@ -19,6 +20,9 @@ export function SettingsPage() {
   const [activeTab, setActiveTab] = useState<"profile" | "password" | "danger">("profile");
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deleteConfirmText, setDeleteConfirmText] = useState("");
+  const [showCurrentPassword, setShowCurrentPassword] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const { data: user, isLoading: isLoadingUser } = useQuery({
     queryKey: ["user", "me"],
@@ -56,18 +60,37 @@ export function SettingsPage() {
       if (passwordForm.newPassword.length < 8) {
         throw new Error("Password must be at least 8 characters");
       }
-      const res = await api.put("/users/me/password", {
-        currentPassword: passwordForm.currentPassword,
-        newPassword: passwordForm.newPassword,
-      });
-      return res.data;
+      try {
+        const res = await api.put("/users/me/password", {
+          currentPassword: passwordForm.currentPassword,
+          newPassword: passwordForm.newPassword,
+        });
+        return res.data;
+      } catch (error: any) {
+        // Check if it's a 401 error (wrong password) - don't logout for password change
+        if (error.response?.status === 401 || error.response?.data?.code === 401 || error.skipLogout) {
+          // For password change, a 401 means wrong current password, not invalid session
+          // Throw a specific error that won't trigger logout
+          const err = new Error(error.response?.data?.message || error.message || "Current password is incorrect");
+          (err as any).skipLogout = true;
+          throw err;
+        }
+        throw error;
+      }
     },
     onSuccess: () => {
       setPasswordForm({ currentPassword: "", newPassword: "", confirmPassword: "" });
+      setShowCurrentPassword(false);
+      setShowNewPassword(false);
+      setShowConfirmPassword(false);
       toast.success("Password changed successfully");
     },
-    onError: (error) => {
-      toast.error(extractErrorMessage(error, "Failed to change password"));
+    onError: (error: any) => {
+      // Only show error toast, don't logout
+      const message = error.skipLogout 
+        ? error.message 
+        : extractErrorMessage(error, "Failed to change password");
+      toast.error(message);
     },
   });
 
@@ -189,37 +212,64 @@ export function SettingsPage() {
               changePassword.mutate();
             }}
           >
-            <label className="space-y-1 text-sm font-medium">
+            <label className="space-y-1 text-sm font-medium relative">
               Current Password
-              <input
-                type="password"
-                className="w-full rounded-xl border border-border bg-background px-3 py-2"
-                value={passwordForm.currentPassword}
-                onChange={(e) => setPasswordForm((prev) => ({ ...prev, currentPassword: e.target.value }))}
-                required
-              />
+              <div className="relative">
+                <input
+                  type={showCurrentPassword ? "text" : "password"}
+                  className="w-full rounded-xl border border-border bg-background px-3 py-2 pr-10"
+                  value={passwordForm.currentPassword}
+                  onChange={(e) => setPasswordForm((prev) => ({ ...prev, currentPassword: e.target.value }))}
+                  required
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowCurrentPassword(!showCurrentPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                >
+                  {showCurrentPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </button>
+              </div>
             </label>
-            <label className="space-y-1 text-sm font-medium">
+            <label className="space-y-1 text-sm font-medium relative">
               New Password
-              <input
-                type="password"
-                className="w-full rounded-xl border border-border bg-background px-3 py-2"
-                value={passwordForm.newPassword}
-                onChange={(e) => setPasswordForm((prev) => ({ ...prev, newPassword: e.target.value }))}
-                required
-                minLength={8}
-              />
+              <div className="relative">
+                <input
+                  type={showNewPassword ? "text" : "password"}
+                  className="w-full rounded-xl border border-border bg-background px-3 py-2 pr-10"
+                  value={passwordForm.newPassword}
+                  onChange={(e) => setPasswordForm((prev) => ({ ...prev, newPassword: e.target.value }))}
+                  required
+                  minLength={8}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowNewPassword(!showNewPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                >
+                  {showNewPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </button>
+              </div>
             </label>
-            <label className="space-y-1 text-sm font-medium">
+            <label className="space-y-1 text-sm font-medium relative">
               Confirm New Password
-              <input
-                type="password"
-                className="w-full rounded-xl border border-border bg-background px-3 py-2"
-                value={passwordForm.confirmPassword}
-                onChange={(e) => setPasswordForm((prev) => ({ ...prev, confirmPassword: e.target.value }))}
-                required
-                minLength={8}
-              />
+              <div className="relative">
+                <input
+                  type={showConfirmPassword ? "text" : "password"}
+                  className="w-full rounded-xl border border-border bg-background px-3 py-2 pr-10"
+                  value={passwordForm.confirmPassword}
+                  onChange={(e) => setPasswordForm((prev) => ({ ...prev, confirmPassword: e.target.value }))}
+                  required
+                  minLength={8}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                >
+                  {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </button>
+              </div>
             </label>
             <button
               type="submit"

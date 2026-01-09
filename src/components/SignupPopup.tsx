@@ -102,7 +102,8 @@ export function SignupPopup({ isOpen, onClose, currentThreadId, onSuccess, onSwi
       } else {
         // Navigate to current thread if provided, otherwise to new chat
         if (currentThreadId) {
-          navigate(`/user/chat/${currentThreadId}`, { replace: true });
+          // Use window.location to force full page reload to clear any guest state
+          window.location.href = `/user/chat/${currentThreadId}`;
         } else {
           navigate("/user/chat/new", { replace: true });
         }

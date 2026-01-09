@@ -24,128 +24,109 @@ export function PrivacyPolicyPage() {
           <div className="prose prose-gray dark:prose-invert max-w-none">
             <section className="mb-8">
               <h2 className="text-2xl font-semibold text-gray-900 dark:text-gray-100 mb-4">
-                1. Introduction
+                Introduction
               </h2>
               <p className="text-gray-700 dark:text-gray-300 leading-relaxed mb-4">
-                Welcome to MetaMindful ("we," "our," or "us"). We are committed to protecting your privacy and ensuring the security of your personal information. This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you use our AI mental wellness chatbot service.
+                Welcome to MetaMindful. Your mental well-being is our priority, and that starts with the absolute privacy of your thoughts. This policy describes our data practices for the MetaMindful platform.
               </p>
             </section>
 
             <section className="mb-8">
               <h2 className="text-2xl font-semibold text-gray-900 dark:text-gray-100 mb-4">
-                2. Information We Collect
+                Data Collection
               </h2>
-              <h3 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-3">
-                2.1 Information You Provide
-              </h3>
               <p className="text-gray-700 dark:text-gray-300 leading-relaxed mb-4">
-                We collect information that you provide directly to us, including:
+                We only collect data required to use the app:
               </p>
               <ul className="list-disc pl-6 text-gray-700 dark:text-gray-300 mb-4 space-y-2">
-                <li>Account information (name, email address, password)</li>
-                <li>Messages and conversations you have with our chatbot</li>
-                <li>Profile information and preferences</li>
-                <li>Device information and identifiers</li>
-              </ul>
-
-              <h3 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-3 mt-6">
-                2.2 Automatically Collected Information
-              </h3>
-              <p className="text-gray-700 dark:text-gray-300 leading-relaxed mb-4">
-                We automatically collect certain information when you use our service, including:
-              </p>
-              <ul className="list-disc pl-6 text-gray-700 dark:text-gray-300 mb-4 space-y-2">
-                <li>Device information (IP address, browser type, operating system)</li>
-                <li>Usage data (pages visited, features used, session duration)</li>
-                <li>Cookies and similar tracking technologies</li>
+                <li><strong>Account Info:</strong> Your email and name for account management.</li>
+                <li><strong>Coaching Threads:</strong> The text you share within "Threads" so the AI Coach can provide context-aware guidance.</li>
+                <li><strong>No Hidden Data:</strong> We do not access your contacts, location, or camera without explicit, one-time permission for a specific feature.</li>
               </ul>
             </section>
 
             <section className="mb-8">
               <h2 className="text-2xl font-semibold text-gray-900 dark:text-gray-100 mb-4">
-                3. How We Use Your Information
+                Data Usage
               </h2>
               <p className="text-gray-700 dark:text-gray-300 leading-relaxed mb-4">
-                We use the information we collect to:
+                We have the <strong>"No training" Promise.</strong>
+              </p>
+              <p className="text-gray-700 dark:text-gray-300 leading-relaxed mb-4">
+                Your data is used solely to:
               </p>
               <ul className="list-disc pl-6 text-gray-700 dark:text-gray-300 mb-4 space-y-2">
-                <li>Provide, maintain, and improve our chatbot service</li>
-                <li>Personalize your experience and respond to your inquiries</li>
-                <li>Send you notifications and updates about our service</li>
-                <li>Analyze usage patterns to enhance our AI models</li>
-                <li>Detect, prevent, and address technical issues and security threats</li>
-                <li>Comply with legal obligations</li>
+                <li>Power your 90-second coaching interactions.</li>
+                <li>Track your personal skill-building progress within your private Threads.</li>
+              </ul>
+              <p className="text-gray-700 dark:text-gray-300 leading-relaxed mb-4">
+                <strong>Zero Training:</strong> We never use your personal conversations or thread data to train our AI models or any third-party models. Your specific experiences remain yours alone.
+              </p>
+            </section>
+
+            <section className="mb-8">
+              <h2 className="text-2xl font-semibold text-gray-900 dark:text-gray-100 mb-4">
+                Data Sharing
+              </h2>
+              <ul className="list-disc pl-6 text-gray-700 dark:text-gray-300 mb-4 space-y-2">
+                <li><strong>No Selling:</strong> We never sell, rent, or monetize your data.</li>
+                <li><strong>No Marketing:</strong> Your data is never shared with third parties for advertising purposes.</li>
+                <li><strong>Third-Party Processing:</strong> We use secure, encrypted, and HIPAA-compliant infrastructure providers to run the AI, but they never use your data for their own purposes.</li>
               </ul>
             </section>
 
             <section className="mb-8">
               <h2 className="text-2xl font-semibold text-gray-900 dark:text-gray-100 mb-4">
-                4. Data Security
+                Data Storage and Retention
               </h2>
-              <p className="text-gray-700 dark:text-gray-300 leading-relaxed mb-4">
-                We implement appropriate technical and organizational measures to protect your personal information against unauthorized access, alteration, disclosure, or destruction. However, no method of transmission over the internet or electronic storage is 100% secure, and we cannot guarantee absolute security.
-              </p>
-            </section>
-
-            <section className="mb-8">
-              <h2 className="text-2xl font-semibold text-gray-900 dark:text-gray-100 mb-4">
-                5. Data Sharing and Disclosure
-              </h2>
-              <p className="text-gray-700 dark:text-gray-300 leading-relaxed mb-4">
-                We do not sell your personal information. We may share your information only in the following circumstances:
-              </p>
               <ul className="list-disc pl-6 text-gray-700 dark:text-gray-300 mb-4 space-y-2">
-                <li>With your explicit consent</li>
-                <li>To comply with legal obligations or respond to lawful requests</li>
-                <li>To protect our rights, privacy, safety, or property</li>
-                <li>With service providers who assist us in operating our service (under strict confidentiality agreements)</li>
+                <li><strong>Instant Deletion:</strong> You have the "Right to be Forgotten." You can delete specific threads or your entire account data at any time from your profile page. This action is immediate and permanent.</li>
+                <li><strong>Security:</strong> All interactions are encrypted in transit and at rest using industry-standard protocols.</li>
               </ul>
             </section>
 
             <section className="mb-8">
               <h2 className="text-2xl font-semibold text-gray-900 dark:text-gray-100 mb-4">
-                6. Your Rights and Choices
+                User Rights
               </h2>
               <p className="text-gray-700 dark:text-gray-300 leading-relaxed mb-4">
-                You have the right to:
+                You own your data. You can:
               </p>
               <ul className="list-disc pl-6 text-gray-700 dark:text-gray-300 mb-4 space-y-2">
-                <li>Access and receive a copy of your personal information</li>
-                <li>Correct inaccurate or incomplete information</li>
-                <li>Request deletion of your personal information</li>
-                <li>Opt-out of certain data processing activities</li>
-                <li>Withdraw consent where processing is based on consent</li>
+                <li>Inquire about how your data is used.</li>
+                <li>Request a copy of your data.</li>
+                <li>Delete your data instantly via the in-app profile settings.</li>
               </ul>
             </section>
 
             <section className="mb-8">
               <h2 className="text-2xl font-semibold text-gray-900 dark:text-gray-100 mb-4">
-                7. Children's Privacy
+                Apple App Store Provisions
+              </h2>
+              <ul className="list-disc pl-6 text-gray-700 dark:text-gray-300 mb-4 space-y-2">
+                <li>Our data practices comply with Apple's guidelines for data collection and usage.</li>
+                <li>We abide by Apple's tracking transparency requirements, ensuring no data is used for unauthorized tracking purposes.</li>
+              </ul>
+            </section>
+
+            <section className="mb-8">
+              <h2 className="text-2xl font-semibold text-gray-900 dark:text-gray-100 mb-4">
+                Changes to Privacy Policy
               </h2>
               <p className="text-gray-700 dark:text-gray-300 leading-relaxed mb-4">
-                Our service is not intended for children under the age of 13. We do not knowingly collect personal information from children under 13. If we become aware that we have collected information from a child under 13, we will take steps to delete such information promptly.
+                In case of updates to our Privacy Policy, they will be reflected on this page. Significant changes will be communicated to users via the app.
               </p>
             </section>
 
             <section className="mb-8">
               <h2 className="text-2xl font-semibold text-gray-900 dark:text-gray-100 mb-4">
-                8. Changes to This Privacy Policy
+                Contact
               </h2>
               <p className="text-gray-700 dark:text-gray-300 leading-relaxed mb-4">
-                We may update this Privacy Policy from time to time. We will notify you of any changes by posting the new Privacy Policy on this page and updating the "Last updated" date. You are advised to review this Privacy Policy periodically for any changes.
-              </p>
-            </section>
-
-            <section className="mb-8">
-              <h2 className="text-2xl font-semibold text-gray-900 dark:text-gray-100 mb-4">
-                9. Contact Us
-              </h2>
-              <p className="text-gray-700 dark:text-gray-300 leading-relaxed mb-4">
-                If you have any questions about this Privacy Policy, please contact us at:
+                For any inquiries, questions or concerns, please contact us at:
               </p>
               <p className="text-gray-700 dark:text-gray-300 leading-relaxed">
-                Email: privacy@metamindful.ai<br />
-                Address: [Your Company Address]
+                Email: <a href="mailto:info@metamindful.ai" className="text-blue-600 dark:text-blue-400 hover:underline">info@metamindful.ai</a>
               </p>
             </section>
           </div>

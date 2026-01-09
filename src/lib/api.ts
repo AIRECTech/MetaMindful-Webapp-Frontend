@@ -23,7 +23,9 @@ api.interceptors.response.use(
       const errorMessage = response.data.message || response.data.error?.message || "Request failed";
       
       // Handle 401 errors (invalid token, login again)
-      if (response.data.code === 401) {
+      // Exception: Don't logout for password change endpoint (wrong password should not logout)
+      const isPasswordChangeEndpoint = response.config?.url?.includes("/users/me/password");
+      if (response.data.code === 401 && !isPasswordChangeEndpoint) {
         handleUnauthorized();
       }
       
@@ -37,12 +39,18 @@ api.interceptors.response.use(
         config: response.config,
       };
       error.isAxiosError = true;
+      // Mark password change errors to skip logout
+      if (isPasswordChangeEndpoint && response.data.code === 401) {
+        error.skipLogout = true;
+      }
       throw error;
     }
     return response;
   },
   (error) => {
-    if (error.response?.status === 401) {
+    // Don't logout for password change endpoint on 401 (wrong password)
+    const isPasswordChangeEndpoint = error.config?.url?.includes("/users/me/password");
+    if (error.response?.status === 401 && !isPasswordChangeEndpoint) {
       handleUnauthorized();
     }
     const message =
@@ -50,6 +58,10 @@ api.interceptors.response.use(
       error.response?.data?.message ||
       error.message ||
       "Unexpected error";
-    return Promise.reject(new Error(message));
+    const err = new Error(message);
+    if (isPasswordChangeEndpoint && error.response?.status === 401) {
+      (err as any).skipLogout = true;
+    }
+    return Promise.reject(err);
   }
 );

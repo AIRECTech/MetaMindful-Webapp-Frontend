@@ -358,6 +358,18 @@ export function SignupPage() {
               Log in
             </Link>
           </p>
+
+          {/* Privacy Policy Link */}
+          <p className="mt-4 text-center text-xs text-gray-500">
+            By signing up, you agree to our{" "}
+            <Link to="/terms" target="_blank" className="font-medium text-gray-700 hover:underline">
+              Terms
+            </Link>{" "}
+            and{" "}
+            <Link to="/privacy-policy" target="_blank" className="font-medium text-gray-700 hover:underline">
+              Privacy Policy
+            </Link>
+          </p>
         </div>
       </div>
     </div>

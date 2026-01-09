@@ -56,13 +56,11 @@ export function SettingsPage() {
       if (passwordForm.newPassword.length < 8) {
         throw new Error("Password must be at least 8 characters");
       }
-      // This endpoint doesn't exist in the backend yet
-      // You'll need to add: router.put("/me/password", authenticate(), asyncHandler(userController.changeOwnPassword));
       const res = await api.put("/users/me/password", {
         currentPassword: passwordForm.currentPassword,
         newPassword: passwordForm.newPassword,
       });
-      return res.data.data;
+      return res.data;
     },
     onSuccess: () => {
       setPasswordForm({ currentPassword: "", newPassword: "", confirmPassword: "" });
@@ -138,7 +136,7 @@ export function SettingsPage() {
                   : "text-muted-foreground hover:text-foreground"
               }`}
             >
-              Danger Zone
+              Delete Account
             </button>
           </div>
 

@@ -1,8 +1,8 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { useState, useEffect, useRef } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, Link } from "react-router-dom";
 import { toast } from "react-hot-toast";
-import { ArrowUp } from "lucide-react";
+import { ArrowUp, X } from "lucide-react";
 import { api } from "../../lib/api";
 import { extractErrorMessage } from "../../lib/errors";
 import { ensureToken } from "../../lib/auth";
@@ -49,6 +49,7 @@ export function GuestChatPage() {
   const [threadDesc, setThreadDesc] = useState<string | null>(null);
   const [showLoginPopup, setShowLoginPopup] = useState(false);
   const [showSignupPopup, setShowSignupPopup] = useState(false);
+  const [showDisclaimer, setShowDisclaimer] = useState(true);
   const hasCreatedThreadRef = useRef(false);
 
   // Generate guest token and create thread on page load
@@ -240,6 +241,37 @@ export function GuestChatPage() {
                   </div>
                 </div>
 
+                {/* Terms and Privacy Disclaimer - Above input field */}
+                {showDisclaimer && (
+                  <div className="relative bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 px-4 py-3 pr-8 flex items-center">
+                    <button
+                      onClick={() => setShowDisclaimer(false)}
+                      className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition"
+                      aria-label="Close disclaimer"
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+                    <p className="text-xs text-gray-600 dark:text-gray-400 leading-relaxed pr-6 text-center w-full">
+                      By messaging MetaMindful, an AI mental wellness chatbot, you agree to our{" "}
+                      <Link 
+                        to="/terms" 
+                        target="_blank"
+                        className="font-semibold underline hover:text-gray-700 dark:hover:text-gray-300"
+                      >
+                        terms
+                      </Link>{" "}
+                      and have read our{" "}
+                      <Link 
+                        to="/privacy-policy" 
+                        target="_blank"
+                        className="font-semibold underline hover:text-gray-700 dark:hover:text-gray-300"
+                      >
+                        privacy policy
+                      </Link>
+                    </p>
+                  </div>
+                )}
+
                 <div className="bg-white dark:bg-gray-800 rounded-full border border-gray-200 dark:border-gray-700 shadow-sm flex items-center gap-3 p-4">
                   <input
                     type="text"
@@ -293,7 +325,7 @@ export function GuestChatPage() {
           setShowLoginPopup(false);
           setShowSignupPopup(false);
         }}
-        currentThreadId={threadId || undefined}
+        currentThreadId={id || threadId || undefined}
         onSwitchToSignup={() => {
           setShowLoginPopup(false);
           setShowSignupPopup(true);
@@ -305,7 +337,7 @@ export function GuestChatPage() {
           setShowLoginPopup(false);
           setShowSignupPopup(false);
         }}
-        currentThreadId={threadId || undefined}
+        currentThreadId={id || threadId || undefined}
         onSwitchToLogin={() => {
           setShowSignupPopup(false);
           setShowLoginPopup(true);

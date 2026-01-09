@@ -27,6 +27,8 @@ import { SettingsPage } from "./pages/profile/SettingsPage";
 import { StartChatPage } from "./pages/chat/StartChatPage";
 import { GuestChatPage } from "./pages/chat/GuestChatPage";
 import { GoogleCallbackPage } from "./pages/auth/GoogleCallbackPage";
+import { PrivacyPolicyPage } from "./pages/legal/PrivacyPolicyPage";
+import { TermsPage } from "./pages/legal/TermsPage";
 
 const router = createBrowserRouter([
   { 
@@ -50,6 +52,8 @@ const router = createBrowserRouter([
   { path: "/verify-email", element: <VerifyEmailPage /> },
   { path: "/start-chat", element: <StartChatPage /> },
   { path: "/auth/google/callback", element: <GoogleCallbackPage /> },
+  { path: "/privacy-policy", element: <PrivacyPolicyPage /> },
+  { path: "/terms", element: <TermsPage /> },
   // Guest routes
   { path: "/guest", element: <GuestChatPage /> },
   { path: "/guest/:id", element: <GuestChatPage /> },

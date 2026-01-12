@@ -712,39 +712,29 @@ export function ChatPage() {
       {showLimitPopup && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white dark:bg-gray-800 rounded-xl p-6 max-w-md w-full mx-4 shadow-xl">
-            <h2 className="text-2xl font-bold text-gray-800 dark:text-gray-200 mb-4">
-              Chat Limit Reached
+            <h2 className="text-2xl font-bold text-gray-800 dark:text-gray-200 mb-4 text-center">
+              Save your progress
             </h2>
-            <p className="text-gray-600 dark:text-gray-400 mb-6">
-              You've reached the limit of {guestChatLimit} messages for guest users. 
-              Please log in or sign up to continue chatting.
+            <p className="text-gray-600 dark:text-gray-400 mb-6 text-center">
+              Guest chats don't stay forever. Log in or sign up to save this thread and create more.
             </p>
-            <div className="flex flex-col gap-3">
+            <div className="flex gap-3">
+              <button
+                onClick={() => {
+                  setShowLimitPopup(false);
+                }}
+                className="flex-1 bg-amber-100 hover:bg-amber-200 dark:bg-amber-900 dark:hover:bg-amber-800 text-gray-900 dark:text-gray-100 font-medium py-3 px-4 rounded-lg transition"
+              >
+                Skip
+              </button>
               <button
                 onClick={() => {
                   setShowLimitPopup(false);
                   setShowLoginPopup(true);
                 }}
-                className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-4 rounded-lg transition"
+                className="flex-1 bg-yellow-400 hover:bg-yellow-500 dark:bg-yellow-500 dark:hover:bg-yellow-600 text-gray-900 dark:text-gray-900 font-medium py-3 px-4 rounded-lg transition"
               >
-                Log In
-              </button>
-              <button
-                onClick={() => {
-                  setShowLimitPopup(false);
-                  setShowSignupPopup(true);
-                }}
-                className="w-full bg-green-600 hover:bg-green-700 text-white font-medium py-3 px-4 rounded-lg transition"
-              >
-                Sign Up
-              </button>
-              <button
-                onClick={() => {
-                  setShowLimitPopup(false);
-                }}
-                className="w-full bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-200 font-medium py-3 px-4 rounded-lg transition"
-              >
-                Skip
+                Login
               </button>
             </div>
           </div>

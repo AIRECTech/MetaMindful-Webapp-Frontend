@@ -49,6 +49,7 @@ export function NewChatPage() {
   const [threadDesc, setThreadDesc] = useState<string | null>(null);
   const hasCreatedThreadRef = useRef(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -57,6 +58,15 @@ export function NewChatPage() {
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
+
+  // Auto-resize textarea
+  useEffect(() => {
+    const textarea = textareaRef.current;
+    if (textarea) {
+      textarea.style.height = "auto";
+      textarea.style.height = `${Math.min(textarea.scrollHeight, 200)}px`; // Max height of 200px
+    }
+  }, [message]);
 
   // Create a thread on page load so the initial assistant message is dynamic
   useEffect(() => {
@@ -150,6 +160,11 @@ export function NewChatPage() {
     const userMessage = trimmedMessage;
     setMessage("");
 
+    // Reset textarea height
+    if (textareaRef.current) {
+      textareaRef.current.style.height = "auto";
+    }
+
     // Pass to the chat screen: first message = thread response, second = user message
     navigateToChatWithFirstUserMessage(userMessage);
   };
@@ -235,10 +250,10 @@ export function NewChatPage() {
               </div>
             </div>
 
-            <div className="bg-white dark:bg-gray-800 rounded-full border border-gray-200 dark:border-gray-700 shadow-sm flex items-center gap-3 p-4">
-              <input
-                type="text"
-                className="flex-1 px-6 py-3 text-gray-800 dark:text-gray-200 placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none text-base border-0 bg-gray-100 dark:bg-gray-700 rounded-full"
+            <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm flex items-end gap-3 p-4">
+              <textarea
+                ref={textareaRef}
+                className="flex-1 px-6 py-3 text-gray-800 dark:text-gray-200 placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none text-base border-0 bg-gray-100 dark:bg-gray-700 rounded-xl resize-none min-h-[48px] max-h-[200px] overflow-y-auto"
                 placeholder="Type here ....."
                 value={message}
                 onChange={(e) => setMessage(e.target.value)}
@@ -249,11 +264,12 @@ export function NewChatPage() {
                   }
                 }}
                 disabled={isLoading || !threadId}
+                rows={1}
               />
               <button
                 onClick={handleSend}
                 disabled={!message.trim() || isLoading || !threadId}
-                className="bg-yellow-300 hover:bg-yellow-400 p-3 rounded-full disabled:opacity-50 disabled:cursor-not-allowed transition flex-shrink-0"
+                className="bg-yellow-300 hover:bg-yellow-400 p-3 rounded-full disabled:opacity-50 disabled:cursor-not-allowed transition flex-shrink-0 mb-1"
               >
                 <ArrowUp className="h-5 w-5 text-gray-900" strokeWidth={2.5} fill="none" />
               </button>

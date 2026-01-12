@@ -207,7 +207,75 @@ export function SignupPopup({ isOpen, onClose, currentThreadId, onSuccess, onSwi
   };
 
   const handleAppleSignup = () => {
-    toast.error("Apple signup not yet configured. Please use email/password.");
+    const clientId = import.meta.env.VITE_APPLE_CLIENT_ID || '';
+    if (!clientId) {
+      toast.error("Apple Client ID not configured. Please check your .env file.");
+      console.error("VITE_APPLE_CLIENT_ID is not set in environment variables");
+      return;
+    }
+
+    // Load Apple Sign In SDK if not already loaded
+    const scriptId = 'apple-signin-script';
+    if (!document.getElementById(scriptId)) {
+      const script = document.createElement('script');
+      script.id = scriptId;
+      script.src = 'https://appleid.cdn-apple.com/appleauth/static/jsapi/appleid/1/en_US/appleid.auth.js';
+      script.async = true;
+      script.onload = () => {
+        initAppleSignIn();
+      };
+      document.head.appendChild(script);
+    } else {
+      initAppleSignIn();
+    }
+
+    function initAppleSignIn() {
+      // Initialize Apple Sign In
+      if (window.AppleID && window.AppleID.auth) {
+        window.AppleID.auth.init({
+          clientId: clientId,
+          scope: 'name email',
+          redirectURI: `${window.location.origin}/auth/apple/callback`,
+          usePopup: true,
+        });
+
+        // Trigger sign in
+        window.AppleID.auth.signIn().then((response: any) => {
+          if (response.id_token) {
+            // Extract name from user object if available
+            let name: string | undefined;
+            let email: string | undefined;
+            
+            if (response.user) {
+              const user = response.user;
+              if (user.name) {
+                const firstName = user.name.firstName || '';
+                const lastName = user.name.lastName || '';
+                name = `${firstName} ${lastName}`.trim() || undefined;
+              }
+              email = user.email;
+            }
+
+            // Send token to backend
+            socialSignup.mutate({
+              provider: "apple",
+              providerToken: response.id_token,
+              email,
+              name,
+            });
+          } else {
+            toast.error("Apple signup failed: No ID token received");
+          }
+        }).catch((error: any) => {
+          console.error("Apple sign in error:", error);
+          if (error.error !== 'popup_closed_by_user') {
+            toast.error("Apple signup failed. Please try again.");
+          }
+        });
+      } else {
+        toast.error("Apple Sign In SDK failed to load. Please refresh and try again.");
+      }
+    }
   };
 
   if (!isOpen) return null;

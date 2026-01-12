@@ -203,18 +203,76 @@ export function LoginPage() {
   };
 
   // Handle Apple OAuth
-  const handleAppleLogin = async () => {
-    // TODO: Integrate Apple Sign In SDK
-    // For now, this is a placeholder - you'll need to integrate Apple Sign In
-    // Example:
-    // const response = await AppleID.auth.signIn();
-    // socialLogin.mutate({
-    //   provider: "apple",
-    //   providerToken: response.id_token,
-    //   email: response.email,
-    //   name: response.fullName,
-    // });
-    toast.error("Apple login not yet configured. Please use email/password or continue as guest.");
+  const handleAppleLogin = () => {
+    const clientId = import.meta.env.VITE_APPLE_CLIENT_ID || '';
+    if (!clientId) {
+      toast.error("Apple Client ID not configured. Please check your .env file.");
+      console.error("VITE_APPLE_CLIENT_ID is not set in environment variables");
+      return;
+    }
+
+    // Load Apple Sign In SDK if not already loaded
+    const scriptId = 'apple-signin-script';
+    if (!document.getElementById(scriptId)) {
+      const script = document.createElement('script');
+      script.id = scriptId;
+      script.src = 'https://appleid.cdn-apple.com/appleauth/static/jsapi/appleid/1/en_US/appleid.auth.js';
+      script.async = true;
+      script.onload = () => {
+        initAppleSignIn();
+      };
+      document.head.appendChild(script);
+    } else {
+      initAppleSignIn();
+    }
+
+    function initAppleSignIn() {
+      // Initialize Apple Sign In
+      if (window.AppleID && window.AppleID.auth) {
+        window.AppleID.auth.init({
+          clientId: clientId,
+          scope: 'name email',
+          redirectURI: `${window.location.origin}/auth/apple/callback`,
+          usePopup: true,
+        });
+
+        // Trigger sign in
+        window.AppleID.auth.signIn().then((response: any) => {
+          if (response.id_token) {
+            // Extract name from user object if available
+            let name: string | undefined;
+            let email: string | undefined;
+            
+            if (response.user) {
+              const user = response.user;
+              if (user.name) {
+                const firstName = user.name.firstName || '';
+                const lastName = user.name.lastName || '';
+                name = `${firstName} ${lastName}`.trim() || undefined;
+              }
+              email = user.email;
+            }
+
+            // Send token to backend
+            socialLogin.mutate({
+              provider: "apple",
+              providerToken: response.id_token,
+              email,
+              name,
+            });
+          } else {
+            toast.error("Apple login failed: No ID token received");
+          }
+        }).catch((error: any) => {
+          console.error("Apple sign in error:", error);
+          if (error.error !== 'popup_closed_by_user') {
+            toast.error("Apple login failed. Please try again.");
+          }
+        });
+      } else {
+        toast.error("Apple Sign In SDK failed to load. Please refresh and try again.");
+      }
+    }
   };
 
   return (

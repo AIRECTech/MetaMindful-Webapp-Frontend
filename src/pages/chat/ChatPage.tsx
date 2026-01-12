@@ -38,6 +38,7 @@ export function ChatPage() {
   const [message, setMessage] = useState("");
   const [isSending, setIsSending] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const messageInputRef = useRef<HTMLInputElement>(null);
   // Check if user is guest by auth status OR by route path (/guest/:id)
   const isGuestRoute = location.pathname.startsWith("/guest");
   const isGuest = isGuestUser() || isGuestRoute;
@@ -249,19 +250,8 @@ export function ChatPage() {
               return updated;
             });
             
-            // If title changed, also update the thread in the threads list cache
+            // If title changed, invalidate threads list to ensure sidebar updates
             if (data.title_name && data.title_name !== thread.title) {
-              queryClient.setQueryData(["threads"], (old: any) => {
-                if (!old || !Array.isArray(old)) return old;
-                return old.map((t: any) => {
-                  if (t.threadId === id || t.id === id) {
-                    return { ...t, title: data.title_name };
-                  }
-                  return t;
-                });
-              });
-              
-              // Invalidate threads list to ensure it refetches with updated title
               queryClient.invalidateQueries({ queryKey: ["threads"] });
             }
           }
@@ -274,6 +264,10 @@ export function ChatPage() {
         queryClient.invalidateQueries({ queryKey: ["threads"] });
       }
       setIsSending(false);
+      // Refocus input after sending
+      setTimeout(() => {
+        messageInputRef.current?.focus();
+      }, 0);
     },
     onError: (error: any, variables: string) => {
       const errorMessage = extractErrorMessage(error, "Failed to send message");
@@ -338,6 +332,10 @@ export function ChatPage() {
       }
       
       setIsSending(false);
+      // Refocus input after error
+      setTimeout(() => {
+        messageInputRef.current?.focus();
+      }, 0);
       
       // Check if it's a 401 error (handled by interceptor, but show message)
       if (error.response?.status === 401 || error.response?.data?.code === 401) {
@@ -653,6 +651,7 @@ export function ChatPage() {
           
           <div className="bg-white dark:bg-gray-800 rounded-full border border-gray-200 dark:border-gray-700 shadow-sm flex items-center gap-3 p-4">
             <input
+              ref={messageInputRef}
               type="text"
               className="flex-1 px-6 py-3 text-gray-800 dark:text-gray-200 placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none text-base border-0 bg-gray-100 dark:bg-gray-700 rounded-full"
               placeholder="Type here ....."

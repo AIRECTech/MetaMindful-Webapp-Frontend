@@ -128,6 +128,12 @@ export function Sidebar() {
     setEditingTitle("");
   };
 
+  // Clear edit state when location changes (navigation)
+  useEffect(() => {
+    setEditingThreadId(null);
+    setEditingTitle("");
+  }, [location.pathname]);
+
   // Handle delete with confirmation
   const handleDelete = (threadId: string) => {
     if (confirm("Are you sure you want to delete this thread? This action cannot be undone.")) {
@@ -241,7 +247,7 @@ export function Sidebar() {
                 >
                   {editingThreadId === (thread.threadId || thread.id) ? (
                     // Edit mode
-                    <div className="flex-1 flex items-center gap-2 px-3 py-2">
+                    <div className="flex-1 px-3 py-2 min-w-0">
                       <input
                         ref={editInputRef}
                         type="text"
@@ -249,28 +255,24 @@ export function Sidebar() {
                         onChange={(e) => setEditingTitle(e.target.value)}
                         onKeyDown={(e) => {
                           if (e.key === "Enter") {
+                            e.preventDefault();
                             handleSaveEdit();
                           } else if (e.key === "Escape") {
+                            e.preventDefault();
                             handleCancelEdit();
                           }
                         }}
-                        className="flex-1 px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        onBlur={() => {
+                          // Auto-save on blur if there's a change
+                          if (editingThreadId && editingTitle.trim() && editingTitle.trim() !== thread.title) {
+                            handleSaveEdit();
+                          } else {
+                            handleCancelEdit();
+                          }
+                        }}
+                        className="w-full px-2 py-1 text-sm text-gray-900 dark:text-gray-200 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 overflow-hidden"
                         disabled={updateThread.isPending}
                       />
-                      <button
-                        onClick={handleSaveEdit}
-                        disabled={updateThread.isPending || !editingTitle.trim()}
-                        className="p-1 text-green-600 hover:bg-green-50 rounded disabled:opacity-50"
-                      >
-                        <Check className="h-4 w-4" />
-                      </button>
-                      <button
-                        onClick={handleCancelEdit}
-                        disabled={updateThread.isPending}
-                        className="p-1 text-gray-600 hover:bg-gray-100 rounded disabled:opacity-50"
-                      >
-                        <X className="h-4 w-4" />
-                      </button>
                     </div>
                   ) : (
                     // Normal mode

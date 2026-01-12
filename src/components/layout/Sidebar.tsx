@@ -1,6 +1,6 @@
 import { useNavigate, useParams } from "react-router-dom";
 import { cn } from "../../lib/utils";
-import { MessageSquare, Settings, Plus, Moon, Sun, LogOut, Edit2, Trash2, MoreVertical, X, Check } from "lucide-react";
+import { MessageSquare, Settings, Plus, Moon, Sun, LogOut, Edit2, Trash2, MoreVertical } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "../../lib/api";

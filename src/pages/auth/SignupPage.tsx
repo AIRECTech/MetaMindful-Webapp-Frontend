@@ -191,9 +191,90 @@ export function SignupPage() {
   };
 
   // Handle Apple OAuth
-  const handleAppleSignup = async () => {
-    // TODO: Integrate Apple Sign In SDK
-    toast.error("Apple signup not yet configured. Please use email/password.");
+  const handleAppleSignup = () => {
+    const clientId = import.meta.env.VITE_APPLE_CLIENT_ID || '';
+    if (!clientId) {
+      toast.error("Apple Client ID not configured. Please check your .env file.");
+      console.error("VITE_APPLE_CLIENT_ID is not set in environment variables");
+      return;
+    }
+
+    // Load Apple Sign In SDK if not already loaded
+    const scriptId = 'apple-signin-script';
+    const existingScript = document.getElementById(scriptId);
+    
+    if (!existingScript) {
+      const script = document.createElement('script');
+      script.id = scriptId;
+      script.src = 'https://appleid.cdn-apple.com/appleauth/static/jsapi/appleid/1/en_US/appleid.auth.js';
+      script.async = true;
+      script.onload = () => {
+        // Wait a bit for the SDK to initialize
+        setTimeout(() => initAppleSignIn(), 100);
+      };
+      script.onerror = () => {
+        toast.error("Failed to load Apple Sign In SDK. Please try again.");
+        console.error("Apple Sign In SDK script failed to load");
+      };
+      document.head.appendChild(script);
+    } else {
+      // Script exists, wait a bit and try
+      setTimeout(() => initAppleSignIn(), 100);
+    }
+
+    function initAppleSignIn() {
+      // Check if SDK is available
+      if (typeof window !== 'undefined' && (window as any).AppleID && (window as any).AppleID.auth) {
+        try {
+          (window as any).AppleID.auth.init({
+            clientId: clientId,
+            scope: 'name email',
+            redirectURI: `${window.location.origin}/auth/apple/callback`,
+            usePopup: true,
+          });
+
+          // Trigger sign in
+          (window as any).AppleID.auth.signIn().then((response: any) => {
+            if (response.id_token) {
+              // Extract name from user object if available
+              let name: string | undefined;
+              let email: string | undefined;
+              
+              if (response.user) {
+                const user = response.user;
+                if (user.name) {
+                  const firstName = user.name.firstName || '';
+                  const lastName = user.name.lastName || '';
+                  name = `${firstName} ${lastName}`.trim() || undefined;
+                }
+                email = user.email;
+              }
+
+              // Send token to backend
+              socialSignup.mutate({
+                provider: "apple",
+                providerToken: response.id_token,
+                email,
+                name,
+              });
+            } else {
+              toast.error("Apple signup failed: No ID token received");
+            }
+          }).catch((error: any) => {
+            console.error("Apple sign in error:", error);
+            if (error.error !== 'popup_closed_by_user' && error.error !== 'user_cancelled_authorize') {
+              toast.error("Apple signup failed. Please try again.");
+            }
+          });
+        } catch (error: any) {
+          console.error("Apple Sign In initialization error:", error);
+          toast.error("Apple Sign In initialization failed. Please try again.");
+        }
+      } else {
+        console.error("Apple Sign In SDK not available. Window.AppleID:", (window as any).AppleID);
+        toast.error("Apple Sign In SDK not ready. Please wait a moment and try again.");
+      }
+    }
   };
 
   return (

@@ -244,7 +244,16 @@ export function LoginPage() {
 
           // Trigger sign in
           (window as any).AppleID.auth.signIn().then((response: any) => {
+            console.log("Apple Sign In response:", response);
+            
+            if (!response) {
+              console.error("Apple Sign In: Empty response received");
+              toast.error("Apple login failed: No response received");
+              return;
+            }
+
             if (response.id_token) {
+              console.log("Apple Sign In: ID token received");
               // Extract name from user object if available
               let name: string | undefined;
               
@@ -253,22 +262,39 @@ export function LoginPage() {
                 const firstName = user.name.firstName || '';
                 const lastName = user.name.lastName || '';
                 name = `${firstName} ${lastName}`.trim() || undefined;
+                console.log("Apple Sign In: Name extracted:", name);
               }
 
               // Send token to backend (backend extracts email from token)
+              console.log("Apple Sign In: Calling socialLogin.mutate");
               socialLogin.mutate({
                 provider: "apple",
                 providerToken: response.id_token,
                 name,
               });
             } else {
+              console.error("Apple Sign In: No ID token in response", response);
               toast.error("Apple login failed: No ID token received");
             }
           }).catch((error: any) => {
             console.error("Apple sign in error:", error);
-            if (error.error !== 'popup_closed_by_user' && error.error !== 'user_cancelled_authorize') {
-              toast.error("Apple login failed. Please try again.");
+            console.error("Apple sign in error details:", {
+              error,
+              errorCode: error?.error,
+              errorMessage: error?.message,
+              errorType: typeof error,
+            });
+            
+            // Handle different error types
+            if (error?.error === 'popup_closed_by_user' || error?.error === 'user_cancelled_authorize') {
+              // User cancelled, don't show error
+              console.log("Apple Sign In: User cancelled");
+              return;
             }
+            
+            // Show error for other cases
+            const errorMessage = error?.error?.message || error?.message || "Apple login failed. Please try again.";
+            toast.error(errorMessage);
           });
         } catch (error: any) {
           console.error("Apple Sign In initialization error:", error);

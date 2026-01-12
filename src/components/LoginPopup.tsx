@@ -234,6 +234,7 @@ export function LoginPopup({ isOpen, onClose, currentThreadId, onSuccess, onSwit
       // Check if SDK is available
       if (typeof window !== 'undefined' && (window as any).AppleID && (window as any).AppleID.auth) {
         try {
+          // Re-initialize on each attempt to ensure fresh state
           (window as any).AppleID.auth.init({
             clientId: clientId,
             scope: 'name email',
@@ -241,34 +242,88 @@ export function LoginPopup({ isOpen, onClose, currentThreadId, onSuccess, onSwit
             usePopup: true,
           });
 
-          // Trigger sign in
-          (window as any).AppleID.auth.signIn().then((response: any) => {
-            if (response.id_token) {
-              // Extract name from user object if available
-              let name: string | undefined;
+          // Trigger sign in with a timeout to handle cases where popup closes
+          const signInPromise = (window as any).AppleID.auth.signIn();
+          const timeoutPromise = new Promise((_, reject) => {
+            setTimeout(() => reject(new Error('Sign in timeout')), 30000); // 30 second timeout
+          });
+
+          Promise.race([signInPromise, timeoutPromise])
+            .then((response: any) => {
+              console.log("Apple Sign In response:", response);
               
-              if (response.user?.name) {
-                const user = response.user;
-                const firstName = user.name.firstName || '';
-                const lastName = user.name.lastName || '';
-                name = `${firstName} ${lastName}`.trim() || undefined;
+              if (!response) {
+                console.error("Apple Sign In: Empty response received");
+                toast.error("Apple login failed: No response received");
+                return;
               }
 
-              // Send token to backend (backend extracts email from token)
-              socialLogin.mutate({
-                provider: "apple",
-                providerToken: response.id_token,
-                name,
+              if (response.id_token) {
+                console.log("Apple Sign In: ID token received");
+                // Extract name from user object if available
+                let name: string | undefined;
+                
+                if (response.user?.name) {
+                  const user = response.user;
+                  const firstName = user.name.firstName || '';
+                  const lastName = user.name.lastName || '';
+                  name = `${firstName} ${lastName}`.trim() || undefined;
+                  console.log("Apple Sign In: Name extracted:", name);
+                }
+
+                // Send token to backend (backend extracts email from token)
+                console.log("Apple Sign In: Calling socialLogin.mutate");
+                socialLogin.mutate({
+                  provider: "apple",
+                  providerToken: response.id_token,
+                  name,
+                });
+              } else {
+                console.error("Apple Sign In: No ID token in response", response);
+                toast.error("Apple login failed: No ID token received");
+              }
+            })
+            .catch((error: any) => {
+              console.error("Apple sign in error:", error);
+              console.error("Apple sign in error details:", {
+                error,
+                errorCode: error?.error,
+                errorMessage: error?.message,
+                errorType: typeof error,
+                errorKeys: error ? Object.keys(error) : [],
               });
-            } else {
-              toast.error("Apple login failed: No ID token received");
-            }
-          }).catch((error: any) => {
-            console.error("Apple sign in error:", error);
-            if (error.error !== 'popup_closed_by_user' && error.error !== 'user_cancelled_authorize') {
-              toast.error("Apple login failed. Please try again.");
-            }
-          });
+              
+              // Check if error object contains the response data (some SDK versions do this)
+              if (error?.id_token) {
+                console.log("Apple Sign In: ID token found in error object");
+                let name: string | undefined;
+                
+                if (error.user?.name) {
+                  const user = error.user;
+                  const firstName = user.name.firstName || '';
+                  const lastName = user.name.lastName || '';
+                  name = `${firstName} ${lastName}`.trim() || undefined;
+                }
+
+                socialLogin.mutate({
+                  provider: "apple",
+                  providerToken: error.id_token,
+                  name,
+                });
+                return;
+              }
+              
+              // Handle different error types
+              if (error?.error === 'popup_closed_by_user' || error?.error === 'user_cancelled_authorize') {
+                // User cancelled, don't show error
+                console.log("Apple Sign In: User cancelled");
+                return;
+              }
+              
+              // Show error for other cases
+              const errorMessage = error?.error?.message || error?.message || "Apple login failed. Please try again.";
+              toast.error(errorMessage);
+            });
         } catch (error: any) {
           console.error("Apple Sign In initialization error:", error);
           toast.error("Apple Sign In initialization failed. Please try again.");

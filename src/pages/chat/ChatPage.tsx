@@ -38,7 +38,7 @@ export function ChatPage() {
   const [message, setMessage] = useState("");
   const [isSending, setIsSending] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const messageInputRef = useRef<HTMLInputElement>(null);
+  const messageInputRef = useRef<HTMLTextAreaElement>(null);
   // Check if user is guest by auth status OR by route path (/guest/:id)
   const isGuestRoute = location.pathname.startsWith("/guest");
   const isGuest = isGuestUser() || isGuestRoute;
@@ -352,6 +352,15 @@ export function ChatPage() {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [thread?.messages, guestMessages]);
 
+  // Auto-resize textarea
+  useEffect(() => {
+    const textarea = messageInputRef.current;
+    if (textarea) {
+      textarea.style.height = "auto";
+      textarea.style.height = `${Math.min(textarea.scrollHeight, 200)}px`; // Max height of 200px
+    }
+  }, [message]);
+
   const sendText = (text: string) => {
     const trimmedMessage = text.trim();
     if (!trimmedMessage || sendMessage.isPending || isSending) {
@@ -425,6 +434,10 @@ export function ChatPage() {
     if (!trimmedMessage) return;
     setMessage("");
     sendText(trimmedMessage);
+    // Reset textarea height
+    if (messageInputRef.current) {
+      messageInputRef.current.style.height = "auto";
+    }
   };
 
   // Auto-send the first user message when coming from NewChatPage
@@ -649,11 +662,10 @@ export function ChatPage() {
             </div>
           )}
           
-          <div className="bg-white dark:bg-gray-800 rounded-full border border-gray-200 dark:border-gray-700 shadow-sm flex items-center gap-3 p-4">
-            <input
+          <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm flex items-end gap-3 p-4">
+            <textarea
               ref={messageInputRef}
-              type="text"
-              className="flex-1 px-6 py-3 text-gray-800 dark:text-gray-200 placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none text-base border-0 bg-gray-100 dark:bg-gray-700 rounded-full"
+              className="flex-1 min-w-0 px-6 py-3 text-gray-800 dark:text-gray-200 placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none text-base border-0 bg-gray-100 dark:bg-gray-700 rounded-xl resize-none min-h-[48px] max-h-[200px] overflow-y-auto"
               placeholder="Type here ....."
               value={message}
               onChange={(e) => setMessage(e.target.value)}
@@ -664,11 +676,12 @@ export function ChatPage() {
                 }
               }}
               disabled={sendMessage.isPending || isSending}
+              rows={1}
             />
             <button
               onClick={handleSend}
               disabled={!message.trim() || sendMessage.isPending || isSending}
-              className="bg-yellow-300 hover:bg-yellow-400 p-3 rounded-full disabled:opacity-50 disabled:cursor-not-allowed transition flex-shrink-0"
+              className="bg-yellow-300 hover:bg-yellow-400 p-3 rounded-full disabled:opacity-50 disabled:cursor-not-allowed transition flex-shrink-0 mb-1"
             >
               <ArrowUp className="h-5 w-5 text-gray-900" strokeWidth={2.5} fill="none" />
             </button>

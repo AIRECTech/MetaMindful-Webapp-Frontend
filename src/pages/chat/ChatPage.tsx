@@ -717,7 +717,7 @@ export function ChatPage() {
             </h2>
             <p className="text-gray-600 dark:text-gray-400 mb-6">
               You've reached the limit of {guestChatLimit} messages for guest users. 
-              Please log in or sign up to continue chatting, or continue as guest to start a new thread.
+              Please log in or sign up to continue chatting.
             </p>
             <div className="flex flex-col gap-3">
               <button
@@ -741,16 +741,10 @@ export function ChatPage() {
               <button
                 onClick={() => {
                   setShowLimitPopup(false);
-                  if (isGuest) {
-                    // Force full page reload to reset state and create a new thread
-                    window.location.href = "/guest";
-                  } else {
-                    navigate("/user/chat/new");
-                  }
                 }}
                 className="w-full bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-200 font-medium py-3 px-4 rounded-lg transition"
               >
-                Continue as Guest (New Thread)
+                Skip
               </button>
             </div>
           </div>

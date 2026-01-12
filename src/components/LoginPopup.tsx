@@ -72,12 +72,11 @@ export function LoginPopup({ isOpen, onClose, currentThreadId, onSuccess, onSwit
   });
 
   const socialLogin = useMutation({
-    mutationFn: async ({ provider, providerToken, email, name }: { provider: "google" | "apple"; providerToken: string; email?: string; name?: string }) => {
+    mutationFn: async ({ provider, providerToken, name }: { provider: "google" | "apple"; providerToken: string; name?: string }) => {
       const deviceId = getDeviceId();
       const payload: any = {
         provider,
         providerToken,
-        email,
         name,
         deviceId,
       };
@@ -172,12 +171,10 @@ export function LoginPopup({ isOpen, onClose, currentThreadId, onSuccess, onSwit
           return;
         }
         
-        // Send token to backend
+        // Send token to backend (backend extracts email/name from token)
         socialLogin.mutate({
           provider: "google",
           providerToken: event.data.id_token,
-          email: undefined,
-          name: undefined,
         });
         
         // Clean up
@@ -249,23 +246,18 @@ export function LoginPopup({ isOpen, onClose, currentThreadId, onSuccess, onSwit
             if (response.id_token) {
               // Extract name from user object if available
               let name: string | undefined;
-              let email: string | undefined;
               
-              if (response.user) {
+              if (response.user?.name) {
                 const user = response.user;
-                if (user.name) {
-                  const firstName = user.name.firstName || '';
-                  const lastName = user.name.lastName || '';
-                  name = `${firstName} ${lastName}`.trim() || undefined;
-                }
-                email = user.email;
+                const firstName = user.name.firstName || '';
+                const lastName = user.name.lastName || '';
+                name = `${firstName} ${lastName}`.trim() || undefined;
               }
 
-              // Send token to backend
+              // Send token to backend (backend extracts email from token)
               socialLogin.mutate({
                 provider: "apple",
                 providerToken: response.id_token,
-                email,
                 name,
               });
             } else {

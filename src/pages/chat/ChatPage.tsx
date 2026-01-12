@@ -49,6 +49,7 @@ export function ChatPage() {
   const [guestThreadTitle, setGuestThreadTitle] = useState<string>("New Chat");
   const [guestChatCount, setGuestChatCount] = useState<number>(0);
   const [guestChatLimit, setGuestChatLimit] = useState<number | null>(null);
+  const [lastPopupCount, setLastPopupCount] = useState<number>(0); // Track count when popup was last shown
   const [showLimitPopup, setShowLimitPopup] = useState(false);
   const [showLoginPopup, setShowLoginPopup] = useState(false);
   const [showSignupPopup, setShowSignupPopup] = useState(false);
@@ -77,7 +78,10 @@ export function ChatPage() {
       setGuestThreadTitle(state.bootstrapThread.title || "New Chat");
       // Initialize chat count and limit from bootstrap thread if available
       if (state.bootstrapThread.chatCount !== undefined) {
-        setGuestChatCount(state.bootstrapThread.chatCount);
+        const count = state.bootstrapThread.chatCount;
+        setGuestChatCount(count);
+        // Initialize lastPopupCount to current count so popup shows after next 10 messages
+        setLastPopupCount(count);
       }
       if (state.bootstrapThread.chatLimit !== undefined) {
         setGuestChatLimit(state.bootstrapThread.chatLimit);
@@ -157,7 +161,12 @@ export function ChatPage() {
     
     // Update chat count and limit from thread data
     if (thread.chatCount !== undefined) {
-      setGuestChatCount(thread.chatCount);
+      const count = thread.chatCount;
+      setGuestChatCount(count);
+      // Initialize lastPopupCount if not already set
+      if (lastPopupCount === 0 && count > 0) {
+        setLastPopupCount(count);
+      }
     }
     if (thread.chatLimit !== undefined) {
       setGuestChatLimit(thread.chatLimit);
@@ -208,9 +217,30 @@ export function ChatPage() {
           
           // Update chat count from API response if available, otherwise increment
           if (data.chatCount !== undefined) {
-            setGuestChatCount(data.chatCount);
+            const newCount = data.chatCount;
+            setGuestChatCount(newCount);
+            
+            // Check if we should show popup after count update
+            if (isGuest && guestChatLimit !== null && guestChatLimit > 0) {
+              const messagesSinceLastPopup = newCount - lastPopupCount;
+              if (messagesSinceLastPopup >= guestChatLimit) {
+                setShowLimitPopup(true);
+                setLastPopupCount(newCount);
+              }
+            }
           } else {
-            setGuestChatCount((prev) => prev + 1);
+            setGuestChatCount((prev) => {
+              const newCount = prev + 1;
+              // Check if we should show popup after increment
+              if (isGuest && guestChatLimit !== null && guestChatLimit > 0) {
+                const messagesSinceLastPopup = newCount - lastPopupCount;
+                if (messagesSinceLastPopup >= guestChatLimit) {
+                  setShowLimitPopup(true);
+                  setLastPopupCount(newCount);
+                }
+              }
+              return newCount;
+            });
           }
           if (data.chatLimit !== undefined) {
             setGuestChatLimit(data.chatLimit);
@@ -365,12 +395,6 @@ export function ChatPage() {
     const trimmedMessage = text.trim();
     if (!trimmedMessage || sendMessage.isPending || isSending) {
       console.log("[ChatPage] sendText: skipping - trimmed:", trimmedMessage, "pending:", sendMessage.isPending, "sending:", isSending);
-      return;
-    }
-
-    // Check chat limit for guest users
-    if (isGuest && guestChatLimit !== null && guestChatCount >= guestChatLimit) {
-      setShowLimitPopup(true);
       return;
     }
 
@@ -722,6 +746,8 @@ export function ChatPage() {
               <button
                 onClick={() => {
                   setShowLimitPopup(false);
+                  // Reset counter when skipped - next popup will show after another 10 messages
+                  setLastPopupCount(guestChatCount);
                 }}
                 className="flex-1 bg-amber-100 hover:bg-amber-200 dark:bg-amber-900 dark:hover:bg-amber-800 text-gray-900 dark:text-gray-100 font-medium py-3 px-4 rounded-lg transition"
               >
@@ -730,6 +756,8 @@ export function ChatPage() {
               <button
                 onClick={() => {
                   setShowLimitPopup(false);
+                  // Reset counter when login clicked - next popup will show after another 10 messages
+                  setLastPopupCount(guestChatCount);
                   setShowLoginPopup(true);
                 }}
                 className="flex-1 bg-yellow-400 hover:bg-yellow-500 dark:bg-yellow-500 dark:hover:bg-yellow-600 text-gray-900 dark:text-gray-900 font-medium py-3 px-4 rounded-lg transition"

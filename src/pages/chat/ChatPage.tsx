@@ -516,8 +516,6 @@ export function ChatPage() {
 
   // Use guest messages for guest users, thread messages for authenticated users
   const displayMessages = isGuest ? guestMessages : (thread?.messages || []);
-  const displayTitle = isGuest ? guestThreadTitle : (thread?.title || "New Chat");
-  const displayDesc = isGuest ? undefined : thread?.desc;
 
   // Hide disclaimer after 2 user messages are sent
   useEffect(() => {
@@ -570,13 +568,6 @@ export function ChatPage() {
     <div className="flex flex-col h-full relative bg-gray-50 dark:bg-gray-900">
       <div className="flex-1 overflow-y-auto">
         <div className="max-w-4xl mx-auto px-4 py-6 space-y-6">
-          {/* Centered header */}
-          <div className="text-center mb-8">
-            <h1 className="text-2xl font-bold text-gray-800 dark:text-gray-200 mb-1">{displayTitle}</h1>
-            {displayDesc && displayDesc !== "None" && (
-              <p className="text-sm text-gray-600 dark:text-gray-400">{displayDesc}</p>
-            )}
-          </div>
           {displayMessages.length === 0 && !isLoading ? (
             <div className="text-center text-gray-500 dark:text-gray-400 py-12">
               <p>Start a conversation by sending a message below.</p>

@@ -749,7 +749,7 @@ export function ChatPage() {
                   // Reset counter when skipped - next popup will show after another 10 messages
                   setLastPopupCount(guestChatCount);
                 }}
-                className="flex-1 bg-amber-100 hover:bg-amber-200 dark:bg-amber-900 dark:hover:bg-amber-800 text-gray-900 dark:text-gray-100 font-medium py-3 px-4 rounded-lg transition"
+                className="flex-1 rounded-xl border border-gray-200 bg-white dark:bg-gray-800 dark:border-gray-700 px-5 py-3 text-sm font-semibold text-gray-800 dark:text-gray-200 transition hover:bg-gray-50 dark:hover:bg-gray-700"
               >
                 Skip
               </button>
@@ -760,7 +760,7 @@ export function ChatPage() {
                   setLastPopupCount(guestChatCount);
                   setShowLoginPopup(true);
                 }}
-                className="flex-1 bg-yellow-400 hover:bg-yellow-500 dark:bg-yellow-500 dark:hover:bg-yellow-600 text-gray-900 dark:text-gray-900 font-medium py-3 px-4 rounded-lg transition"
+                className="flex-1 rounded-xl bg-yellow-400 px-5 py-3 text-sm font-semibold text-gray-800 transition hover:bg-yellow-500 disabled:opacity-50"
               >
                 Login
               </button>

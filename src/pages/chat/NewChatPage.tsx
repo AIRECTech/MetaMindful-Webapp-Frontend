@@ -82,7 +82,7 @@ export function NewChatPage() {
 
         const res = await api.post("/threads", { title: "New Chat" });
         console.log("[NewChatPage] Thread creation response:", res.data);
-        
+
         const thread = res.data.data as ThreadResponse;
         console.log("[NewChatPage] Thread data:", thread);
 
@@ -97,7 +97,7 @@ export function NewChatPage() {
 
         const firstAssistant = thread.messages?.find((m) => m.role === "assistant")?.content;
         console.log("[NewChatPage] First assistant message:", firstAssistant);
-        
+
         if (firstAssistant) {
           // Store as the first message in our flow (thread response)
           setMessages([{ role: "assistant", content: firstAssistant, isError: false }]);
@@ -155,7 +155,7 @@ export function NewChatPage() {
   const handleSend = () => {
     const trimmedMessage = message.trim();
     if (!trimmedMessage || isLoading || !threadId) return;
-    
+
     // Clear input immediately
     const userMessage = trimmedMessage;
     setMessage("");
@@ -171,7 +171,7 @@ export function NewChatPage() {
 
   const handleSuggestionClick = (suggestion: string) => {
     if (isLoading || !threadId) return;
-    
+
     setMessage("");
 
     // Pass to the chat screen: first message = thread response, second = user message

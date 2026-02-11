@@ -666,14 +666,14 @@ export function ChatPage() {
 
             if (lastAssistantMessageWithReplies?.replies && lastAssistantMessageWithReplies.replies.length > 0) {
               return (
-                <div className="flex flex-col items-center gap-3 mb-2">
-                  <div className="flex flex-wrap gap-3 justify-center">
+                <div className="flex flex-col items-center gap-3 mb-2 w-full">
+                  <div className="flex overflow-x-auto gap-3 pb-2 w-full no-scrollbar">
                     {lastAssistantMessageWithReplies.replies.map((reply, idx) => (
                       <button
                         key={idx}
                         onClick={() => sendText(reply)}
                         disabled={sendMessage.isPending || isSending}
-                        className="px-5 py-3 bg-blue-100 dark:bg-blue-900/30 text-gray-700 dark:text-gray-300 rounded-xl border border-blue-200 dark:border-blue-800 hover:bg-blue-200 dark:hover:bg-blue-900/50 text-base font-normal transition disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="px-5 py-3 bg-blue-100 dark:bg-blue-900/30 text-gray-700 dark:text-gray-300 rounded-xl border border-blue-200 dark:border-blue-800 hover:bg-blue-200 dark:hover:bg-blue-900/50 text-base font-normal transition disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap flex-shrink-0"
                       >
                         {reply}
                       </button>

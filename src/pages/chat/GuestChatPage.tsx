@@ -239,28 +239,47 @@ export function GuestChatPage() {
               <div className="max-w-4xl mx-auto space-y-3">
                 {/* Suggested prompts */}
                 {/* Suggested prompts - Dynamic mapping */}
-                <div className="flex flex-col items-center gap-3">
-                  <div className="flex flex-wrap gap-3 justify-center">
-                    {(() => {
-                      // Try to find the last assistant message with replies first
-                      const lastAssistantMessageWithReplies = [...messages]
-                        .reverse()
-                        .find(m => m.role === "assistant" && m.replies && m.replies.length > 0);
+                <div className="flex flex-col items-center gap-3 w-full">
+                  {(() => {
+                    // Try to find the last assistant message with replies first
+                    const lastAssistantMessageWithReplies = [...messages]
+                      .reverse()
+                      .find(m => m.role === "assistant" && m.replies && m.replies.length > 0);
 
-                      const suggestionsToShow = lastAssistantMessageWithReplies?.replies || currentSuggestions;
+                    if (lastAssistantMessageWithReplies?.replies) {
+                      // Show assistant replies in a horizontal scrollable container
+                      return (
+                        <div className="flex overflow-x-auto gap-3 pb-2 w-full no-scrollbar">
+                          {lastAssistantMessageWithReplies.replies.map((reply, idx) => (
+                            <button
+                              key={idx}
+                              onClick={() => handleSuggestionClick(reply)}
+                              disabled={isLoading || !threadId}
+                              className="px-5 py-3 bg-blue-100 dark:bg-blue-900/30 text-gray-700 dark:text-gray-300 rounded-xl border border-blue-200 dark:border-blue-800 hover:bg-blue-200 dark:hover:bg-blue-900/50 text-base font-normal transition disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap flex-shrink-0"
+                            >
+                              {reply}
+                            </button>
+                          ))}
+                        </div>
+                      );
+                    }
 
-                      return suggestionsToShow.map((suggestion, idx) => (
-                        <button
-                          key={idx}
-                          onClick={() => handleSuggestionClick(suggestion)}
-                          disabled={isLoading || !threadId}
-                          className="px-5 py-3 bg-blue-100 dark:bg-blue-900/30 text-gray-700 dark:text-gray-300 rounded-xl border border-blue-200 dark:border-blue-800 hover:bg-blue-200 dark:hover:bg-blue-900/50 text-base font-normal transition disabled:opacity-50 disabled:cursor-not-allowed"
-                        >
-                          {suggestion}
-                        </button>
-                      ));
-                    })()}
-                  </div>
+                    // Show initial suggestions in the old wrapping layout
+                    return (
+                      <div className="flex flex-wrap gap-3 justify-center w-full">
+                        {currentSuggestions.map((suggestion, idx) => (
+                          <button
+                            key={idx}
+                            onClick={() => handleSuggestionClick(suggestion)}
+                            disabled={isLoading || !threadId}
+                            className="px-5 py-3 bg-blue-100 dark:bg-blue-900/30 text-gray-700 dark:text-gray-300 rounded-xl border border-blue-200 dark:border-blue-800 hover:bg-blue-200 dark:hover:bg-blue-900/50 text-base font-normal transition disabled:opacity-50 disabled:cursor-not-allowed"
+                          >
+                            {suggestion}
+                          </button>
+                        ))}
+                      </div>
+                    );
+                  })()}
                 </div>
 
                 {/* Terms and Privacy Disclaimer - Above input field */}

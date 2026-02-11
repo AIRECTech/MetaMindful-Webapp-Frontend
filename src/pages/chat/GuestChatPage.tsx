@@ -24,6 +24,7 @@ interface Message {
   role: "user" | "assistant";
   content: string;
   isError?: boolean;
+  replies?: string[];
 }
 
 interface ThreadResponseMessage {
@@ -56,6 +57,9 @@ export function GuestChatPage() {
   const hasAutoSentQueryMessageRef = useRef(false); // Track if we've auto-sent the query message
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
+  // Default suggestions provided as constant
+  const [currentSuggestions, setCurrentSuggestions] = useState<string[]>(suggestions);
+
   // Generate guest token and create thread on page load
   const generateToken = useQuery({
     queryKey: ["guest-token"],
@@ -79,10 +83,16 @@ export function GuestChatPage() {
         setThreadTitle(data.title || "New Chat");
         setThreadDesc(data.desc ?? null);
         const firstAssistant = data.messages?.find((m: ThreadResponseMessage) => m.role === "assistant")?.content;
+        const replies = data.replies || [];
+
+        if (replies.length > 0) {
+          setCurrentSuggestions(replies);
+        }
+
         if (firstAssistant) {
-          setMessages([{ role: "assistant", content: firstAssistant, isError: false }]);
+          setMessages([{ role: "assistant", content: firstAssistant, isError: false, replies }]);
         } else {
-          setMessages([{ role: "assistant", content: "Hi, I'm MetaMindful. I'm here to listen and support you. How are you feeling today?", isError: false }]);
+          setMessages([{ role: "assistant", content: "Hi, I'm MetaMindful. I'm here to listen and support you. How are you feeling today?", isError: false, replies }]);
         }
       } else {
         toast.error("Failed to create thread");
@@ -143,6 +153,7 @@ export function GuestChatPage() {
               id: `bootstrap-assistant-${Date.now()}`,
               role: "assistant",
               content: messages[0]?.content || "Hi, I'm MetaMindful. I'm here to listen and support you. How are you feeling today?",
+              replies: messages[0]?.replies || currentSuggestions,
               createdAt: new Date().toISOString(),
             },
           ],
@@ -227,46 +238,28 @@ export function GuestChatPage() {
             <div className="pb-4 px-4">
               <div className="max-w-4xl mx-auto space-y-3">
                 {/* Suggested prompts */}
+                {/* Suggested prompts - Dynamic mapping */}
                 <div className="flex flex-col items-center gap-3">
                   <div className="flex flex-wrap gap-3 justify-center">
-                    <button
-                      onClick={() => handleSuggestionClick(suggestions[0])}
-                      disabled={isLoading || !threadId}
-                      className="px-5 py-3 bg-blue-100 dark:bg-blue-900/30 text-gray-700 dark:text-gray-300 rounded-xl border border-blue-200 dark:border-blue-800 hover:bg-blue-200 dark:hover:bg-blue-900/50 text-base font-normal transition disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      {suggestions[0]}
-                    </button>
-                    <button
-                      onClick={() => handleSuggestionClick(suggestions[1])}
-                      disabled={isLoading || !threadId}
-                      className="px-5 py-3 bg-blue-100 dark:bg-blue-900/30 text-gray-700 dark:text-gray-300 rounded-xl border border-blue-200 dark:border-blue-800 hover:bg-blue-200 dark:hover:bg-blue-900/50 text-base font-normal transition disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      {suggestions[1]}
-                    </button>
-                    <button
-                      onClick={() => handleSuggestionClick(suggestions[2])}
-                      disabled={isLoading || !threadId}
-                      className="px-5 py-3 bg-blue-100 dark:bg-blue-900/30 text-gray-700 dark:text-gray-300 rounded-xl border border-blue-200 dark:border-blue-800 hover:bg-blue-200 dark:hover:bg-blue-900/50 text-base font-normal transition disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      {suggestions[2]}
-                    </button>
-                  </div>
+                    {(() => {
+                      // Try to find the last assistant message with replies first
+                      const lastAssistantMessageWithReplies = [...messages]
+                        .reverse()
+                        .find(m => m.role === "assistant" && m.replies && m.replies.length > 0);
 
-                  <div className="flex flex-wrap gap-3 justify-center">
-                    <button
-                      onClick={() => handleSuggestionClick(suggestions[3])}
-                      disabled={isLoading || !threadId}
-                      className="px-5 py-3 bg-blue-100 dark:bg-blue-900/30 text-gray-700 dark:text-gray-300 rounded-xl border border-blue-200 dark:border-blue-800 hover:bg-blue-200 dark:hover:bg-blue-900/50 text-base font-normal transition disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      {suggestions[3]}
-                    </button>
-                    <button
-                      onClick={() => handleSuggestionClick(suggestions[4])}
-                      disabled={isLoading || !threadId}
-                      className="px-5 py-3 bg-blue-100 dark:bg-blue-900/30 text-gray-700 dark:text-gray-300 rounded-xl border border-blue-200 dark:border-blue-800 hover:bg-blue-200 dark:hover:bg-blue-900/50 text-base font-normal transition disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      {suggestions[4]}
-                    </button>
+                      const suggestionsToShow = lastAssistantMessageWithReplies?.replies || currentSuggestions;
+
+                      return suggestionsToShow.map((suggestion, idx) => (
+                        <button
+                          key={idx}
+                          onClick={() => handleSuggestionClick(suggestion)}
+                          disabled={isLoading || !threadId}
+                          className="px-5 py-3 bg-blue-100 dark:bg-blue-900/30 text-gray-700 dark:text-gray-300 rounded-xl border border-blue-200 dark:border-blue-800 hover:bg-blue-200 dark:hover:bg-blue-900/50 text-base font-normal transition disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          {suggestion}
+                        </button>
+                      ));
+                    })()}
                   </div>
                 </div>
 
@@ -282,16 +275,16 @@ export function GuestChatPage() {
                     </button>
                     <p className="text-xs text-gray-600 dark:text-gray-400 leading-relaxed pr-6 text-center w-full">
                       By messaging MetaMindful, an AI mental wellness chatbot, you agree to our{" "}
-                      <Link 
-                        to="/terms" 
+                      <Link
+                        to="/terms"
                         target="_blank"
                         className="font-semibold underline hover:text-gray-700 dark:hover:text-gray-300"
                       >
                         terms
                       </Link>{" "}
                       and have read our{" "}
-                      <Link 
-                        to="/privacy-policy" 
+                      <Link
+                        to="/privacy-policy"
                         target="_blank"
                         className="font-semibold underline hover:text-gray-700 dark:hover:text-gray-300"
                       >

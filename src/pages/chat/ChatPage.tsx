@@ -18,6 +18,7 @@ interface Message {
   createdAt: string;
   isError?: boolean;
   originalUserMessage?: string; // Store the original user message for retry
+  replies?: string[];
 }
 
 interface Thread {
@@ -43,7 +44,7 @@ export function ChatPage() {
   const isGuestRoute = location.pathname.startsWith("/guest");
   const isGuest = isGuestUser() || isGuestRoute;
   const hasAutoSentRef = useRef(false);
-  
+
   // For guest users, manage messages in local state instead of fetching thread
   const [guestMessages, setGuestMessages] = useState<Message[]>([]);
   const [guestThreadTitle, setGuestThreadTitle] = useState<string>("New Chat");
@@ -92,7 +93,7 @@ export function ChatPage() {
   // Check if we have bootstrap data from navigation state
   const hasBootstrapData = !!(state.bootstrapThread && state.bootstrapThread.threadId === id);
   const cachedThread = id ? queryClient.getQueryData(["thread", id]) as Thread | undefined : undefined;
-  
+
   // After window.location.href (full page reload), router state is lost and React Query cache is cleared
   // So hasBootstrapData is always false and cache is empty, which means we always fetch
   // Only skip fetching if we have bootstrap data (from router state, not cache)
@@ -151,14 +152,14 @@ export function ChatPage() {
     if (!id) return;
     if (!isGuest) return;
     if (!thread) return;
-    
+
     // Only update if guestMessages is empty (page reload scenario)
     if (guestMessages.length === 0 && thread.messages && thread.messages.length > 0) {
       console.log("[ChatPage] Loading thread data into guest state:", thread);
       setGuestMessages(thread.messages);
       setGuestThreadTitle(thread.title || "New Chat");
     }
-    
+
     // Update chat count and limit from thread data
     if (thread.chatCount !== undefined) {
       const count = thread.chatCount;
@@ -177,12 +178,12 @@ export function ChatPage() {
     mutationFn: async (text: string) => {
       // Ensure user has a token (generate guest token if needed)
       await ensureToken();
-      
+
       const res = await api.post("/threads/chat", {
         threadId: id,
         message: text,
       });
-      
+
       return res.data.data;
     },
     onSuccess: (data) => {
@@ -200,6 +201,7 @@ export function ChatPage() {
                   id: `temp-assistant-${Date.now()}`,
                   role: "assistant" as const,
                   content: data.assistantMessage,
+                  replies: data.replies || [],
                   createdAt: new Date().toISOString(),
                 },
               ];
@@ -209,17 +211,17 @@ export function ChatPage() {
           } else {
             console.warn("[ChatPage] sendMessage.onSuccess: no assistantMessage in response for guest");
           }
-          
+
           // Update title if changed
           if (data.title_name && data.title_name !== guestThreadTitle) {
             setGuestThreadTitle(data.title_name);
           }
-          
+
           // Update chat count from API response if available, otherwise increment
           if (data.chatCount !== undefined) {
             const newCount = data.chatCount;
             setGuestChatCount(newCount);
-            
+
             // Check if we should show popup after count update
             if (isGuest && guestChatLimit !== null && guestChatLimit > 0) {
               const messagesSinceLastPopup = newCount - lastPopupCount;
@@ -245,7 +247,7 @@ export function ChatPage() {
           if (data.chatLimit !== undefined) {
             setGuestChatLimit(data.chatLimit);
           }
-          
+
           // Update URL to /guest/:threadId if this is the first message and we're on /guest
           if (isGuest && data.threadId && window.location.pathname === "/guest") {
             navigate(`/guest/${data.threadId}`, { replace: true });
@@ -256,14 +258,14 @@ export function ChatPage() {
             // Update thread detail cache (title and/or messages)
             queryClient.setQueryData(["thread", id], (old: Thread | undefined) => {
               if (!old) return old;
-              
+
               const updated = { ...old };
-              
+
               // Update title if changed
               if (data.title_name && data.title_name !== thread.title) {
                 updated.title = data.title_name;
               }
-              
+
               // Add assistant message if available
               if (data.assistantMessage) {
                 updated.messages = [
@@ -272,14 +274,15 @@ export function ChatPage() {
                     id: `temp-assistant-${Date.now()}`,
                     role: "assistant",
                     content: data.assistantMessage,
+                    replies: data.replies || [],
                     createdAt: new Date().toISOString(),
                   },
                 ];
               }
-              
+
               return updated;
             });
-            
+
             // If title changed, invalidate threads list to ensure sidebar updates
             if (data.title_name && data.title_name !== thread.title) {
               queryClient.invalidateQueries({ queryKey: ["threads"] });
@@ -287,7 +290,7 @@ export function ChatPage() {
           }
         }
       }
-      
+
       // Only invalidate threads list (for sidebar) if user is not a guest
       // Guest users don't have a sidebar, so no need to refetch threads
       if (!isGuestUser()) {
@@ -301,11 +304,11 @@ export function ChatPage() {
     },
     onError: (error: any, variables: string) => {
       const errorMessage = extractErrorMessage(error, "Failed to send message");
-      
+
       // Store the failed message for retry (use the message that was sent)
       const failedMessage = variables || lastFailedMessage || message.trim();
       setLastFailedMessage(failedMessage);
-      
+
       if (isGuest) {
         // For guest users, add error message instead of removing user message
         setGuestMessages((prev) => {
@@ -316,7 +319,7 @@ export function ChatPage() {
             }
             return true;
           });
-          
+
           // Add error message
           return [
             ...filtered,
@@ -336,7 +339,7 @@ export function ChatPage() {
         // For authenticated users, add error message to thread
         queryClient.setQueryData(["thread", id], (old: Thread | undefined) => {
           if (!old) return old;
-          
+
           // Remove the last temp user message
           const filteredMessages = old.messages.filter((msg, index) => {
             if (index === old.messages.length - 1 && msg.id?.startsWith("temp-user-")) {
@@ -344,7 +347,7 @@ export function ChatPage() {
             }
             return true;
           });
-          
+
           // Add error message
           const errorMsg: Message = {
             id: `error-${Date.now()}`,
@@ -356,17 +359,17 @@ export function ChatPage() {
             isError: true,
             originalUserMessage: failedMessage,
           };
-          
+
           return { ...old, messages: [...filteredMessages, errorMsg] };
         });
       }
-      
+
       setIsSending(false);
       // Refocus input after error
       setTimeout(() => {
         messageInputRef.current?.focus();
       }, 0);
-      
+
       // Check if it's a 401 error (handled by interceptor, but show message)
       if (error.response?.status === 401 || error.response?.data?.code === 401) {
         // Redirect is handled by interceptor, just show message
@@ -402,13 +405,16 @@ export function ChatPage() {
 
     // Store message for potential retry
     setLastFailedMessage(trimmedMessage);
-    
+
     if (isGuest) {
       // Remove any previous error messages
       setGuestMessages((prev) => {
-        return prev.filter((msg) => !msg.isError);
+        return prev.filter((msg) => !msg.isError).map(msg => ({
+          ...msg,
+          replies: undefined
+        }));
       });
-      
+
       setGuestMessages((prev) => {
         const newMessages: Message[] = [
           ...prev,
@@ -426,7 +432,12 @@ export function ChatPage() {
       // Remove any previous error messages
       queryClient.setQueryData(["thread", id], (old: Thread | undefined) => {
         if (!old) return old;
-        const filteredMessages = old.messages.filter((msg) => !msg.isError);
+        const filteredMessages = old.messages
+          .filter((msg) => !msg.isError)
+          .map(msg => ({
+            ...msg,
+            replies: undefined
+          }));
         return { ...old, messages: filteredMessages };
       });
       queryClient.setQueryData(["thread", id], (old: Thread | undefined) => {
@@ -478,9 +489,9 @@ export function ChatPage() {
       console.log("[ChatPage] Auto-send: already sent");
       return;
     }
-    
+
     console.log("[ChatPage] Auto-send: setting up auto-send for:", state.autoSendText, "isGuest:", isGuest);
-    
+
     // Ensure bootstrap thread is set up first (especially for guest users)
     const checkAndSend = () => {
       if (isGuest) {
@@ -501,16 +512,16 @@ export function ChatPage() {
         }
         console.log("[ChatPage] Auto-send: thread cached");
       }
-      
+
       // Now we can send
       console.log("[ChatPage] Auto-send: calling sendText");
       hasAutoSentRef.current = true;
       sendText(state.autoSendText!);
     };
-    
+
     // Start checking after a short delay to let bootstrap complete
     const timer = setTimeout(checkAndSend, 200);
-    
+
     return () => clearTimeout(timer);
   }, [id, state.autoSendText, state.bootstrapThread, isGuest, guestMessages.length, queryClient]);
 
@@ -589,15 +600,15 @@ export function ChatPage() {
                   className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}
                 >
                   <div
-                    className={`max-w-[80%] rounded-2xl px-4 py-3 ${
-                      msg.role === "user"
-                        ? "text-gray-800 dark:text-gray-200 bg-blue-100 dark:bg-blue-900/30"
-                        : msg.isError
+                    className={`max-w-[80%] rounded-2xl px-4 py-3 ${msg.role === "user"
+                      ? "text-gray-800 dark:text-gray-200 bg-blue-100 dark:bg-blue-900/30"
+                      : msg.isError
                         ? "bg-red-50 dark:bg-red-900/30 text-red-800 dark:text-red-300 border border-red-200 dark:border-red-800"
                         : "text-gray-600 dark:text-gray-300"
-                    }`}
+                      }`}
                   >
                     <p className="whitespace-pre-wrap leading-relaxed">{msg.content}</p>
+
                     {msg.isError && msg.originalUserMessage && (
                       <button
                         onClick={() => {
@@ -624,7 +635,7 @@ export function ChatPage() {
                   </div>
                 </div>
               ))}
-              
+
               {/* Loading indicator while waiting for response */}
               {isSending && (
                 <div className="flex justify-start">
@@ -646,6 +657,34 @@ export function ChatPage() {
       {/* Input area */}
       <div className="pb-4 px-4">
         <div className="max-w-4xl mx-auto space-y-3">
+          {/* Suggested replies from the last assistant message */}
+          {(() => {
+            // Find the last assistant message that has replies
+            const lastAssistantMessageWithReplies = [...displayMessages]
+              .reverse()
+              .find(m => m.role === "assistant" && m.replies && m.replies.length > 0);
+
+            if (lastAssistantMessageWithReplies?.replies && lastAssistantMessageWithReplies.replies.length > 0) {
+              return (
+                <div className="flex flex-col items-center gap-3 mb-2">
+                  <div className="flex flex-wrap gap-3 justify-center">
+                    {lastAssistantMessageWithReplies.replies.map((reply, idx) => (
+                      <button
+                        key={idx}
+                        onClick={() => sendText(reply)}
+                        disabled={sendMessage.isPending || isSending}
+                        className="px-5 py-3 bg-blue-100 dark:bg-blue-900/30 text-gray-700 dark:text-gray-300 rounded-xl border border-blue-200 dark:border-blue-800 hover:bg-blue-200 dark:hover:bg-blue-900/50 text-base font-normal transition disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        {reply}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              );
+            }
+            return null;
+          })()}
+
           {/* Terms and Privacy Disclaimer - Above input field */}
           {showDisclaimer && (
             <div className="relative bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 px-4 py-3 pr-8 flex items-center">
@@ -658,16 +697,16 @@ export function ChatPage() {
               </button>
               <p className="text-xs text-gray-600 dark:text-gray-400 leading-relaxed pr-6 text-center w-full">
                 By messaging MetaMindful, an AI mental wellness chatbot, you agree to our{" "}
-                <Link 
-                  to="/terms" 
+                <Link
+                  to="/terms"
                   target="_blank"
                   className="font-semibold underline hover:text-gray-700 dark:hover:text-gray-300"
                 >
                   terms
                 </Link>{" "}
                 and have read our{" "}
-                <Link 
-                  to="/privacy-policy" 
+                <Link
+                  to="/privacy-policy"
                   target="_blank"
                   className="font-semibold underline hover:text-gray-700 dark:hover:text-gray-300"
                 >
@@ -676,7 +715,7 @@ export function ChatPage() {
               </p>
             </div>
           )}
-          
+
           <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm flex items-end gap-3 p-4">
             <textarea
               ref={messageInputRef}
@@ -701,7 +740,7 @@ export function ChatPage() {
               <ArrowUp className="h-5 w-5 text-gray-900" strokeWidth={2.5} fill="none" />
             </button>
           </div>
-          
+
           {/* Guest user login/signup prompt - text only */}
           {isGuest && (
             <div className="text-center mt-4">

@@ -5,6 +5,8 @@ import { toast } from "react-hot-toast";
 import { ArrowUp, X, RefreshCw } from "lucide-react";
 import { api } from "../../lib/api";
 import { extractErrorMessage } from "../../lib/errors";
+import { logAnalyticsEvent } from "../../lib/firebase";
+import { useTimeOnScreen } from "../../hooks/useTimeOnScreen";
 import { ensureToken, isGuestUser } from "../../lib/auth";
 import { GuestTopbar } from "../../components/layout/GuestTopbar";
 import { LoginPopup } from "../../components/LoginPopup";
@@ -44,6 +46,12 @@ export function ChatPage() {
   const isGuestRoute = location.pathname.startsWith("/guest");
   const isGuest = isGuestUser() || isGuestRoute;
   const hasAutoSentRef = useRef(false);
+
+  useTimeOnScreen("chat", "ChatPage", { thread_id: id });
+
+  useEffect(() => {
+    logAnalyticsEvent("chat_screen_view", { thread_id: id });
+  }, [id]);
 
   // For guest users, manage messages in local state instead of fetching thread
   const [guestMessages, setGuestMessages] = useState<Message[]>([]);
@@ -108,7 +116,12 @@ export function ChatPage() {
       console.log("[ChatPage] Fetching thread with ID:", id);
       const res = await api.get(`/threads/${id}`);
       console.log("[ChatPage] Thread fetched:", res.data.data);
-      return res.data.data as Thread;
+      const fetchedThread = res.data.data as Thread;
+      logAnalyticsEvent("thread_opened", {
+        thread_id: id,
+        message_count: fetchedThread.messages?.length || 0
+      });
+      return fetchedThread;
     },
     initialData: () => {
       // Only use bootstrap data if available (from router state)
@@ -186,8 +199,12 @@ export function ChatPage() {
 
       return res.data.data;
     },
-    onSuccess: (data) => {
+    onSuccess: (data, variables) => {
       console.log("[ChatPage] sendMessage.onSuccess: received data:", data);
+      logAnalyticsEvent("chat_message_sent", {
+        thread_id: id,
+        message_length: variables.length
+      });
       // Update thread data from chat API response instead of refetching
       if (data) {
         if (isGuest) {
@@ -205,6 +222,10 @@ export function ChatPage() {
                   createdAt: new Date().toISOString(),
                 },
               ];
+              logAnalyticsEvent("chat_message_received", {
+                thread_id: id,
+                response_length: data.assistantMessage.length
+              });
               console.log("[ChatPage] sendMessage.onSuccess: updated guestMessages:", newMessages);
               return newMessages;
             });
@@ -278,6 +299,11 @@ export function ChatPage() {
                     createdAt: new Date().toISOString(),
                   },
                 ];
+                logAnalyticsEvent("chat_message_received", {
+                  thread_id: id,
+                  response_length: data.assistantMessage.length
+                });
+                return updated;
               }
 
               return updated;
@@ -308,6 +334,11 @@ export function ChatPage() {
       // Store the failed message for retry (use the message that was sent)
       const failedMessage = variables || lastFailedMessage || message.trim();
       setLastFailedMessage(failedMessage);
+
+      logAnalyticsEvent("chat_messsagefailedToSend", {
+        thread_id: id,
+        error: errorMessage
+      });
 
       if (isGuest) {
         // For guest users, add error message instead of removing user message
@@ -623,6 +654,7 @@ export function ChatPage() {
                             });
                           }
                           // Retry sending the message
+                          logAnalyticsEvent("thread_refreshed", { thread_id: id });
                           sendText(msg.originalUserMessage);
                         }}
                         disabled={sendMessage.isPending || isSending}
@@ -671,7 +703,13 @@ export function ChatPage() {
                     {lastAssistantMessageWithReplies.replies.map((reply, idx) => (
                       <button
                         key={idx}
-                        onClick={() => sendText(reply)}
+                        onClick={() => {
+                          logAnalyticsEvent("suggestion_selected", {
+                            thread_id: id,
+                            suggestion: reply
+                          });
+                          sendText(reply);
+                        }}
                         disabled={sendMessage.isPending || isSending}
                         className="px-5 py-3 w-[190px] bg-blue-100 dark:bg-blue-900/30 text-gray-700 dark:text-gray-300 rounded-xl border border-blue-200 dark:border-blue-800 hover:bg-blue-200 dark:hover:bg-blue-900/50 text-[12px] leading-normal font-normal transition disabled:opacity-50 disabled:cursor-not-allowed text-left [text-wrap-mode:wrap] flex-shrink-0"
                       >

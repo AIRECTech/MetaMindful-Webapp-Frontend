@@ -3,6 +3,8 @@ import { useNavigate, Link } from "react-router-dom";
 import { ArrowUp } from "lucide-react";
 import { api } from "../../lib/api";
 import { extractErrorMessage } from "../../lib/errors";
+import { logAnalyticsEvent } from "../../lib/firebase";
+import { useTimeOnScreen } from "../../hooks/useTimeOnScreen";
 import { ensureToken, isGuestUser } from "../../lib/auth";
 
 const suggestions = [
@@ -51,6 +53,8 @@ export function NewChatPage() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
+  useTimeOnScreen("new-chat", "NewChatPage");
+
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
@@ -91,6 +95,10 @@ export function NewChatPage() {
           throw new Error("Thread created but threadId (UUID) missing from response");
         }
 
+        logAnalyticsEvent("thread_created", {
+          thread_id: thread.threadId,
+          title: thread.title
+        });
         setThreadId(thread.threadId);
         setThreadTitle(thread.title || "New Chat");
         setThreadDesc(thread.desc ?? null);
@@ -175,6 +183,10 @@ export function NewChatPage() {
     setMessage("");
 
     // Pass to the chat screen: first message = thread response, second = user message
+    logAnalyticsEvent("suggestion_selected", {
+      thread_id: threadId,
+      suggestion
+    });
     navigateToChatWithFirstUserMessage(suggestion);
   };
 

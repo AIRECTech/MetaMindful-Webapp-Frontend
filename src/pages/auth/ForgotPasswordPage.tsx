@@ -4,12 +4,16 @@ import { toast } from "react-hot-toast";
 import { Link } from "react-router-dom";
 import { api } from "../../lib/api";
 import { extractErrorMessage } from "../../lib/errors";
+import { useTimeOnScreen } from "../../hooks/useTimeOnScreen";
+import { logAnalyticsEvent } from "../../lib/firebase";
 import { Mail } from "lucide-react";
 
 export function ForgotPasswordPage() {
   const [email, setEmail] = useState("");
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [error, setError] = useState("");
+
+  useTimeOnScreen("forgot-password", "ForgotPasswordPage");
 
   const requestReset = useMutation({
     mutationFn: async () => {
@@ -18,6 +22,7 @@ export function ForgotPasswordPage() {
       return res.data;
     },
     onSuccess: () => {
+      logAnalyticsEvent("password_reset_requested", { email });
       setIsSubmitted(true);
       toast.success("If that email exists, a reset link was sent.");
     },
@@ -91,7 +96,7 @@ export function ForgotPasswordPage() {
               <span className="text-2xl font-semibold text-gray-800">MetaMindful</span>
             </div>
           </div>
-          
+
           <h2 className="mb-2 text-center text-2xl font-semibold text-gray-800">Forgot Password?</h2>
           <p className="mb-6 text-center text-sm text-gray-600">
             Enter your email address and we'll send you a link to reset your password.
@@ -108,9 +113,8 @@ export function ForgotPasswordPage() {
               <Mail className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400" />
               <input
                 type="email"
-                className={`w-full rounded-xl border bg-white px-4 py-3 pl-11 text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 ${
-                  error ? "border-red-300 focus:ring-red-400" : "border-gray-200 focus:ring-yellow-400"
-                }`}
+                className={`w-full rounded-xl border bg-white px-4 py-3 pl-11 text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 ${error ? "border-red-300 focus:ring-red-400" : "border-gray-200 focus:ring-yellow-400"
+                  }`}
                 value={email}
                 onChange={(event) => {
                   setEmail(event.target.value);

@@ -3,6 +3,7 @@ import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { getUnreadCount, markNotificationRead, markAllNotificationsRead, getNotifications, type Notification, type NotificationListResponse } from "../lib/notifications";
 import { isGuestUser } from "../lib/auth";
+import { logAnalyticsEvent } from "../lib/firebase";
 import { toast } from "react-hot-toast";
 
 export function NotificationBell() {
@@ -26,13 +27,14 @@ export function NotificationBell() {
     staleTime: 0, // Always fetch fresh data when dropdown opens
     refetchOnWindowFocus: false, // Don't refetch on window focus
   });
-  
+
   const notifications = notificationsData?.data || [];
 
   const markReadMutation = useMutation({
     mutationFn: markNotificationRead,
-    onSuccess: () => {
+    onSuccess: (_, notificationId) => {
       queryClient.invalidateQueries({ queryKey: ["notifications"] });
+      logAnalyticsEvent("notification_read", { notificationId });
     },
   });
 
@@ -41,6 +43,7 @@ export function NotificationBell() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["notifications"] });
       toast.success("All notifications marked as read");
+      logAnalyticsEvent("notification_read", { all: true });
       setIsOpen(false);
     },
   });
@@ -49,6 +52,7 @@ export function NotificationBell() {
     if (!notification.isRead) {
       markReadMutation.mutate(notification.id);
     }
+    logAnalyticsEvent("notification_tapped", { notificationId: notification.id, type: notification.type });
 
     // Navigate based on notification type
     if (notification.data?.threadId) {
@@ -67,7 +71,15 @@ export function NotificationBell() {
   return (
     <div className="relative">
       <button
-        onClick={() => setIsOpen(!isOpen)}
+        onClick={() => {
+          const nextState = !isOpen;
+          setIsOpen(nextState);
+          if (nextState) {
+            logAnalyticsEvent("notification_screen_view");
+          } else {
+            logAnalyticsEvent("notification_dismissed");
+          }
+        }}
         className="relative p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition"
         aria-label="Notifications"
       >
@@ -83,7 +95,10 @@ export function NotificationBell() {
         <>
           <div
             className="fixed inset-0 z-10"
-            onClick={() => setIsOpen(false)}
+            onClick={() => {
+              logAnalyticsEvent("notification_dismissed");
+              setIsOpen(false);
+            }}
           />
           <div className="absolute right-0 mt-2 w-80 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 z-20 max-h-96 overflow-hidden flex flex-col">
             <div className="p-4 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
@@ -129,9 +144,8 @@ export function NotificationBell() {
                     <button
                       key={notification.id}
                       onClick={() => handleNotificationClick(notification)}
-                      className={`w-full text-left p-4 hover:bg-gray-50 dark:hover:bg-gray-700 transition ${
-                        !notification.isRead ? "bg-blue-50 dark:bg-blue-900/20" : ""
-                      }`}
+                      className={`w-full text-left p-4 hover:bg-gray-50 dark:hover:bg-gray-700 transition ${!notification.isRead ? "bg-blue-50 dark:bg-blue-900/20" : ""
+                        }`}
                     >
                       <div className="flex items-start gap-3">
                         <div className="flex-1">

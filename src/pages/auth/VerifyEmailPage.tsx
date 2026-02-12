@@ -4,6 +4,8 @@ import { toast } from "react-hot-toast";
 import { Link, useSearchParams, useNavigate } from "react-router-dom";
 import { api } from "../../lib/api";
 import { extractErrorMessage } from "../../lib/errors";
+import { useTimeOnScreen } from "../../hooks/useTimeOnScreen";
+import { logAnalyticsEvent } from "../../lib/firebase";
 
 export function VerifyEmailPage() {
   const [searchParams] = useSearchParams();
@@ -15,6 +17,8 @@ export function VerifyEmailPage() {
   const [isVerified, setIsVerified] = useState(false);
   const [error, setError] = useState("");
 
+  useTimeOnScreen("verify-email", "VerifyEmailPage");
+
   const verifyEmail = useMutation({
     mutationFn: async () => {
       // Clear previous error
@@ -22,16 +26,21 @@ export function VerifyEmailPage() {
       const res = await api.post("/auth/verify-email", { code: code.trim(), email: email.trim() });
       return res.data;
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
+      const responseData = data.data || data;
+      logAnalyticsEvent("email_verification_completed", {
+        user_id: responseData.user?.id,
+        email
+      });
       setIsVerified(true);
       toast.success("Email verified successfully!");
       // If threadId is provided, redirect to login with threadId so user can log in and continue chat
       // After login, they'll be redirected to the thread
       if (threadIdFromQuery) {
         setTimeout(() => {
-          navigate("/", { 
+          navigate("/", {
             state: { threadId: threadIdFromQuery },
-            replace: true 
+            replace: true
           });
         }, 1500);
       }
@@ -49,6 +58,7 @@ export function VerifyEmailPage() {
       return res.data;
     },
     onSuccess: () => {
+      logAnalyticsEvent("email_verification_sent", { email });
       toast.success("Verification code sent!");
     },
     onError: (error) => {
@@ -121,7 +131,7 @@ export function VerifyEmailPage() {
               <span className="text-2xl font-semibold text-gray-800">MetaMindful</span>
             </div>
           </div>
-          
+
           <h2 className="mb-2 text-center text-2xl font-semibold text-gray-800">Verify Email</h2>
           <p className="mb-6 text-center text-sm text-gray-600">
             We've sent a verification code to <strong>{email || "your email"}</strong>. Please enter it below.
@@ -156,11 +166,10 @@ export function VerifyEmailPage() {
               <span className="mb-1 block text-sm font-medium text-gray-700">Verification Code</span>
               <input
                 type="text"
-                className={`w-full rounded-xl border px-4 py-3 text-center text-2xl tracking-widest text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 ${
-                  error
+                className={`w-full rounded-xl border px-4 py-3 text-center text-2xl tracking-widest text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 ${error
                     ? "border-red-300 bg-red-50 focus:ring-red-400"
                     : "border-gray-200 bg-white focus:ring-yellow-400"
-                }`}
+                  }`}
                 value={code}
                 onChange={(event) => {
                   const value = event.target.value.replace(/\D/g, "").slice(0, 6);

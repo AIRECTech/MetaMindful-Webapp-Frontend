@@ -2,9 +2,12 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 import { useState, useEffect, useRef } from "react";
 import { useParams, useNavigate, Link, useSearchParams } from "react-router-dom";
 import { toast } from "react-hot-toast";
-import { ArrowUp, X } from "lucide-react";
+import { ArrowUp } from "lucide-react";
 import { api } from "../../lib/api";
 import { extractErrorMessage } from "../../lib/errors";
+import { logAnalyticsEvent } from "../../lib/firebase";
+import { useTimeOnScreen } from "../../hooks/useTimeOnScreen";
+import { X } from "lucide-react";
 import { ensureToken } from "../../lib/auth";
 import { ChatPage } from "./ChatPage";
 import { LoginPopup } from "../../components/LoginPopup";
@@ -47,6 +50,8 @@ export function GuestChatPage() {
   const [message, setMessage] = useState("");
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+
+  useTimeOnScreen("guest-chat", "GuestChatPage");
   const [threadId, setThreadId] = useState<string | null>(null);
   const [threadTitle, setThreadTitle] = useState<string>("New Chat");
   const [threadDesc, setThreadDesc] = useState<string | null>(null);
@@ -65,6 +70,11 @@ export function GuestChatPage() {
     queryKey: ["guest-token"],
     queryFn: async () => {
       await ensureToken();
+      // Since ensureToken doesn't return user, we just log it happened
+      logAnalyticsEvent("guest_login_completed", {
+        is_guest: true
+      });
+      console.log("[GuestChatPage] Guest token ensured");
       return true;
     },
     enabled: !id && !hasCreatedThreadRef.current,
@@ -79,6 +89,10 @@ export function GuestChatPage() {
     },
     onSuccess: (data) => {
       if (data?.threadId) {
+        // The logAnalyticsEvent for guest_login_completed with user_id is now in generateToken.queryFn
+        // This event here is redundant if the one in generateToken is sufficient for "login completed"
+        // Keeping it for now as per original code, but consider if it's needed.
+        // logAnalyticsEvent("guest_login_completed", { threadId: data.threadId });
         setThreadId(data.threadId);
         setThreadTitle(data.title || "New Chat");
         setThreadDesc(data.desc ?? null);

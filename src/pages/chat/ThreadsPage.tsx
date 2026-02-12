@@ -1,10 +1,12 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-hot-toast";
 import { ArrowRight, X, Send, User, Cloud, Trophy } from "lucide-react";
 import { api } from "../../lib/api";
 import { extractErrorMessage } from "../../lib/errors";
+import { logAnalyticsEvent } from "../../lib/firebase";
+import { useTimeOnScreen } from "../../hooks/useTimeOnScreen";
 
 interface Thread {
   id: string;
@@ -26,6 +28,8 @@ export function ThreadsPage() {
   const [newThreadTitle, setNewThreadTitle] = useState("");
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
 
+  useTimeOnScreen("threads-list", "ThreadsPage");
+
   const { data, isLoading } = useQuery({
     queryKey: ["threads"],
     queryFn: async () => {
@@ -34,12 +38,24 @@ export function ThreadsPage() {
     },
   });
 
+  useEffect(() => {
+    if (data) {
+      logAnalyticsEvent("thread_list_viewed", { thread_count: data.length });
+    } else if (!isLoading) {
+      logAnalyticsEvent("thread_list_viewed", { thread_count: 0 });
+    }
+  }, [data, isLoading]);
+
   const createThread = useMutation({
     mutationFn: async (title: string) => {
       const res = await api.post("/threads", { title });
       return res.data.data;
     },
-    onSuccess: (thread) => {
+    onSuccess: (thread, title) => {
+      logAnalyticsEvent("thread_created", {
+        thread_id: thread.threadId || thread.id,
+        title
+      });
       queryClient.invalidateQueries({ queryKey: ["threads"] });
       setNewThreadTitle("");
       setSelectedTags([]);
@@ -188,11 +204,10 @@ export function ThreadsPage() {
             <button
               key={tag}
               onClick={() => handleTagClick(tag)}
-              className={`px-4 py-2 rounded-full text-sm font-medium transition ${
-                selectedTags.includes(tag)
-                  ? "bg-blue-600 text-white"
-                  : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-              }`}
+              className={`px-4 py-2 rounded-full text-sm font-medium transition ${selectedTags.includes(tag)
+                ? "bg-blue-600 text-white"
+                : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                }`}
             >
               {tag}
             </button>

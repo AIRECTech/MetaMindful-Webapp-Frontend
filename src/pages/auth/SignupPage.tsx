@@ -1,10 +1,12 @@
 import { useMutation } from "@tanstack/react-query";
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { toast } from "react-hot-toast";
 import { useNavigate, Link, useLocation } from "react-router-dom";
 import { api } from "../../lib/api";
 import { setTokens, getDeviceId, getAccessToken } from "../../lib/auth";
+import { logAnalyticsEvent } from "../../lib/firebase";
 import { extractErrorMessage } from "../../lib/errors";
+import { useTimeOnScreen } from "../../hooks/useTimeOnScreen";
 import { Mail, Lock, Eye, EyeOff } from "lucide-react";
 
 export function SignupPage() {
@@ -15,6 +17,13 @@ export function SignupPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [error, setError] = useState("");
+  const startedRef = useRef(false);
+
+  useTimeOnScreen("signup", "SignupPage");
+
+  useEffect(() => {
+    logAnalyticsEvent("signup_view");
+  }, []);
 
   const register = useMutation({
     mutationFn: async () => {
@@ -48,7 +57,14 @@ export function SignupPage() {
       );
       return res.data;
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
+      const responseData = data.data || data;
+      logAnalyticsEvent("signup_complete", {
+        auth_method: "email",
+        user_id: responseData.user?.id,
+        is_email_verified: responseData.user?.isEmailVerified
+      });
+      logAnalyticsEvent("email_verification_sent", { email: formData.email });
       toast.success("Registration successful! Please verify your email.");
       // Redirect to verification page
       navigate(`/verify-email?email=${encodeURIComponent(formData.email)}`, { replace: true });
@@ -90,11 +106,19 @@ export function SignupPage() {
         return;
       }
       setTokens(responseData.accessToken, responseData.refreshToken, false);
+      logAnalyticsEvent("social_login_completed", {
+        provider: responseData.provider || "social",
+        user_id: responseData.user?.id
+      });
       toast.success("Welcome!");
       navigate("/", { replace: true });
     },
-    onError: (error) => {
+    onError: (error, variables) => {
       const message = extractErrorMessage(error, "Social signup failed");
+      logAnalyticsEvent("social_login_failed", {
+        provider: variables.provider,
+        error: message
+      });
       toast.error(message);
     },
   });
@@ -110,61 +134,61 @@ export function SignupPage() {
       console.error("VITE_GOOGLE_CLIENT_ID is not set in environment variables");
       return;
     }
-    
+
     const redirectUri = `${window.location.origin}/auth/google/callback`;
     const scope = 'openid email profile';
     const nonce = Math.random().toString(36).substring(2, 15);
     const state = Math.random().toString(36).substring(2, 15);
-    
+
     // Store state and nonce for verification
     sessionStorage.setItem('google_oauth_state', state);
     sessionStorage.setItem('google_oauth_nonce', nonce);
     if (currentThreadId) {
       sessionStorage.setItem('google_oauth_threadId', currentThreadId);
     }
-    
+
     // Use implicit flow to get ID token directly via popup
     const width = 500;
     const height = 600;
     const left = (window.screen.width - width) / 2;
     const top = (window.screen.height - height) / 2;
-    
+
     const googleAuthUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${encodeURIComponent(clientId)}&response_type=id_token&redirect_uri=${encodeURIComponent(redirectUri)}&scope=${encodeURIComponent(scope)}&nonce=${encodeURIComponent(nonce)}&state=${encodeURIComponent(state)}`;
-    
+
     console.log("Opening Google OAuth popup:", googleAuthUrl);
     const popup = window.open(
       googleAuthUrl,
       'Google Sign Up',
       `width=${width},height=${height},left=${left},top=${top}`
     );
-    
+
     if (!popup) {
       toast.error("Popup blocked. Please allow popups for this site.");
       console.error("Popup was blocked by browser");
       return;
     }
-    
+
     // Listen for message from popup
     const messageListener = (event: MessageEvent) => {
       if (event.origin !== window.location.origin) return;
-      
+
       if (event.data.type === 'GOOGLE_OAUTH_SUCCESS' && event.data.id_token) {
         window.removeEventListener('message', messageListener);
         popup?.close();
-        
+
         // Verify state
         const storedState = sessionStorage.getItem('google_oauth_state');
         if (event.data.state !== storedState) {
           toast.error("Security error: Invalid state");
           return;
         }
-        
+
         // Send token to backend (backend extracts email/name from token)
         socialSignup.mutate({
           provider: "google",
           providerToken: event.data.id_token,
         });
-        
+
         // Clean up
         sessionStorage.removeItem('google_oauth_state');
         sessionStorage.removeItem('google_oauth_nonce');
@@ -175,9 +199,9 @@ export function SignupPage() {
         toast.error("Google signup failed");
       }
     };
-    
+
     window.addEventListener('message', messageListener);
-    
+
     // Check if popup was closed
     const checkClosed = setInterval(() => {
       if (popup?.closed) {
@@ -199,7 +223,7 @@ export function SignupPage() {
     // Load Apple Sign In SDK if not already loaded
     const scriptId = 'apple-signin-script';
     const existingScript = document.getElementById(scriptId);
-    
+
     if (!existingScript) {
       const script = document.createElement('script');
       script.id = scriptId;
@@ -233,7 +257,7 @@ export function SignupPage() {
           // Trigger sign in
           (window as any).AppleID.auth.signIn().then((response: any) => {
             console.log("Apple Sign Up response:", response);
-            
+
             if (!response) {
               console.error("Apple Sign Up: Empty response received");
               toast.error("Apple signup failed: No response received");
@@ -244,7 +268,7 @@ export function SignupPage() {
               console.log("Apple Sign Up: ID token received");
               // Extract name from user object if available
               let name: string | undefined;
-              
+
               if (response.user?.name) {
                 const user = response.user;
                 const firstName = user.name.firstName || '';
@@ -272,14 +296,14 @@ export function SignupPage() {
               errorMessage: error?.message,
               errorType: typeof error,
             });
-            
+
             // Handle different error types
             if (error?.error === 'popup_closed_by_user' || error?.error === 'user_cancelled_authorize') {
               // User cancelled, don't show error
               console.log("Apple Sign Up: User cancelled");
               return;
             }
-            
+
             // Show error for other cases
             const errorMessage = error?.error?.message || error?.message || "Apple signup failed. Please try again.";
             toast.error(errorMessage);
@@ -307,7 +331,7 @@ export function SignupPage() {
               <span className="text-2xl font-semibold text-gray-800">MetaMindful</span>
             </div>
           </div>
-          
+
           <p className="mb-6 text-center text-sm font-medium text-gray-700">Choose a sign up method</p>
 
           {/* Social Login Buttons */}
@@ -363,6 +387,7 @@ export function SignupPage() {
             className="space-y-4"
             onSubmit={(event) => {
               event.preventDefault();
+              logAnalyticsEvent("signup_submit");
               register.mutate();
             }}
           >
@@ -370,11 +395,14 @@ export function SignupPage() {
               <Mail className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400" />
               <input
                 type="email"
-                className={`w-full rounded-xl border bg-white px-4 py-3 pl-11 text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 ${
-                  error ? "border-red-300 focus:ring-red-400" : "border-gray-200 focus:ring-yellow-400"
-                }`}
+                className={`w-full rounded-xl border bg-white px-4 py-3 pl-11 text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 ${error ? "border-red-300 focus:ring-red-400" : "border-gray-200 focus:ring-yellow-400"
+                  }`}
                 value={formData.email}
                 onChange={(event) => {
+                  if (!startedRef.current) {
+                    logAnalyticsEvent("signup_start");
+                    startedRef.current = true;
+                  }
                   setFormData((prev) => ({ ...prev, email: event.target.value }));
                   setError(""); // Clear error when typing
                 }}
@@ -388,9 +416,8 @@ export function SignupPage() {
               <Lock className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400" />
               <input
                 type={showPassword ? "text" : "password"}
-                className={`w-full rounded-xl border bg-white px-4 py-3 pl-11 pr-11 text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 ${
-                  error ? "border-red-300 focus:ring-red-400" : "border-gray-200 focus:ring-yellow-400"
-                }`}
+                className={`w-full rounded-xl border bg-white px-4 py-3 pl-11 pr-11 text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 ${error ? "border-red-300 focus:ring-red-400" : "border-gray-200 focus:ring-yellow-400"
+                  }`}
                 value={formData.password}
                 onChange={(event) => {
                   setFormData((prev) => ({ ...prev, password: event.target.value }));
@@ -413,9 +440,8 @@ export function SignupPage() {
               <Lock className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400" />
               <input
                 type={showConfirmPassword ? "text" : "password"}
-                className={`w-full rounded-xl border bg-white px-4 py-3 pl-11 pr-11 text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 ${
-                  error ? "border-red-300 focus:ring-red-400" : "border-gray-200 focus:ring-yellow-400"
-                }`}
+                className={`w-full rounded-xl border bg-white px-4 py-3 pl-11 pr-11 text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 ${error ? "border-red-300 focus:ring-red-400" : "border-gray-200 focus:ring-yellow-400"
+                  }`}
                 value={formData.confirmPassword}
                 onChange={(event) => {
                   setFormData((prev) => ({ ...prev, confirmPassword: event.target.value }));

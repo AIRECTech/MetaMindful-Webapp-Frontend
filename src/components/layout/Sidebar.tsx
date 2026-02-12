@@ -6,6 +6,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "../../lib/api";
 import { useLocation } from "react-router-dom";
 import { clearTokens, isRealUser, isAuthenticated, isGuestUser } from "../../lib/auth";
+import { logAnalyticsEvent } from "../../lib/firebase";
 import { extractErrorMessage } from "../../lib/errors";
 import { toast } from "react-hot-toast";
 import { getDarkMode, toggleDarkMode as toggleDarkModeUtil } from "../../lib/darkMode";
@@ -53,7 +54,7 @@ export function Sidebar() {
 
   // Only fetch threads if user is authenticated (not guest)
   const isAuthenticatedUser = isAuthenticated() && isRealUser();
-  
+
   const { data: threads } = useQuery({
     queryKey: ["threads"],
     queryFn: async () => {
@@ -75,6 +76,7 @@ export function Sidebar() {
       queryClient.invalidateQueries({ queryKey: ["threads"] });
       setEditingThreadId(null);
       setEditingTitle("");
+      logAnalyticsEvent("thread_renamed", { threadId: editingThreadId });
       toast.success("Thread renamed successfully");
     },
     onError: (error: Error) => {
@@ -89,6 +91,7 @@ export function Sidebar() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["threads"] });
+      logAnalyticsEvent("thread_deleted", { threadId: showMenuThreadId });
       setShowMenuThreadId(null);
       toast.success("Thread deleted successfully");
       // If we deleted the current thread, navigate to new chat
@@ -165,7 +168,7 @@ export function Sidebar() {
     if (diffMins < 60) return `${diffMins}m ago`;
     if (diffHours < 24) return `${diffHours}h ago`;
     if (diffDays < 7) return `${diffDays}d ago`;
-    
+
     // For older dates, show formatted date
     return date.toLocaleDateString("en-US", { month: "short", day: "numeric", year: date.getFullYear() !== now.getFullYear() ? "numeric" : undefined });
   };
@@ -179,6 +182,7 @@ export function Sidebar() {
     try {
       // Try to call logout endpoint if user is logged in
       if (isRealUser()) {
+        logAnalyticsEvent("logout");
         await api.post("/auth/logout");
       }
     } catch (error) {
@@ -196,13 +200,13 @@ export function Sidebar() {
     <aside className="hidden lg:flex w-64 flex-col border-r border-gray-200 dark:border-gray-700">
       {/* Logo at top */}
       <div className="p-4 border-b border-gray-200 dark:border-gray-700">
-        <div 
+        <div
           className="flex items-center gap-3 cursor-pointer"
           onClick={() => navigate("/")}
         >
-          <img 
-            src="/logo.png" 
-            alt="MetaMindful" 
+          <img
+            src="/logo.png"
+            alt="MetaMindful"
             className="h-8 w-auto"
           />
           <div className="flex flex-col">
@@ -301,7 +305,7 @@ export function Sidebar() {
                           )}
                         </div>
                       </button>
-                      
+
                       {/* Menu button - show on hover */}
                       {hoveredThreadId === (thread.threadId || thread.id) && (
                         <div className="relative" data-thread-menu={thread.threadId || thread.id}>
@@ -315,7 +319,7 @@ export function Sidebar() {
                           >
                             <MoreVertical className="h-4 w-4" />
                           </button>
-                          
+
                           {/* Dropdown menu */}
                           {showMenuThreadId === (thread.threadId || thread.id) && (
                             <div className="absolute right-0 top-full mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg z-50 min-w-[120px]">

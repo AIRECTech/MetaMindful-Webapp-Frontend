@@ -211,21 +211,21 @@ export function NewChatPage() {
                 <button
                   onClick={() => handleSuggestionClick(suggestions[0])}
                   disabled={isLoading || !threadId}
-                  className="px-5 py-3 bg-blue-100 dark:bg-blue-900/30 text-gray-700 dark:text-gray-300 rounded-xl border border-blue-200 dark:border-blue-800 hover:bg-blue-200 dark:hover:bg-blue-900/50 text-base font-normal transition disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="px-5 py-3 w-[190px] bg-blue-100 dark:bg-blue-900/30 text-gray-700 dark:text-gray-300 rounded-xl border border-blue-200 dark:border-blue-800 hover:bg-blue-200 dark:hover:bg-blue-900/50 text-[12px] leading-normal font-normal transition disabled:opacity-50 disabled:cursor-not-allowed text-left [text-wrap-mode:wrap]"
                 >
                   {suggestions[0]}
                 </button>
                 <button
                   onClick={() => handleSuggestionClick(suggestions[1])}
                   disabled={isLoading || !threadId}
-                  className="px-5 py-3 bg-blue-100 dark:bg-blue-900/30 text-gray-700 dark:text-gray-300 rounded-xl border border-blue-200 dark:border-blue-800 hover:bg-blue-200 dark:hover:bg-blue-900/50 text-base font-normal transition disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="px-5 py-3 w-[190px] bg-blue-100 dark:bg-blue-900/30 text-gray-700 dark:text-gray-300 rounded-xl border border-blue-200 dark:border-blue-800 hover:bg-blue-200 dark:hover:bg-blue-900/50 text-[12px] leading-normal font-normal transition disabled:opacity-50 disabled:cursor-not-allowed text-left [text-wrap-mode:wrap]"
                 >
                   {suggestions[1]}
                 </button>
                 <button
                   onClick={() => handleSuggestionClick(suggestions[2])}
                   disabled={isLoading || !threadId}
-                  className="px-5 py-3 bg-blue-100 dark:bg-blue-900/30 text-gray-700 dark:text-gray-300 rounded-xl border border-blue-200 dark:border-blue-800 hover:bg-blue-200 dark:hover:bg-blue-900/50 text-base font-normal transition disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="px-5 py-3 w-[190px] bg-blue-100 dark:bg-blue-900/30 text-gray-700 dark:text-gray-300 rounded-xl border border-blue-200 dark:border-blue-800 hover:bg-blue-200 dark:hover:bg-blue-900/50 text-[12px] leading-normal font-normal transition disabled:opacity-50 disabled:cursor-not-allowed text-left [text-wrap-mode:wrap]"
                 >
                   {suggestions[2]}
                 </button>
@@ -236,14 +236,14 @@ export function NewChatPage() {
                 <button
                   onClick={() => handleSuggestionClick(suggestions[3])}
                   disabled={isLoading || !threadId}
-                  className="px-5 py-3 bg-blue-100 dark:bg-blue-900/30 text-gray-700 dark:text-gray-300 rounded-xl border border-blue-200 dark:border-blue-800 hover:bg-blue-200 dark:hover:bg-blue-900/50 text-base font-normal transition disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="px-5 py-3 w-[190px] bg-blue-100 dark:bg-blue-900/30 text-gray-700 dark:text-gray-300 rounded-xl border border-blue-200 dark:border-blue-800 hover:bg-blue-200 dark:hover:bg-blue-900/50 text-[12px] leading-normal font-normal transition disabled:opacity-50 disabled:cursor-not-allowed text-left [text-wrap-mode:wrap]"
                 >
                   {suggestions[3]}
                 </button>
                 <button
                   onClick={() => handleSuggestionClick(suggestions[4])}
                   disabled={isLoading || !threadId}
-                  className="px-5 py-3 bg-blue-100 dark:bg-blue-900/30 text-gray-700 dark:text-gray-300 rounded-xl border border-blue-200 dark:border-blue-800 hover:bg-blue-200 dark:hover:bg-blue-900/50 text-base font-normal transition disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="px-5 py-3 w-[190px] bg-blue-100 dark:bg-blue-900/30 text-gray-700 dark:text-gray-300 rounded-xl border border-blue-200 dark:border-blue-800 hover:bg-blue-200 dark:hover:bg-blue-900/50 text-[12px] leading-normal font-normal transition disabled:opacity-50 disabled:cursor-not-allowed text-left [text-wrap-mode:wrap]"
                 >
                   {suggestions[4]}
                 </button>

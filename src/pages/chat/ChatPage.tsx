@@ -673,7 +673,7 @@ export function ChatPage() {
                         key={idx}
                         onClick={() => sendText(reply)}
                         disabled={sendMessage.isPending || isSending}
-                        className="px-5 py-3 bg-blue-100 dark:bg-blue-900/30 text-gray-700 dark:text-gray-300 rounded-xl border border-blue-200 dark:border-blue-800 hover:bg-blue-200 dark:hover:bg-blue-900/50 text-base font-normal transition disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap flex-shrink-0"
+                        className="px-5 py-3 w-[190px] bg-blue-100 dark:bg-blue-900/30 text-gray-700 dark:text-gray-300 rounded-xl border border-blue-200 dark:border-blue-800 hover:bg-blue-200 dark:hover:bg-blue-900/50 text-[12px] leading-normal font-normal transition disabled:opacity-50 disabled:cursor-not-allowed text-left [text-wrap-mode:wrap] flex-shrink-0"
                       >
                         {reply}
                       </button>

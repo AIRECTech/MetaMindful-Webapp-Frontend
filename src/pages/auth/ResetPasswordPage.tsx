@@ -4,6 +4,7 @@ import { toast } from "react-hot-toast";
 import { Link, useSearchParams, useNavigate } from "react-router-dom";
 import { api } from "../../lib/api";
 import { extractErrorMessage } from "../../lib/errors";
+import { useTimeOnScreen } from "../../hooks/useTimeOnScreen";
 import { Lock, Eye, EyeOff } from "lucide-react";
 
 export function ResetPasswordPage() {
@@ -15,6 +16,8 @@ export function ResetPasswordPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
+
+  useTimeOnScreen("reset-password", "ResetPasswordPage");
 
   useEffect(() => {
     if (!token) {
@@ -100,7 +103,7 @@ export function ResetPasswordPage() {
               <span className="text-2xl font-semibold text-gray-800">MetaMindful</span>
             </div>
           </div>
-          
+
           <h2 className="mb-2 text-center text-2xl font-semibold text-gray-800">Reset Password</h2>
           <p className="mb-6 text-center text-sm text-gray-600">Enter your new password below.</p>
 

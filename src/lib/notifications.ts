@@ -1,5 +1,5 @@
 import { api } from "./api";
-import { requestNotificationPermission, setupForegroundMessageHandler, registerServiceWorker } from "./firebase";
+import { requestNotificationPermission, setupForegroundMessageHandler, registerServiceWorker, logAnalyticsEvent } from "./firebase";
 
 export interface Notification {
   id: string;
@@ -52,7 +52,7 @@ export async function initializePushNotifications(
     // Register service worker for background notifications FIRST
     // This must be done before requesting notification permission
     const swRegistration = await registerServiceWorker();
-    
+
     if (!swRegistration) {
       console.warn("Service worker registration failed. Push notifications may not work in background.");
     }
@@ -82,6 +82,7 @@ export async function initializePushNotifications(
             readAt: null,
             createdAt: new Date().toISOString(),
           };
+          logAnalyticsEvent("notification_received", { notificationId: notification.id, type: notification.type });
           onNotificationReceived(notification);
         });
       }

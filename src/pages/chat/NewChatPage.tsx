@@ -3,6 +3,8 @@ import { useNavigate, Link } from "react-router-dom";
 import { ArrowUp } from "lucide-react";
 import { api } from "../../lib/api";
 import { extractErrorMessage } from "../../lib/errors";
+import { logAnalyticsEvent } from "../../lib/firebase";
+import { useTimeOnScreen } from "../../hooks/useTimeOnScreen";
 import { ensureToken, isGuestUser } from "../../lib/auth";
 
 const suggestions = [
@@ -51,6 +53,8 @@ export function NewChatPage() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
+  useTimeOnScreen("new-chat", "NewChatPage");
+
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
@@ -82,7 +86,7 @@ export function NewChatPage() {
 
         const res = await api.post("/threads", { title: "New Chat" });
         console.log("[NewChatPage] Thread creation response:", res.data);
-        
+
         const thread = res.data.data as ThreadResponse;
         console.log("[NewChatPage] Thread data:", thread);
 
@@ -91,13 +95,17 @@ export function NewChatPage() {
           throw new Error("Thread created but threadId (UUID) missing from response");
         }
 
+        logAnalyticsEvent("thread_created", {
+          thread_id: thread.threadId,
+          title: thread.title
+        });
         setThreadId(thread.threadId);
         setThreadTitle(thread.title || "New Chat");
         setThreadDesc(thread.desc ?? null);
 
         const firstAssistant = thread.messages?.find((m) => m.role === "assistant")?.content;
         console.log("[NewChatPage] First assistant message:", firstAssistant);
-        
+
         if (firstAssistant) {
           // Store as the first message in our flow (thread response)
           setMessages([{ role: "assistant", content: firstAssistant, isError: false }]);
@@ -155,7 +163,7 @@ export function NewChatPage() {
   const handleSend = () => {
     const trimmedMessage = message.trim();
     if (!trimmedMessage || isLoading || !threadId) return;
-    
+
     // Clear input immediately
     const userMessage = trimmedMessage;
     setMessage("");
@@ -171,10 +179,14 @@ export function NewChatPage() {
 
   const handleSuggestionClick = (suggestion: string) => {
     if (isLoading || !threadId) return;
-    
+
     setMessage("");
 
     // Pass to the chat screen: first message = thread response, second = user message
+    logAnalyticsEvent("suggestion_selected", {
+      thread_id: threadId,
+      suggestion
+    });
     navigateToChatWithFirstUserMessage(suggestion);
   };
 
@@ -211,21 +223,21 @@ export function NewChatPage() {
                 <button
                   onClick={() => handleSuggestionClick(suggestions[0])}
                   disabled={isLoading || !threadId}
-                  className="px-5 py-3 bg-blue-100 dark:bg-blue-900/30 text-gray-700 dark:text-gray-300 rounded-xl border border-blue-200 dark:border-blue-800 hover:bg-blue-200 dark:hover:bg-blue-900/50 text-base font-normal transition disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="px-5 py-3 w-[190px] bg-blue-100 dark:bg-blue-900/30 text-gray-700 dark:text-gray-300 rounded-xl border border-blue-200 dark:border-blue-800 hover:bg-blue-200 dark:hover:bg-blue-900/50 text-[12px] leading-normal font-normal transition disabled:opacity-50 disabled:cursor-not-allowed text-left [text-wrap-mode:wrap]"
                 >
                   {suggestions[0]}
                 </button>
                 <button
                   onClick={() => handleSuggestionClick(suggestions[1])}
                   disabled={isLoading || !threadId}
-                  className="px-5 py-3 bg-blue-100 dark:bg-blue-900/30 text-gray-700 dark:text-gray-300 rounded-xl border border-blue-200 dark:border-blue-800 hover:bg-blue-200 dark:hover:bg-blue-900/50 text-base font-normal transition disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="px-5 py-3 w-[190px] bg-blue-100 dark:bg-blue-900/30 text-gray-700 dark:text-gray-300 rounded-xl border border-blue-200 dark:border-blue-800 hover:bg-blue-200 dark:hover:bg-blue-900/50 text-[12px] leading-normal font-normal transition disabled:opacity-50 disabled:cursor-not-allowed text-left [text-wrap-mode:wrap]"
                 >
                   {suggestions[1]}
                 </button>
                 <button
                   onClick={() => handleSuggestionClick(suggestions[2])}
                   disabled={isLoading || !threadId}
-                  className="px-5 py-3 bg-blue-100 dark:bg-blue-900/30 text-gray-700 dark:text-gray-300 rounded-xl border border-blue-200 dark:border-blue-800 hover:bg-blue-200 dark:hover:bg-blue-900/50 text-base font-normal transition disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="px-5 py-3 w-[190px] bg-blue-100 dark:bg-blue-900/30 text-gray-700 dark:text-gray-300 rounded-xl border border-blue-200 dark:border-blue-800 hover:bg-blue-200 dark:hover:bg-blue-900/50 text-[12px] leading-normal font-normal transition disabled:opacity-50 disabled:cursor-not-allowed text-left [text-wrap-mode:wrap]"
                 >
                   {suggestions[2]}
                 </button>
@@ -236,14 +248,14 @@ export function NewChatPage() {
                 <button
                   onClick={() => handleSuggestionClick(suggestions[3])}
                   disabled={isLoading || !threadId}
-                  className="px-5 py-3 bg-blue-100 dark:bg-blue-900/30 text-gray-700 dark:text-gray-300 rounded-xl border border-blue-200 dark:border-blue-800 hover:bg-blue-200 dark:hover:bg-blue-900/50 text-base font-normal transition disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="px-5 py-3 w-[190px] bg-blue-100 dark:bg-blue-900/30 text-gray-700 dark:text-gray-300 rounded-xl border border-blue-200 dark:border-blue-800 hover:bg-blue-200 dark:hover:bg-blue-900/50 text-[12px] leading-normal font-normal transition disabled:opacity-50 disabled:cursor-not-allowed text-left [text-wrap-mode:wrap]"
                 >
                   {suggestions[3]}
                 </button>
                 <button
                   onClick={() => handleSuggestionClick(suggestions[4])}
                   disabled={isLoading || !threadId}
-                  className="px-5 py-3 bg-blue-100 dark:bg-blue-900/30 text-gray-700 dark:text-gray-300 rounded-xl border border-blue-200 dark:border-blue-800 hover:bg-blue-200 dark:hover:bg-blue-900/50 text-base font-normal transition disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="px-5 py-3 w-[190px] bg-blue-100 dark:bg-blue-900/30 text-gray-700 dark:text-gray-300 rounded-xl border border-blue-200 dark:border-blue-800 hover:bg-blue-200 dark:hover:bg-blue-900/50 text-[12px] leading-normal font-normal transition disabled:opacity-50 disabled:cursor-not-allowed text-left [text-wrap-mode:wrap]"
                 >
                   {suggestions[4]}
                 </button>

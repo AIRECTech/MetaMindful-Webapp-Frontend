@@ -2,9 +2,12 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 import { useState, useEffect, useRef } from "react";
 import { useParams, useNavigate, Link, useSearchParams } from "react-router-dom";
 import { toast } from "react-hot-toast";
-import { ArrowUp, X } from "lucide-react";
+import { ArrowUp } from "lucide-react";
 import { api } from "../../lib/api";
 import { extractErrorMessage } from "../../lib/errors";
+import { logAnalyticsEvent } from "../../lib/firebase";
+import { useTimeOnScreen } from "../../hooks/useTimeOnScreen";
+import { X } from "lucide-react";
 import { ensureToken } from "../../lib/auth";
 import { ChatPage } from "./ChatPage";
 import { LoginPopup } from "../../components/LoginPopup";
@@ -47,6 +50,8 @@ export function GuestChatPage() {
   const [message, setMessage] = useState("");
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+
+  useTimeOnScreen("guest-chat", "GuestChatPage");
   const [threadId, setThreadId] = useState<string | null>(null);
   const [threadTitle, setThreadTitle] = useState<string>("New Chat");
   const [threadDesc, setThreadDesc] = useState<string | null>(null);
@@ -65,6 +70,11 @@ export function GuestChatPage() {
     queryKey: ["guest-token"],
     queryFn: async () => {
       await ensureToken();
+      // Since ensureToken doesn't return user, we just log it happened
+      logAnalyticsEvent("guest_login_completed", {
+        is_guest: true
+      });
+      console.log("[GuestChatPage] Guest token ensured");
       return true;
     },
     enabled: !id && !hasCreatedThreadRef.current,
@@ -79,6 +89,10 @@ export function GuestChatPage() {
     },
     onSuccess: (data) => {
       if (data?.threadId) {
+        // The logAnalyticsEvent for guest_login_completed with user_id is now in generateToken.queryFn
+        // This event here is redundant if the one in generateToken is sufficient for "login completed"
+        // Keeping it for now as per original code, but consider if it's needed.
+        // logAnalyticsEvent("guest_login_completed", { threadId: data.threadId });
         setThreadId(data.threadId);
         setThreadTitle(data.title || "New Chat");
         setThreadDesc(data.desc ?? null);
@@ -239,28 +253,47 @@ export function GuestChatPage() {
               <div className="max-w-4xl mx-auto space-y-3">
                 {/* Suggested prompts */}
                 {/* Suggested prompts - Dynamic mapping */}
-                <div className="flex flex-col items-center gap-3">
-                  <div className="flex flex-wrap gap-3 justify-center">
-                    {(() => {
-                      // Try to find the last assistant message with replies first
-                      const lastAssistantMessageWithReplies = [...messages]
-                        .reverse()
-                        .find(m => m.role === "assistant" && m.replies && m.replies.length > 0);
+                <div className="flex flex-col items-center gap-3 w-full">
+                  {(() => {
+                    // Try to find the last assistant message with replies first
+                    const lastAssistantMessageWithReplies = [...messages]
+                      .reverse()
+                      .find(m => m.role === "assistant" && m.replies && m.replies.length > 0);
 
-                      const suggestionsToShow = lastAssistantMessageWithReplies?.replies || currentSuggestions;
+                    if (lastAssistantMessageWithReplies?.replies) {
+                      // Show assistant replies in a horizontal scrollable container
+                      return (
+                        <div className="flex overflow-x-auto gap-3 pb-2 w-full no-scrollbar">
+                          {lastAssistantMessageWithReplies.replies.map((reply, idx) => (
+                            <button
+                              key={idx}
+                              onClick={() => handleSuggestionClick(reply)}
+                              disabled={isLoading || !threadId}
+                              className="px-5 py-3 w-[190px] bg-blue-100 dark:bg-blue-900/30 text-gray-700 dark:text-gray-300 rounded-xl border border-blue-200 dark:border-blue-800 hover:bg-blue-200 dark:hover:bg-blue-900/50 text-[12px] leading-normal font-normal transition disabled:opacity-50 disabled:cursor-not-allowed text-left [text-wrap-mode:wrap] flex-shrink-0"
+                            >
+                              {reply}
+                            </button>
+                          ))}
+                        </div>
+                      );
+                    }
 
-                      return suggestionsToShow.map((suggestion, idx) => (
-                        <button
-                          key={idx}
-                          onClick={() => handleSuggestionClick(suggestion)}
-                          disabled={isLoading || !threadId}
-                          className="px-5 py-3 bg-blue-100 dark:bg-blue-900/30 text-gray-700 dark:text-gray-300 rounded-xl border border-blue-200 dark:border-blue-800 hover:bg-blue-200 dark:hover:bg-blue-900/50 text-base font-normal transition disabled:opacity-50 disabled:cursor-not-allowed"
-                        >
-                          {suggestion}
-                        </button>
-                      ));
-                    })()}
-                  </div>
+                    // Show initial suggestions in the old wrapping layout
+                    return (
+                      <div className="flex flex-wrap gap-3 justify-center w-full">
+                        {currentSuggestions.map((suggestion, idx) => (
+                          <button
+                            key={idx}
+                            onClick={() => handleSuggestionClick(suggestion)}
+                            disabled={isLoading || !threadId}
+                            className="px-5 py-3 w-[190px] bg-blue-100 dark:bg-blue-900/30 text-gray-700 dark:text-gray-300 rounded-xl border border-blue-200 dark:border-blue-800 hover:bg-blue-200 dark:hover:bg-blue-900/50 text-[12px] leading-normal font-normal transition disabled:opacity-50 disabled:cursor-not-allowed text-left [text-wrap-mode:wrap]"
+                          >
+                            {suggestion}
+                          </button>
+                        ))}
+                      </div>
+                    );
+                  })()}
                 </div>
 
                 {/* Terms and Privacy Disclaimer - Above input field */}

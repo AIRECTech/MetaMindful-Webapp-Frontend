@@ -1,4 +1,5 @@
 import { initializeApp, getApps, type FirebaseApp } from "firebase/app";
+import { getAnalytics, logEvent, type Analytics, isSupported as isAnalyticsSupported } from "firebase/analytics";
 import { getMessaging, getToken, onMessage, type Messaging, isSupported } from "firebase/messaging";
 
 // Firebase web app configuration
@@ -16,20 +17,20 @@ const firebaseConfig = {
 function validateFirebaseConfig() {
   const required: Array<keyof typeof firebaseConfig> = ['apiKey', 'messagingSenderId', 'appId'];
   const missing: string[] = [];
-  
+
   required.forEach(key => {
     const value = firebaseConfig[key];
-    if (!value || 
-        value === '' || 
-        value === 'your-api-key' || 
-        value === 'your-sender-id' || 
-        value === 'your-app-id' ||
-        value.includes('your-') ||
-        value.includes('placeholder')) {
+    if (!value ||
+      value === '' ||
+      value === 'your-api-key' ||
+      value === 'your-sender-id' ||
+      value === 'your-app-id' ||
+      value.includes('your-') ||
+      value.includes('placeholder')) {
       missing.push(key);
     }
   });
-  
+
   if (missing.length > 0) {
     console.error('Firebase configuration is missing or invalid. Missing:', missing);
     console.error('Please set the following environment variables in your .env file:');
@@ -45,6 +46,7 @@ function validateFirebaseConfig() {
 // Initialize Firebase
 let app: FirebaseApp | null = null;
 let messaging: Messaging | null = null;
+let analytics: Analytics | null = null;
 
 export function initializeFirebase(): FirebaseApp | null {
   if (app) {
@@ -70,6 +72,45 @@ export function initializeFirebase(): FirebaseApp | null {
   }
 
   return app;
+}
+
+export async function getFirebaseAnalytics(): Promise<Analytics | null> {
+  if (analytics) {
+    return analytics;
+  }
+
+  const supported = await isAnalyticsSupported();
+  if (!supported) {
+    return null;
+  }
+
+  if (!app) {
+    initializeFirebase();
+  }
+
+  if (app) {
+    analytics = getAnalytics(app);
+    return analytics;
+  }
+
+  return null;
+}
+
+/**
+ * Log an analytics event
+ */
+export async function logAnalyticsEvent(eventName: string, params?: any) {
+  try {
+    const analyticsInstance = await getFirebaseAnalytics();
+    if (analyticsInstance) {
+      logEvent(analyticsInstance, eventName, params);
+      console.log(`[Analytics] Event: ${eventName}`, params || "");
+    } else {
+      console.warn(`[Analytics] Failed to log event ${eventName}: Analytics not supported or initialized`);
+    }
+  } catch (error) {
+    console.error(`[Analytics] Error logging event ${eventName}:`, error);
+  }
 }
 
 export async function getFirebaseMessaging(): Promise<Messaging | null> {
@@ -133,13 +174,13 @@ export async function requestNotificationPermission(): Promise<string | null> {
 
     // Get service worker registration
     const swRegistration = serviceWorkerRegistration || await navigator.serviceWorker.ready;
-    
+
     // Get FCM token with service worker registration
-    const token = await getToken(messagingInstance, { 
+    const token = await getToken(messagingInstance, {
       vapidKey,
       serviceWorkerRegistration: swRegistration,
     });
-    
+
     if (token) {
       console.log("FCM token obtained:", token);
       return token;

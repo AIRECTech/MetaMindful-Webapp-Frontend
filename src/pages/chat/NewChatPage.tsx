@@ -177,17 +177,29 @@ export function NewChatPage() {
     navigateToChatWithFirstUserMessage(userMessage);
   };
 
-  const handleSuggestionClick = (suggestion: string) => {
+  const handleSuggestionClick = async (suggestion: string) => {
     if (isLoading || !threadId) return;
 
-    setMessage("");
+    setMessage(suggestion);
 
-    // Pass to the chat screen: first message = thread response, second = user message
+    // Focus textarea
+    if (textareaRef.current) {
+      textareaRef.current.focus();
+    }
+
     logAnalyticsEvent("suggestion_selected", {
       thread_id: threadId,
       suggestion
     });
-    navigateToChatWithFirstUserMessage(suggestion);
+
+    try {
+      await api.post("/threads/suggestion-click", {
+        suggestion,
+        threadId,
+      });
+    } catch (error) {
+      console.error("[NewChatPage] Error logging suggestion click:", error);
+    }
   };
 
   // Note: retry is handled by simply refreshing the page / reloading the route.

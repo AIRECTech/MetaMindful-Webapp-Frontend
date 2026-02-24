@@ -186,10 +186,23 @@ export function GuestChatPage() {
     navigateToChatWithFirstUserMessage(userMessage);
   };
 
-  const handleSuggestionClick = (suggestion: string) => {
+  const handleSuggestionClick = async (suggestion: string) => {
     if (isLoading || !threadId) return;
-    setMessage("");
-    navigateToChatWithFirstUserMessage(suggestion);
+    setMessage(suggestion);
+
+    // Focus textarea
+    if (textareaRef.current) {
+      textareaRef.current.focus();
+    }
+
+    try {
+      await api.post("/threads/suggestion-click", {
+        suggestion,
+        threadId,
+      });
+    } catch (error) {
+      console.error("[GuestChatPage] Error logging suggestion click:", error);
+    }
   };
 
   // If we have a thread ID, show the ChatPage (after all hooks)

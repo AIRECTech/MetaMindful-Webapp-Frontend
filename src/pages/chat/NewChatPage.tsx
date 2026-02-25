@@ -6,6 +6,7 @@ import { extractErrorMessage } from "../../lib/errors";
 import { logAnalyticsEvent } from "../../lib/firebase";
 import { useTimeOnScreen } from "../../hooks/useTimeOnScreen";
 import { ensureToken, isGuestUser } from "../../lib/auth";
+import { MessageFormatter } from "../../components/chat/MessageFormatter";
 
 const suggestions = [
   "I can't sleep",
@@ -219,7 +220,7 @@ export function NewChatPage() {
               </div>
             ) : (
               <h2 className="text-3xl md:text-4xl font-normal text-gray-700 dark:text-gray-300 leading-relaxed">
-                {messages[0]?.content || "Hi, im Metamindful, how are you feeling right now?"}
+                <MessageFormatter content={messages[0]?.content || "Hi, im Metamindful, how are you feeling right now?"} />
               </h2>
             )}
           </div>

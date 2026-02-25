@@ -12,6 +12,7 @@ import { GuestTopbar } from "../../components/layout/GuestTopbar";
 import { LoginPopup } from "../../components/LoginPopup";
 import { SignupPopup } from "../../components/SignupPopup";
 import { Toaster } from "react-hot-toast";
+import { MessageFormatter } from "../../components/chat/MessageFormatter";
 
 interface Message {
   id: string;
@@ -638,7 +639,7 @@ export function ChatPage() {
                         : "text-gray-600 dark:text-gray-300"
                       }`}
                   >
-                    <p className="whitespace-pre-wrap leading-relaxed">{msg.content}</p>
+                    <MessageFormatter content={msg.content} />
 
                     {msg.isError && msg.originalUserMessage && (
                       <button

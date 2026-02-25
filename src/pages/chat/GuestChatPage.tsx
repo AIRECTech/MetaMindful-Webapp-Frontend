@@ -14,6 +14,7 @@ import { LoginPopup } from "../../components/LoginPopup";
 import { SignupPopup } from "../../components/SignupPopup";
 import { GuestTopbar } from "../../components/layout/GuestTopbar";
 import { Toaster } from "react-hot-toast";
+import { MessageFormatter } from "../../components/chat/MessageFormatter";
 
 const suggestions = [
   "I can't sleep",
@@ -256,7 +257,7 @@ export function GuestChatPage() {
             <div className="flex-1 flex items-center justify-center px-4">
               <div className="text-center max-w-4xl w-full">
                 <h2 className="text-3xl md:text-4xl font-normal text-gray-700 dark:text-gray-300 leading-relaxed">
-                  {messages[0]?.content || "Hi, I'm MetaMindful. I'm here to listen and support you. How are you feeling today?"}
+                  <MessageFormatter content={messages[0]?.content || "Hi, I'm MetaMindful. I'm here to listen and support you. How are you feeling today?"} />
                 </h2>
               </div>
             </div>

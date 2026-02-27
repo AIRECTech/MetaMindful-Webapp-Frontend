@@ -84,7 +84,8 @@ export function ChatPage() {
     queryClient.setQueryData(["thread", id], state.bootstrapThread);
 
     if (isGuest) {
-      setGuestMessages(state.bootstrapThread.messages || []);
+      // Only set from bootstrap if guestMessages are empty to avoid resetting after auto-send
+      setGuestMessages((prev) => prev.length === 0 ? (state.bootstrapThread!.messages || []) : prev);
       setGuestThreadTitle(state.bootstrapThread.title || "New Chat");
       // Initialize chat count and limit from bootstrap thread if available
       if (state.bootstrapThread.chatCount !== undefined) {
@@ -148,6 +149,7 @@ export function ChatPage() {
     gcTime: Infinity, // Keep data in cache forever
   });
 
+
   // Debug logging
   useEffect(() => {
     console.log("[ChatPage] Query state:", {
@@ -201,7 +203,9 @@ export function ChatPage() {
       return res.data.data;
     },
     onSuccess: (data, variables) => {
-      console.log("[ChatPage] sendMessage.onSuccess: received data:", data);
+      console.log("[ChatPage] sendMessage.onSuccess: entered", { data: !!data, variables });
+      setIsSending(false);
+
       logAnalyticsEvent("chat_message_sent", {
         thread_id: id,
         message_length: variables.length
@@ -323,13 +327,19 @@ export function ChatPage() {
       if (!isGuestUser()) {
         queryClient.invalidateQueries({ queryKey: ["threads"] });
       }
-      setIsSending(false);
       // Refocus input after sending
       setTimeout(() => {
         messageInputRef.current?.focus();
       }, 0);
+      setIsSending(false);
+    },
+    onSettled: () => {
+      console.log("[ChatPage] sendMessage.onSettled");
+      setIsSending(false);
     },
     onError: (error: any, variables: string) => {
+      console.log("[ChatPage] sendMessage.onError:", error);
+      setIsSending(false);
       const errorMessage = extractErrorMessage(error, "Failed to send message");
 
       // Store the failed message for retry (use the message that was sent)
@@ -396,7 +406,6 @@ export function ChatPage() {
         });
       }
 
-      setIsSending(false);
       // Refocus input after error
       setTimeout(() => {
         messageInputRef.current?.focus();
@@ -410,12 +419,22 @@ export function ChatPage() {
         // Error is already shown in chat, just show a brief toast
         toast.error("Message failed to send");
       }
+      setIsSending(false);
     },
   });
 
+
+  // Auto-focus input when sending finishes
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [thread?.messages, guestMessages]);
+    if (!isSending) {
+      setTimeout(() => {
+        const input = messageInputRef.current;
+        if (input && document.activeElement !== input) {
+          input.focus();
+        }
+      }, 100);
+    }
+  }, [isSending]);
 
   // Auto-resize textarea
   useEffect(() => {
@@ -428,12 +447,13 @@ export function ChatPage() {
 
   const sendText = (text: string) => {
     const trimmedMessage = text.trim();
-    if (!trimmedMessage || sendMessage.isPending || isSending) {
-      console.log("[ChatPage] sendText: skipping - trimmed:", trimmedMessage, "pending:", sendMessage.isPending, "sending:", isSending);
+    if (!trimmedMessage || isSending) {
+      console.log("[ChatPage] sendText: skipping - trimmed:", trimmedMessage, "isSending:", isSending);
       return;
     }
 
     console.log("[ChatPage] sendText: sending message:", trimmedMessage, "isGuest:", isGuest);
+    setIsSending(true);
 
     // Store message for potential retry
     setLastFailedMessage(trimmedMessage);
@@ -491,7 +511,6 @@ export function ChatPage() {
       });
     }
 
-    setIsSending(true);
     console.log("[ChatPage] sendText: calling sendMessage.mutate");
     sendMessage.mutate(trimmedMessage);
   };
@@ -507,54 +526,33 @@ export function ChatPage() {
     }
   };
 
-  // Auto-send the first user message when coming from NewChatPage
   useEffect(() => {
-    if (!id) {
-      console.log("[ChatPage] Auto-send: no id");
-      return;
-    }
-    if (!state.autoSendText) {
-      console.log("[ChatPage] Auto-send: no autoSendText");
-      return;
-    }
-    if (hasAutoSentRef.current) {
-      console.log("[ChatPage] Auto-send: already sent");
-      return;
-    }
+    if (!state.autoSendText || hasAutoSentRef.current) return;
 
-    console.log("[ChatPage] Auto-send: setting up auto-send for:", state.autoSendText, "isGuest:", isGuest);
-
-    // Ensure bootstrap thread is set up first (especially for guest users)
     const checkAndSend = () => {
+      if (hasAutoSentRef.current) return;
+
+      // Don't use setTimeout unless necessary, but check if we are ready
       if (isGuest) {
-        // For guest users, wait until guestMessages are set (should have at least the greeting)
-        if (guestMessages.length === 0) {
-          console.log("[ChatPage] Auto-send: waiting for guestMessages to be set...");
-          setTimeout(checkAndSend, 50);
+        // Wait until location state is ready and hasBootstrapData is true
+        if (!id || !hasBootstrapData) {
+          setTimeout(checkAndSend, 10);
           return;
         }
-        console.log("[ChatPage] Auto-send: guestMessages ready, count:", guestMessages.length);
       } else {
-        // For authenticated users, wait until thread is cached
         const cachedThread = queryClient.getQueryData(["thread", id]);
-        if (!cachedThread) {
-          console.log("[ChatPage] Auto-send: waiting for thread to be cached...");
-          setTimeout(checkAndSend, 50);
+        if (!id || !cachedThread) {
+          setTimeout(checkAndSend, 10);
           return;
         }
-        console.log("[ChatPage] Auto-send: thread cached");
       }
 
-      // Now we can send
-      console.log("[ChatPage] Auto-send: calling sendText");
+      console.log("[ChatPage] Auto-send: ready, calling sendText");
       hasAutoSentRef.current = true;
       sendText(state.autoSendText!);
     };
 
-    // Start checking after a short delay to let bootstrap complete
-    const timer = setTimeout(checkAndSend, 200);
-
-    return () => clearTimeout(timer);
+    checkAndSend();
   }, [id, state.autoSendText, state.bootstrapThread, isGuest, guestMessages.length, queryClient]);
 
   // Use guest messages for guest users, thread messages for authenticated users
@@ -611,18 +609,20 @@ export function ChatPage() {
     <div className="flex flex-col h-full relative bg-gray-50 dark:bg-gray-900">
       <div className="flex-1 overflow-y-auto">
         <div className="max-w-4xl mx-auto px-4 py-6 space-y-6">
-          {displayMessages.length === 0 && !isLoading ? (
-            <div className="text-center text-gray-500 dark:text-gray-400 py-12">
-              <p>Start a conversation by sending a message below.</p>
-            </div>
-          ) : displayMessages.length === 0 && isLoading ? (
+          {(displayMessages.length === 0 && (isLoading || (state.autoSendText && !hasAutoSentRef.current))) ? (
             <div className="text-center py-12">
               <div className="flex items-center justify-center gap-2 mb-4">
                 <div className="w-2 h-2 bg-gray-400 dark:bg-gray-500 rounded-full animate-bounce" style={{ animationDelay: "0ms" }}></div>
                 <div className="w-2 h-2 bg-gray-400 dark:bg-gray-500 rounded-full animate-bounce" style={{ animationDelay: "150ms" }}></div>
                 <div className="w-2 h-2 bg-gray-400 dark:bg-gray-500 rounded-full animate-bounce" style={{ animationDelay: "300ms" }}></div>
               </div>
-              <p className="text-gray-500 dark:text-gray-400">Loading messages...</p>
+              <p className="text-gray-500 dark:text-gray-400">
+                {state.autoSendText ? "Setting up your chat..." : "Loading messages..."}
+              </p>
+            </div>
+          ) : displayMessages.length === 0 ? (
+            <div className="text-center text-gray-500 dark:text-gray-400 py-12">
+              <p>Start a conversation by sending a message below.</p>
             </div>
           ) : (
             <>
@@ -658,7 +658,7 @@ export function ChatPage() {
                           logAnalyticsEvent("thread_refreshed", { thread_id: id });
                           sendText(msg.originalUserMessage);
                         }}
-                        disabled={sendMessage.isPending || isSending}
+                        disabled={isSending}
                         className="mt-3 flex items-center gap-2 px-4 py-2 bg-red-100 dark:bg-red-900/30 hover:bg-red-200 dark:hover:bg-red-900/50 text-red-800 dark:text-red-300 rounded-lg text-sm font-medium transition disabled:opacity-50 disabled:cursor-not-allowed border border-red-300 dark:border-red-800"
                       >
                         <RefreshCw className="h-4 w-4" />
@@ -705,17 +705,15 @@ export function ChatPage() {
                       <button
                         key={idx}
                         onClick={async () => {
+                          if (isSending) return;
+
                           logAnalyticsEvent("suggestion_selected", {
                             thread_id: id,
                             suggestion: reply
                           });
 
-                          setMessage(reply);
-
-                          // Focus input
-                          if (messageInputRef.current) {
-                            messageInputRef.current.focus();
-                          }
+                          // Send the suggestion text immediately
+                          sendText(reply);
 
                           try {
                             await api.post("/threads/suggestion-click", {
@@ -726,7 +724,7 @@ export function ChatPage() {
                             console.error("[ChatPage] Error logging suggestion click:", error);
                           }
                         }}
-                        disabled={sendMessage.isPending || isSending}
+                        disabled={isSending}
                         className="px-5 py-3 w-[190px] bg-blue-100 dark:bg-blue-900/30 text-gray-700 dark:text-gray-300 rounded-xl border border-blue-200 dark:border-blue-800 hover:bg-blue-200 dark:hover:bg-blue-900/50 text-[12px] leading-normal font-normal transition disabled:opacity-50 disabled:cursor-not-allowed text-left [text-wrap-mode:wrap] flex-shrink-0"
                       >
                         {reply}
@@ -783,12 +781,12 @@ export function ChatPage() {
                   handleSend();
                 }
               }}
-              disabled={sendMessage.isPending || isSending}
+              disabled={isSending}
               rows={1}
             />
             <button
               onClick={handleSend}
-              disabled={!message.trim() || sendMessage.isPending || isSending}
+              disabled={!message.trim() || isSending}
               className="bg-yellow-300 hover:bg-yellow-400 p-3 rounded-full disabled:opacity-50 disabled:cursor-not-allowed transition flex-shrink-0 mb-1"
             >
               <ArrowUp className="h-5 w-5 text-gray-900" strokeWidth={2.5} fill="none" />

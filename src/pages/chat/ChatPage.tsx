@@ -542,9 +542,9 @@ export function ChatPage() {
       });
 
       if (stars === 5) {
-        toast.success("👍- Thanks for your feedback.");
+        toast.success("Thanks for your feedback.");
       } else {
-        toast.success("👎- Thanks for the feedback, we’ll improve this.");
+        toast.success("Thanks for the feedback, we’ll improve this.");
       }
 
       // Update local state to show feedback was given (optional UI feedback)

@@ -16,11 +16,10 @@ import { GuestTopbar } from "../../components/layout/GuestTopbar";
 import { Toaster } from "react-hot-toast";
 
 const suggestions = [
-  "I can't sleep",
-  "I am not feeling well",
-  "I am stuck",
-  "I am overthinking everything",
-  "I am having anxiety",
+  "I’m overwhelmed by something coming up",
+  "I feel stuck and keep avoiding things",
+  "I feel anxious in my body and I don’t know why",
+  "My mind won’t slow down and I can’t sleep",
 ];
 
 interface Message {

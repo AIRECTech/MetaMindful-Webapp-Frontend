@@ -2,7 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState, useEffect, useRef } from "react";
 import { useParams, useNavigate, Link, useLocation } from "react-router-dom";
 import { toast } from "react-hot-toast";
-import { ArrowUp, X, RefreshCw } from "lucide-react";
+import { ArrowUp, X, RefreshCw, ThumbsUp, ThumbsDown } from "lucide-react";
 import { api } from "../../lib/api";
 import { extractErrorMessage } from "../../lib/errors";
 import { logAnalyticsEvent } from "../../lib/firebase";
@@ -22,6 +22,7 @@ interface Message {
   isError?: boolean;
   originalUserMessage?: string; // Store the original user message for retry
   replies?: string[];
+  feedback?: any[]; // To track if feedback was given
 }
 
 interface Thread {
@@ -220,7 +221,7 @@ export function ChatPage() {
               const newMessages: Message[] = [
                 ...prev,
                 {
-                  id: `temp-assistant-${Date.now()}`,
+                  id: data.message_id || `temp-assistant-${Date.now()}`,
                   role: "assistant" as const,
                   content: data.assistantMessage,
                   replies: data.replies || [],
@@ -297,7 +298,7 @@ export function ChatPage() {
                 updated.messages = [
                   ...old.messages,
                   {
-                    id: `temp-assistant-${Date.now()}`,
+                    id: data.message_id || `temp-assistant-${Date.now()}`,
                     role: "assistant",
                     content: data.assistantMessage,
                     replies: data.replies || [],
@@ -526,6 +527,40 @@ export function ChatPage() {
     }
   };
 
+  const handleFeedback = async (messageId: string, stars: number) => {
+    if (!messageId || messageId.startsWith("temp-")) {
+      toast.error("Cannot give feedback on this message yet");
+      return;
+    }
+
+    try {
+      await api.post("/feedback", {
+        type: "message",
+        messageId,
+        stars,
+        comment: stars === 5 ? "Liked" : "Disliked"
+      });
+
+      toast.success("Thank you for your feedback!");
+
+      // Update local state to show feedback was given (optional UI feedback)
+      const updateMsg = (msgs: Message[]) =>
+        msgs.map(m => m.id === messageId ? { ...m, feedback: [{ stars }] } : m);
+
+      if (isGuest) {
+        setGuestMessages(prev => updateMsg(prev));
+      } else {
+        queryClient.setQueryData(["thread", id], (old: Thread | undefined) => {
+          if (!old) return old;
+          return { ...old, messages: updateMsg(old.messages) };
+        });
+      }
+    } catch (error) {
+      console.error("[ChatPage] Error submitting feedback:", error);
+      toast.error("Failed to submit feedback");
+    }
+  };
+
   useEffect(() => {
     if (!state.autoSendText || hasAutoSentRef.current) return;
 
@@ -641,6 +676,48 @@ export function ChatPage() {
                   >
                     <MessageFormatter content={msg.content} />
 
+                    {msg.role === "assistant" && !msg.isError && !msg.id.startsWith("temp-") && (
+                      <div className="mt-2 flex items-center gap-2 border-t border-gray-100 dark:border-gray-800 pt-2">
+                        {(() => {
+                          const isLastAssistantMessage = [...displayMessages]
+                            .reverse()
+                            .find(m => m.role === "assistant" && !m.isError)?.id === msg.id;
+
+                          if (!isLastAssistantMessage) return null;
+
+                          const hasLiked = msg.feedback?.some(f => f.stars === 5);
+                          const hasDisliked = msg.feedback?.some(f => f.stars === 2);
+
+                          return (
+                            <>
+                              <button
+                                onClick={() => handleFeedback(msg.id, 5)}
+                                className={`p-1.5 rounded-lg transition ${hasLiked
+                                    ? "text-blue-600 bg-blue-50 dark:bg-blue-900/40"
+                                    : "text-gray-400 hover:text-blue-600 hover:bg-gray-100 dark:hover:bg-gray-800"
+                                  }`}
+                                title="Like"
+                                disabled={hasLiked || hasDisliked}
+                              >
+                                <ThumbsUp className={`h-4 w-4 ${hasLiked ? "fill-current" : ""}`} />
+                              </button>
+                              <button
+                                onClick={() => handleFeedback(msg.id, 2)}
+                                className={`p-1.5 rounded-lg transition ${hasDisliked
+                                    ? "text-red-600 bg-red-50 dark:bg-red-900/40"
+                                    : "text-gray-400 hover:text-red-600 hover:bg-gray-100 dark:hover:bg-gray-800"
+                                  }`}
+                                title="Dislike"
+                                disabled={hasLiked || hasDisliked}
+                              >
+                                <ThumbsDown className={`h-4 w-4 ${hasDisliked ? "fill-current" : ""}`} />
+                              </button>
+                            </>
+                          );
+                        })()}
+                      </div>
+                    )}
+
                     {msg.isError && msg.originalUserMessage && (
                       <button
                         onClick={() => {
@@ -712,8 +789,13 @@ export function ChatPage() {
                             suggestion: reply
                           });
 
-                          // Send the suggestion text immediately
-                          sendText(reply);
+                          // Place text in input instead of auto-sending
+                          setMessage(reply);
+
+                          // Focus input
+                          setTimeout(() => {
+                            messageInputRef.current?.focus();
+                          }, 0);
 
                           try {
                             await api.post("/threads/suggestion-click", {

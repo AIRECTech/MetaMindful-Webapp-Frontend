@@ -541,7 +541,11 @@ export function ChatPage() {
         comment: stars === 5 ? "Liked" : "Disliked"
       });
 
-      toast.success("Thank you for your feedback!");
+      if (stars === 5) {
+        toast.success("👍- Thanks for your feedback.");
+      } else {
+        toast.success("👎- Thanks for the feedback, we’ll improve this.");
+      }
 
       // Update local state to show feedback was given (optional UI feedback)
       const updateMsg = (msgs: Message[]) =>
@@ -677,7 +681,7 @@ export function ChatPage() {
                     <MessageFormatter content={msg.content} />
 
                     {msg.role === "assistant" && !msg.isError && !msg.id.startsWith("temp-") && (
-                      <div className="mt-2 flex items-center gap-2 border-t border-gray-100 dark:border-gray-800 pt-2">
+                      <div className="mt-2 flex items-center gap-2">
                         {(() => {
                           const isLastAssistantMessage = [...displayMessages]
                             .reverse()
@@ -693,8 +697,8 @@ export function ChatPage() {
                               <button
                                 onClick={() => handleFeedback(msg.id, 5)}
                                 className={`p-1.5 rounded-lg transition ${hasLiked
-                                    ? "text-blue-600 bg-blue-50 dark:bg-blue-900/40"
-                                    : "text-gray-400 hover:text-blue-600 hover:bg-gray-100 dark:hover:bg-gray-800"
+                                  ? "text-blue-600 bg-blue-50 dark:bg-blue-900/40"
+                                  : "text-gray-400 hover:text-blue-600 hover:bg-gray-100 dark:hover:bg-gray-800"
                                   }`}
                                 title="Like"
                                 disabled={hasLiked || hasDisliked}
@@ -704,8 +708,8 @@ export function ChatPage() {
                               <button
                                 onClick={() => handleFeedback(msg.id, 2)}
                                 className={`p-1.5 rounded-lg transition ${hasDisliked
-                                    ? "text-red-600 bg-red-50 dark:bg-red-900/40"
-                                    : "text-gray-400 hover:text-red-600 hover:bg-gray-100 dark:hover:bg-gray-800"
+                                  ? "text-red-600 bg-red-50 dark:bg-red-900/40"
+                                  : "text-gray-400 hover:text-red-600 hover:bg-gray-100 dark:hover:bg-gray-800"
                                   }`}
                                 title="Dislike"
                                 disabled={hasLiked || hasDisliked}

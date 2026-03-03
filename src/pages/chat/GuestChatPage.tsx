@@ -16,11 +16,10 @@ import { GuestTopbar } from "../../components/layout/GuestTopbar";
 import { Toaster } from "react-hot-toast";
 
 const suggestions = [
-  "I can't sleep",
-  "I am not feeling well",
-  "I am stuck",
-  "I am overthinking everything",
-  "I am having anxiety",
+  "I’m overwhelmed by something coming up",
+  "I feel stuck and keep avoiding things",
+  "I feel anxious in my body and I don’t know why",
+  "My mind won’t slow down and I can’t sleep",
 ];
 
 interface Message {
@@ -61,6 +60,8 @@ export function GuestChatPage() {
   const hasCreatedThreadRef = useRef(false);
   const hasAutoSentQueryMessageRef = useRef(false); // Track if we've auto-sent the query message
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const [pendingMessage, setPendingMessage] = useState<string | null>(null);
+  const [suggestionUsed, setSuggestionUsed] = useState(false);
 
   // Default suggestions provided as constant
   const [currentSuggestions, setCurrentSuggestions] = useState<string[]>(suggestions);
@@ -89,29 +90,30 @@ export function GuestChatPage() {
     },
     onSuccess: (data) => {
       if (data?.threadId) {
-        // The logAnalyticsEvent for guest_login_completed with user_id is now in generateToken.queryFn
-        // This event here is redundant if the one in generateToken is sufficient for "login completed"
-        // Keeping it for now as per original code, but consider if it's needed.
-        // logAnalyticsEvent("guest_login_completed", { threadId: data.threadId });
-        setThreadId(data.threadId);
-        setThreadTitle(data.title || "New Chat");
-        setThreadDesc(data.desc ?? null);
-        const firstAssistant = data.messages?.find((m: ThreadResponseMessage) => m.role === "assistant")?.content;
-        const replies = data.replies || [];
-
-        if (replies.length > 0) {
-          setCurrentSuggestions(replies);
-        }
-
-        if (firstAssistant) {
-          setMessages([{ role: "assistant", content: firstAssistant, isError: false, replies }]);
+        if (pendingMessage) {
+          navigateToChatWithFirstUserMessage(pendingMessage, data.threadId, data.title, data.desc);
         } else {
-          setMessages([{ role: "assistant", content: "Hi, I'm MetaMindful. I'm here to listen and support you. How are you feeling today?", isError: false, replies }]);
+          setThreadId(data.threadId);
+          setThreadTitle(data.title || "New Chat");
+          setThreadDesc(data.desc ?? null);
+          const firstAssistant = data.messages?.find((m: ThreadResponseMessage) => m.role === "assistant")?.content;
+          const replies = data.replies || [];
+
+          if (replies.length > 0) {
+            setCurrentSuggestions(replies);
+          }
+
+          if (firstAssistant) {
+            setMessages([{ role: "assistant", content: firstAssistant, isError: false, replies }]);
+          } else {
+            setMessages([{ role: "assistant", content: "Hi, I'm MetaMindful. I'm here to listen and support you. How are you feeling today?", isError: false, replies }]);
+          }
         }
       } else {
         toast.error("Failed to create thread");
       }
       setIsLoading(false);
+      setPendingMessage(null);
     },
     onError: (error) => {
       toast.error(extractErrorMessage(error, "Failed to create thread"));
@@ -119,14 +121,14 @@ export function GuestChatPage() {
     },
   });
 
-  // Create thread when token is ready
-  useEffect(() => {
-    if (generateToken.isSuccess && !threadId && !hasCreatedThreadRef.current && !createThread.isPending && !id) {
-      hasCreatedThreadRef.current = true;
-      setIsLoading(true);
-      createThread.mutate();
-    }
-  }, [generateToken.isSuccess, threadId, createThread, id]);
+  // Create thread when token is ready - REMOVED: Now created on first message
+  // useEffect(() => {
+  //   if (generateToken.isSuccess && !threadId && !hasCreatedThreadRef.current && !createThread.isPending && !id) {
+  //     hasCreatedThreadRef.current = true;
+  //     setIsLoading(true);
+  //     createThread.mutate();
+  //   }
+  // }, [generateToken.isSuccess, threadId, createThread, id]);
 
   // Auto-resize textarea
   useEffect(() => {
@@ -139,38 +141,33 @@ export function GuestChatPage() {
 
   // Handle query parameter message: auto-fill and auto-send after thread is created
   useEffect(() => {
-    if (queryMessage && threadId && !hasAutoSentQueryMessageRef.current && !isLoading && messages.length > 0) {
-      hasAutoSentQueryMessageRef.current = true;
-      // Set the message in the input and navigate to chat with auto-send
-      const trimmedQueryMessage = queryMessage.trim();
-      if (trimmedQueryMessage) {
-        // Remove query parameter from URL
-        searchParams.delete("q");
-        setSearchParams(searchParams, { replace: true });
-        // Navigate to chat page with the message to auto-send
-        navigateToChatWithFirstUserMessage(trimmedQueryMessage);
+    if (queryMessage && !threadId && !hasAutoSentQueryMessageRef.current && !isLoading && !id) {
+      if (generateToken.isSuccess) {
+        hasAutoSentQueryMessageRef.current = true;
+        const trimmedQueryMessage = queryMessage.trim();
+        if (trimmedQueryMessage) {
+          searchParams.delete("q");
+          setSearchParams(searchParams, { replace: true });
+          setPendingMessage(trimmedQueryMessage);
+          setIsLoading(true);
+          createThread.mutate();
+        }
       }
     }
-  }, [queryMessage, threadId, isLoading, messages.length, searchParams, setSearchParams]);
+  }, [queryMessage, threadId, isLoading, generateToken.isSuccess, id, searchParams, setSearchParams]);
 
-  const navigateToChatWithFirstUserMessage = (userMessage: string) => {
-    if (!threadId) return;
-    navigate(`/guest/${threadId}`, {
+  const navigateToChatWithFirstUserMessage = (userMessage: string, tid?: string, title?: string, desc?: string) => {
+    const finalThreadId = tid || threadId;
+    if (!finalThreadId) return;
+
+    navigate(`/guest/${finalThreadId}`, {
       state: {
         bootstrapThread: {
           id: "0",
-          threadId,
-          title: threadTitle,
-          desc: threadDesc ?? undefined,
-          messages: [
-            {
-              id: `bootstrap-assistant-${Date.now()}`,
-              role: "assistant",
-              content: messages[0]?.content || "Hi, I'm MetaMindful. I'm here to listen and support you. How are you feeling today?",
-              replies: messages[0]?.replies || currentSuggestions,
-              createdAt: new Date().toISOString(),
-            },
-          ],
+          threadId: finalThreadId,
+          title: title || threadTitle,
+          desc: desc || threadDesc || undefined,
+          messages: [],
         },
         autoSendText: userMessage,
       },
@@ -180,15 +177,47 @@ export function GuestChatPage() {
 
   const handleSend = () => {
     const trimmedMessage = message.trim();
-    if (!trimmedMessage || isLoading || !threadId) return;
+    if (!trimmedMessage || isLoading) return;
+
     const userMessage = trimmedMessage;
     setMessage("");
-    navigateToChatWithFirstUserMessage(userMessage);
+    setSuggestionUsed(true);
+
+    if (!threadId) {
+      setPendingMessage(userMessage);
+      setIsLoading(true);
+      createThread.mutate();
+    } else {
+      navigateToChatWithFirstUserMessage(userMessage);
+    }
   };
 
-  const handleSuggestionClick = (suggestion: string) => {
-    if (isLoading || !threadId) return;
-    setMessage("");
+  const handleSuggestionClick = async (suggestion: string) => {
+    if (isLoading) return;
+    setMessage(suggestion);
+    setSuggestionUsed(true);
+
+    // Focus textarea
+    if (textareaRef.current) {
+      textareaRef.current.focus();
+    }
+
+    if (!threadId) {
+      setPendingMessage(suggestion);
+      setIsLoading(true);
+      createThread.mutate();
+      return;
+    }
+
+    try {
+      await api.post("/threads/suggestion-click", {
+        suggestion,
+        threadId,
+      });
+    } catch (error) {
+      console.error("[GuestChatPage] Error logging suggestion click:", error);
+    }
+
     navigateToChatWithFirstUserMessage(suggestion);
   };
 
@@ -197,21 +226,7 @@ export function GuestChatPage() {
     return <ChatPage />;
   }
 
-  // Show loading while generating token and creating thread
-  if (generateToken.isLoading || (isLoading && !messages[0])) {
-    return (
-      <div className="flex items-center justify-center h-screen bg-gray-50 dark:bg-gray-900">
-        <div className="text-center">
-          <div className="flex items-center justify-center gap-2 mb-4">
-            <div className="w-2 h-2 bg-gray-400 dark:bg-gray-500 rounded-full animate-bounce" style={{ animationDelay: "0ms" }}></div>
-            <div className="w-2 h-2 bg-gray-400 dark:bg-gray-500 rounded-full animate-bounce" style={{ animationDelay: "150ms" }}></div>
-            <div className="w-2 h-2 bg-gray-400 dark:bg-gray-500 rounded-full animate-bounce" style={{ animationDelay: "300ms" }}></div>
-          </div>
-          <p className="text-gray-500 dark:text-gray-400">Setting up your chat...</p>
-        </div>
-      </div>
-    );
-  }
+  // Loading state moved inside the main return to keep Topbar visible
 
   // If token generation failed
   if (generateToken.isError) {
@@ -239,13 +254,29 @@ export function GuestChatPage() {
         <div className="flex h-full flex-col">
           <GuestTopbar />
           <div className="flex-1 flex flex-col relative bg-gray-50 dark:bg-gray-900 overflow-hidden">
-            {/* Initial greeting view */}
+            {/* Initial greeting view / Loading view */}
             <div className="flex-1 flex items-center justify-center px-4">
-              <div className="text-center max-w-4xl w-full">
-                <h2 className="text-3xl md:text-4xl font-normal text-gray-700 dark:text-gray-300 leading-relaxed">
-                  {messages[0]?.content || "Hi, I'm MetaMindful. I'm here to listen and support you. How are you feeling today?"}
-                </h2>
-              </div>
+              {(generateToken.isLoading || (isLoading && !messages[0])) ? (
+                <div className="text-center">
+                  <div className="flex items-center justify-center gap-2 mb-4">
+                    <div className="w-2 h-2 bg-gray-400 dark:bg-gray-500 rounded-full animate-bounce" style={{ animationDelay: "0ms" }}></div>
+                    <div className="w-2 h-2 bg-gray-400 dark:bg-gray-500 rounded-full animate-bounce" style={{ animationDelay: "150ms" }}></div>
+                    <div className="w-2 h-2 bg-gray-400 dark:bg-gray-500 rounded-full animate-bounce" style={{ animationDelay: "300ms" }}></div>
+                  </div>
+                  <p className="text-gray-500 dark:text-gray-400">Setting up your chat...</p>
+                </div>
+              ) : (
+                <div className="text-center max-w-4xl w-full">
+                  <div className="space-y-4">
+                    <h2 className="text-4xl md:text-5xl font-bold text-gray-800 dark:text-gray-100">
+                      Get unstuck in 90 seconds.
+                    </h2>
+                    <p className="text-xl md:text-2xl text-gray-500 dark:text-gray-400">
+                      Tell me what's happening. I'll suggest one small step you can try now.
+                    </p>
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Input area with suggestions */}
@@ -254,7 +285,7 @@ export function GuestChatPage() {
                 {/* Suggested prompts */}
                 {/* Suggested prompts - Dynamic mapping */}
                 <div className="flex flex-col items-center gap-3 w-full">
-                  {(() => {
+                  {!suggestionUsed && (() => {
                     // Try to find the last assistant message with replies first
                     const lastAssistantMessageWithReplies = [...messages]
                       .reverse()
@@ -268,7 +299,7 @@ export function GuestChatPage() {
                             <button
                               key={idx}
                               onClick={() => handleSuggestionClick(reply)}
-                              disabled={isLoading || !threadId}
+                              disabled={isLoading}
                               className="px-5 py-3 w-[190px] bg-blue-100 dark:bg-blue-900/30 text-gray-700 dark:text-gray-300 rounded-xl border border-blue-200 dark:border-blue-800 hover:bg-blue-200 dark:hover:bg-blue-900/50 text-[12px] leading-normal font-normal transition disabled:opacity-50 disabled:cursor-not-allowed text-left [text-wrap-mode:wrap] flex-shrink-0"
                             >
                               {reply}
@@ -285,7 +316,7 @@ export function GuestChatPage() {
                           <button
                             key={idx}
                             onClick={() => handleSuggestionClick(suggestion)}
-                            disabled={isLoading || !threadId}
+                            disabled={isLoading}
                             className="px-5 py-3 w-[190px] bg-blue-100 dark:bg-blue-900/30 text-gray-700 dark:text-gray-300 rounded-xl border border-blue-200 dark:border-blue-800 hover:bg-blue-200 dark:hover:bg-blue-900/50 text-[12px] leading-normal font-normal transition disabled:opacity-50 disabled:cursor-not-allowed text-left [text-wrap-mode:wrap]"
                           >
                             {suggestion}
@@ -340,12 +371,12 @@ export function GuestChatPage() {
                         handleSend();
                       }
                     }}
-                    disabled={isLoading || !threadId}
+                    disabled={isLoading}
                     rows={1}
                   />
                   <button
                     onClick={handleSend}
-                    disabled={!message.trim() || isLoading || !threadId}
+                    disabled={!message.trim() || isLoading}
                     className="bg-yellow-300 hover:bg-yellow-400 p-3 rounded-full disabled:opacity-50 disabled:cursor-not-allowed transition flex-shrink-0 mb-1"
                   >
                     <ArrowUp className="h-5 w-5 text-gray-900" strokeWidth={2.5} fill="none" />

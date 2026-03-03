@@ -61,6 +61,7 @@ export function GuestChatPage() {
   const hasAutoSentQueryMessageRef = useRef(false); // Track if we've auto-sent the query message
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const [pendingMessage, setPendingMessage] = useState<string | null>(null);
+  const [suggestionUsed, setSuggestionUsed] = useState(false);
 
   // Default suggestions provided as constant
   const [currentSuggestions, setCurrentSuggestions] = useState<string[]>(suggestions);
@@ -180,6 +181,7 @@ export function GuestChatPage() {
 
     const userMessage = trimmedMessage;
     setMessage("");
+    setSuggestionUsed(true);
 
     if (!threadId) {
       setPendingMessage(userMessage);
@@ -193,6 +195,7 @@ export function GuestChatPage() {
   const handleSuggestionClick = async (suggestion: string) => {
     if (isLoading) return;
     setMessage(suggestion);
+    setSuggestionUsed(true);
 
     // Focus textarea
     if (textareaRef.current) {
@@ -282,7 +285,7 @@ export function GuestChatPage() {
                 {/* Suggested prompts */}
                 {/* Suggested prompts - Dynamic mapping */}
                 <div className="flex flex-col items-center gap-3 w-full">
-                  {(() => {
+                  {!suggestionUsed && (() => {
                     // Try to find the last assistant message with replies first
                     const lastAssistantMessageWithReplies = [...messages]
                       .reverse()

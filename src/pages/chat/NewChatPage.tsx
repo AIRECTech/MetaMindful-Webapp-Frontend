@@ -46,7 +46,8 @@ export function NewChatPage() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const messageInputRef = useRef<HTMLTextAreaElement>(null);
+  const [suggestionUsed, setSuggestionUsed] = useState(false);
 
   useTimeOnScreen("new-chat", "NewChatPage");
 
@@ -60,7 +61,7 @@ export function NewChatPage() {
 
   // Auto-resize textarea
   useEffect(() => {
-    const textarea = textareaRef.current;
+    const textarea = messageInputRef.current;
     if (textarea) {
       textarea.style.height = "auto";
       textarea.style.height = `${Math.min(textarea.scrollHeight, 200)}px`; // Max height of 200px
@@ -130,9 +131,10 @@ export function NewChatPage() {
 
     const userMessage = trimmedMessage;
     setMessage("");
+    setSuggestionUsed(true);
 
-    if (textareaRef.current) {
-      textareaRef.current.style.height = "auto";
+    if (messageInputRef.current) {
+      messageInputRef.current.style.height = "auto";
     }
 
     createThread(userMessage);
@@ -142,9 +144,10 @@ export function NewChatPage() {
     if (isLoading) return;
 
     setMessage(suggestion);
+    setSuggestionUsed(true);
 
-    if (textareaRef.current) {
-      textareaRef.current.focus();
+    if (messageInputRef.current) {
+      messageInputRef.current.focus();
     }
 
     createThread(suggestion);
@@ -183,24 +186,26 @@ export function NewChatPage() {
       <div className="pb-4 px-4">
         <div className="max-w-4xl mx-auto space-y-3">
           {/* Suggested prompts */}
-          <div className="flex flex-col items-center gap-3 w-full">
-            <div className="flex flex-wrap gap-3 justify-center w-full">
-              {suggestions.map((suggestion, idx) => (
-                <button
-                  key={idx}
-                  onClick={() => handleSuggestionClick(suggestion)}
-                  disabled={isLoading}
-                  className="px-5 py-3 w-[190px] bg-blue-100 dark:bg-blue-900/30 text-gray-700 dark:text-gray-300 rounded-xl border border-blue-200 dark:border-blue-800 hover:bg-blue-200 dark:hover:bg-blue-900/50 text-[12px] leading-normal font-normal transition disabled:opacity-50 disabled:cursor-not-allowed text-left [text-wrap-mode:wrap] flex-shrink-0"
-                >
-                  {suggestion}
-                </button>
-              ))}
+          {!suggestionUsed && (
+            <div className="flex flex-col items-center gap-3 w-full">
+              <div className="flex flex-wrap gap-3 justify-center w-full">
+                {suggestions.map((suggestion, idx) => (
+                  <button
+                    key={idx}
+                    onClick={() => handleSuggestionClick(suggestion)}
+                    disabled={isLoading}
+                    className="px-5 py-3 w-[190px] bg-blue-100 dark:bg-blue-900/30 text-gray-700 dark:text-gray-300 rounded-xl border border-blue-200 dark:border-blue-800 hover:bg-blue-200 dark:hover:bg-blue-900/50 text-[12px] leading-normal font-normal transition disabled:opacity-50 disabled:cursor-not-allowed text-left [text-wrap-mode:wrap] flex-shrink-0"
+                  >
+                    {suggestion}
+                  </button>
+                ))}
+              </div>
             </div>
-          </div>
+          )}
 
           <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm flex items-end gap-3 p-4">
             <textarea
-              ref={textareaRef}
+              ref={messageInputRef}
               className="flex-1 px-6 py-3 text-gray-800 dark:text-gray-200 placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none text-base border-0 bg-gray-100 dark:bg-gray-700 rounded-xl resize-none min-h-[48px] max-h-[200px] overflow-y-auto"
               placeholder="Type here ....."
               value={message}

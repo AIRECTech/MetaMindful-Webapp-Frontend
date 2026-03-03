@@ -70,6 +70,7 @@ export function ChatPage() {
     // Only show for guest users on initial load
     return isGuestUser();
   });
+  const [suggestionUsed, setSuggestionUsed] = useState(false);
 
   const state = (location.state || {}) as {
     bootstrapThread?: Thread;
@@ -609,6 +610,17 @@ export function ChatPage() {
     }
   }, [displayMessages, showDisclaimer]);
 
+  // Reset suggestionUsed when a new assistant message arrives
+  useEffect(() => {
+    const lastAssistantMessage = [...displayMessages]
+      .reverse()
+      .find(m => m.role === "assistant" && !m.isError);
+
+    if (lastAssistantMessage) {
+      setSuggestionUsed(false);
+    }
+  }, [displayMessages.filter(m => m.role === "assistant").length]);
+
   // Show loading indicator while fetching thread data
   if (isLoading && !hasBootstrapData && displayMessages.length === 0) {
     return (
@@ -778,7 +790,10 @@ export function ChatPage() {
               .reverse()
               .find(m => m.role === "assistant" && m.replies && m.replies.length > 0);
 
-            if (lastAssistantMessageWithReplies?.replies && lastAssistantMessageWithReplies.replies.length > 0) {
+            // Only show suggestions if the last message is from the assistant and hasn't been used yet
+            const isLastMessageAssistant = displayMessages.length > 0 && displayMessages[displayMessages.length - 1].role === "assistant";
+
+            if (lastAssistantMessageWithReplies?.replies && lastAssistantMessageWithReplies.replies.length > 0 && !suggestionUsed && isLastMessageAssistant) {
               return (
                 <div className="flex flex-col items-center gap-3 mb-2 w-full">
                   <div className="flex overflow-x-auto gap-3 pb-2 w-full no-scrollbar">
@@ -787,6 +802,7 @@ export function ChatPage() {
                         key={idx}
                         onClick={async () => {
                           if (isSending) return;
+                          setSuggestionUsed(true);
 
                           logAnalyticsEvent("suggestion_selected", {
                             thread_id: id,

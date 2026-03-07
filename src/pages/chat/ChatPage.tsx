@@ -446,6 +446,11 @@ export function ChatPage() {
       textarea.style.height = `${Math.min(textarea.scrollHeight, 200)}px`; // Max height of 200px
     }
   }, [message]);
+ 
+  // Auto-scroll to bottom of chat
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [displayMessages, isSending]);
 
   const sendText = (text: string) => {
     const trimmedMessage = text.trim();
@@ -795,7 +800,7 @@ export function ChatPage() {
 
             if (lastAssistantMessageWithReplies?.replies && lastAssistantMessageWithReplies.replies.length > 0 && !suggestionUsed && isLastMessageAssistant) {
               return (
-                <div className="flex flex-col items-center gap-3 mb-2 w-full">
+                <div className="flex flex-col items-center gap-3 mb-2 mt-[10px] w-full">
                   <div className="flex overflow-x-auto gap-3 pb-2 w-full no-scrollbar">
                     {lastAssistantMessageWithReplies.replies.map((reply, idx) => (
                       <button

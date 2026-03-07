@@ -284,7 +284,7 @@ export function GuestChatPage() {
               <div className="max-w-4xl mx-auto space-y-3">
                 {/* Suggested prompts */}
                 {/* Suggested prompts - Dynamic mapping */}
-                <div className="flex flex-col items-center gap-3 w-full">
+                <div className="flex flex-col items-center gap-3 mt-[10px] w-full">
                   {!suggestionUsed && (() => {
                     // Try to find the last assistant message with replies first
                     const lastAssistantMessageWithReplies = [...messages]

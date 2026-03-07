@@ -150,6 +150,9 @@ export function ChatPage() {
     staleTime: hasBootstrapData ? Infinity : 0, // If bootstrap data, never stale; otherwise always stale to allow refetch
     gcTime: Infinity, // Keep data in cache forever
   });
+ 
+  // Use guest messages for guest users, thread messages for authenticated users
+  const displayMessages = isGuest ? guestMessages : (thread?.messages || []);
 
 
   // Debug logging
@@ -446,6 +449,11 @@ export function ChatPage() {
       textarea.style.height = `${Math.min(textarea.scrollHeight, 200)}px`; // Max height of 200px
     }
   }, [message]);
+ 
+  // Auto-scroll to bottom of chat
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [displayMessages, isSending]);
 
   const sendText = (text: string) => {
     const trimmedMessage = text.trim();
@@ -594,9 +602,6 @@ export function ChatPage() {
 
     checkAndSend();
   }, [id, state.autoSendText, state.bootstrapThread, isGuest, guestMessages.length, queryClient]);
-
-  // Use guest messages for guest users, thread messages for authenticated users
-  const displayMessages = isGuest ? guestMessages : (thread?.messages || []);
 
   // Hide disclaimer after 2 user messages are sent
   useEffect(() => {
@@ -795,7 +800,7 @@ export function ChatPage() {
 
             if (lastAssistantMessageWithReplies?.replies && lastAssistantMessageWithReplies.replies.length > 0 && !suggestionUsed && isLastMessageAssistant) {
               return (
-                <div className="flex flex-col items-center gap-3 mb-2 w-full">
+                <div className="flex flex-col items-center gap-3 mb-2 mt-[10px] w-full">
                   <div className="flex overflow-x-auto gap-3 pb-2 w-full no-scrollbar">
                     {lastAssistantMessageWithReplies.replies.map((reply, idx) => (
                       <button

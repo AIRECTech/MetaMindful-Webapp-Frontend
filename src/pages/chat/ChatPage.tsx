@@ -150,6 +150,9 @@ export function ChatPage() {
     staleTime: hasBootstrapData ? Infinity : 0, // If bootstrap data, never stale; otherwise always stale to allow refetch
     gcTime: Infinity, // Keep data in cache forever
   });
+ 
+  // Use guest messages for guest users, thread messages for authenticated users
+  const displayMessages = isGuest ? guestMessages : (thread?.messages || []);
 
 
   // Debug logging
@@ -599,9 +602,6 @@ export function ChatPage() {
 
     checkAndSend();
   }, [id, state.autoSendText, state.bootstrapThread, isGuest, guestMessages.length, queryClient]);
-
-  // Use guest messages for guest users, thread messages for authenticated users
-  const displayMessages = isGuest ? guestMessages : (thread?.messages || []);
 
   // Hide disclaimer after 2 user messages are sent
   useEffect(() => {

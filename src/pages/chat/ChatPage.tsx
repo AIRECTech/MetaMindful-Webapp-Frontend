@@ -664,7 +664,7 @@ export function ChatPage() {
   const chatContent = (
     <div className="flex flex-col h-full relative bg-gray-50 dark:bg-gray-900">
       <div className="flex-1 overflow-y-auto">
-        <div className="max-w-4xl mx-auto px-4 py-6 space-y-6">
+        <div className="max-w-4xl mx-auto px-4 pt-6 pb-12 space-y-6">
           {(displayMessages.length === 0 && (isLoading || (state.autoSendText && !hasAutoSentRef.current))) ? (
             <div className="text-center py-12">
               <div className="flex items-center justify-center gap-2 mb-4">
@@ -781,7 +781,7 @@ export function ChatPage() {
               )}
             </>
           )}
-          <div ref={messagesEndRef} />
+          <div ref={messagesEndRef} className="h-16" />
         </div>
       </div>
 

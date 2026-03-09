@@ -277,15 +277,17 @@ export function LoginPage() {
               return;
             }
 
-            if (response.id_token) {
+            const idToken = response.id_token || response.authorization?.id_token;
+            
+            if (idToken) {
               console.log("Apple Sign In: ID token received");
               // Extract name from user object if available
               let name: string | undefined;
 
-              if (response.user?.name) {
-                const user = response.user;
-                const firstName = user.name.firstName || '';
-                const lastName = user.name.lastName || '';
+              const userObject = response.user || response.authorization?.user;
+              if (userObject?.name) {
+                const firstName = userObject.name.firstName || '';
+                const lastName = userObject.name.lastName || '';
                 name = `${firstName} ${lastName}`.trim() || undefined;
                 console.log("Apple Sign In: Name extracted:", name);
               }
@@ -294,7 +296,7 @@ export function LoginPage() {
               console.log("Apple Sign In: Calling socialLogin.mutate");
               socialLogin.mutate({
                 provider: "apple",
-                providerToken: response.id_token,
+                providerToken: idToken,
                 name,
               });
             } else {

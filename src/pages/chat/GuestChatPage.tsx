@@ -167,7 +167,12 @@ export function GuestChatPage() {
           threadId: finalThreadId,
           title: title || threadTitle,
           desc: desc || threadDesc || undefined,
-          messages: [],
+          messages: messages.map((m, i) => ({
+            id: `initial-${i}`,
+            role: m.role,
+            content: m.content,
+            createdAt: new Date().toISOString(),
+          })),
         },
         autoSendText: userMessage,
       },

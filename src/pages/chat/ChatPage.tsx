@@ -79,22 +79,17 @@ export function ChatPage() {
 
   // If we navigated here from NewChatPage, we can prefill the cache and avoid /threads/:id
   useEffect(() => {
-    if (!id) return;
-    if (!state.bootstrapThread) return;
-    if (state.bootstrapThread.threadId !== id) return;
+    if (!id || !state.bootstrapThread || state.bootstrapThread.threadId !== id) return;
 
     queryClient.setQueryData(["thread", id], state.bootstrapThread);
 
     if (isGuest) {
-      // Only set from bootstrap if guestMessages are empty to avoid resetting after auto-send
       setGuestMessages((prev) => prev.length === 0 ? (state.bootstrapThread!.messages || []) : prev);
       setGuestThreadTitle(state.bootstrapThread.title || "New Chat");
-      // Initialize chat count and limit from bootstrap thread if available
+      
       if (state.bootstrapThread.chatCount !== undefined) {
-        const count = state.bootstrapThread.chatCount;
-        setGuestChatCount(count);
-        // Initialize lastPopupCount to current count so popup shows after next 10 messages
-        setLastPopupCount(count);
+        setGuestChatCount(state.bootstrapThread.chatCount);
+        setLastPopupCount((prev) => prev === 0 ? state.bootstrapThread!.chatCount! : prev);
       }
       if (state.bootstrapThread.chatLimit !== undefined) {
         setGuestChatLimit(state.bootstrapThread.chatLimit);
@@ -141,14 +136,13 @@ export function ChatPage() {
     // 1. We have an id
     // 2. We don't have bootstrap data (from router state) - always false after window.location.href
     // Note: After signup/login with window.location.href, router state is lost, cache is cleared, so we always fetch
-    enabled: shouldFetch,
-    // Always refetch on mount if we should fetch (after full page reload)
-    refetchOnWindowFocus: false,
-    refetchOnReconnect: false,
-    refetchOnMount: shouldFetch, // Always refetch on mount if no bootstrap data
-    refetchInterval: false, // Don't refetch on interval
-    staleTime: hasBootstrapData ? Infinity : 0, // If bootstrap data, never stale; otherwise always stale to allow refetch
-    gcTime: Infinity, // Keep data in cache forever
+    // If we have bootstrap data, we still want to fetch in the background to get 
+    // any messages that might be in the database but not in the bootstrap data (like the initial greeting)
+    // or to get the latest chat counts/limits.
+    enabled: !!id,
+    refetchOnMount: true,
+    staleTime: 30000, // 30 seconds
+    gcTime: Infinity,
   });
  
   // Use guest messages for guest users, thread messages for authenticated users
@@ -174,11 +168,24 @@ export function ChatPage() {
     if (!isGuest) return;
     if (!thread) return;
 
-    // Only update if guestMessages is empty (page reload scenario)
-    if (guestMessages.length === 0 && thread.messages && thread.messages.length > 0) {
-      console.log("[ChatPage] Loading thread data into guest state:", thread);
-      setGuestMessages(thread.messages);
-      setGuestThreadTitle(thread.title || "New Chat");
+    // Sync guest messages if they are empty (page reload) OR 
+    // if the thread has more messages than local state (background sync)
+    if (thread.messages && thread.messages.length > 0) {
+      if (guestMessages.length === 0) {
+        console.log("[ChatPage] Initial loading of thread data into guest state:", thread.messages.length);
+        setGuestMessages(thread.messages);
+      } else if (thread.messages.length > guestMessages.length) {
+        // Only sync if the new messages are actual history, not just temp ones
+        const hasTempMessages = guestMessages.some(m => m.id?.startsWith("temp-"));
+        if (!hasTempMessages) {
+          console.log("[ChatPage] Background sync of thread data into guest state:", thread.messages.length);
+          setGuestMessages(thread.messages);
+        }
+      }
+      
+      if (thread.title && thread.title !== guestThreadTitle) {
+        setGuestThreadTitle(thread.title);
+      }
     }
 
     // Update chat count and limit from thread data

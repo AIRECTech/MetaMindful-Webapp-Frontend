@@ -91,7 +91,7 @@ export function GuestChatPage() {
     onSuccess: (data) => {
       if (data?.threadId) {
         if (pendingMessage) {
-          navigateToChatWithFirstUserMessage(pendingMessage, data.threadId, data.title, data.desc);
+          navigateToChatWithFirstUserMessage(pendingMessage, data.threadId, data.title, data.desc, data.messages || []);
         } else {
           setThreadId(data.threadId);
           setThreadTitle(data.title || "New Chat");
@@ -156,7 +156,7 @@ export function GuestChatPage() {
     }
   }, [queryMessage, threadId, isLoading, generateToken.isSuccess, id, searchParams, setSearchParams]);
 
-  const navigateToChatWithFirstUserMessage = (userMessage: string, tid?: string, title?: string, desc?: string) => {
+  const navigateToChatWithFirstUserMessage = (userMessage: string, tid?: string, title?: string, desc?: string, initialMessages: any[] = []) => {
     const finalThreadId = tid || threadId;
     if (!finalThreadId) return;
 
@@ -167,7 +167,7 @@ export function GuestChatPage() {
           threadId: finalThreadId,
           title: title || threadTitle,
           desc: desc || threadDesc || undefined,
-          messages: messages.map((m, i) => ({
+          messages: initialMessages.length > 0 ? initialMessages : messages.map((m, i) => ({
             id: `initial-${i}`,
             role: m.role,
             content: m.content,

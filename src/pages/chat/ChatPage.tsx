@@ -77,8 +77,17 @@ export function ChatPage() {
     autoSendText?: string;
   };
 
+  // Check if this is a browser reload (F5)
+  // If it is, we ignore preserved state and force a fresh load from the database
+  const isReload = useRef(
+    typeof window !== 'undefined' && 
+    window.performance && 
+    (window.performance.getEntriesByType('navigation')[0] as any)?.type === 'reload'
+  ).current;
+
   // If we navigated here from NewChatPage, we can prefill the cache and avoid /threads/:id
   useEffect(() => {
+    if (isReload) return; // Skip bootstrap state sync on reload
     if (!id || !state.bootstrapThread || state.bootstrapThread.threadId !== id) return;
 
     queryClient.setQueryData(["thread", id], state.bootstrapThread);
@@ -95,10 +104,11 @@ export function ChatPage() {
         setGuestChatLimit(state.bootstrapThread.chatLimit);
       }
     }
-  }, [id, isGuest, queryClient, state.bootstrapThread]);
+  }, [id, isGuest, queryClient, state.bootstrapThread, isReload]);
 
   // Check if we have bootstrap data from navigation state
-  const hasBootstrapData = !!(state.bootstrapThread && state.bootstrapThread.threadId === id);
+  // Only trust bootstrap data if it's NOT a reload
+  const hasBootstrapData = !isReload && !!(state.bootstrapThread && state.bootstrapThread.threadId === id);
   const cachedThread = id ? queryClient.getQueryData(["thread", id]) as Thread | undefined : undefined;
 
   // After window.location.href (full page reload), router state is lost and React Query cache is cleared
@@ -123,6 +133,12 @@ export function ChatPage() {
       return fetchedThread;
     },
     initialData: () => {
+      // If it's a reload, ignore saved state and force a fresh load from the database
+      if (isReload) {
+        console.log("[ChatPage] Browser reload detected, ignoring preserved navigation state to force fresh API call.");
+        return undefined;
+      }
+      
       // Only use bootstrap data if available (from router state)
       // Don't use cache here - let the query always fetch fresh data after signup/login (window.location.href)
       if (!id) return undefined;
@@ -141,7 +157,7 @@ export function ChatPage() {
     // or to get the latest chat counts/limits.
     enabled: !!id,
     refetchOnMount: true,
-    staleTime: 30000, // 30 seconds
+    staleTime: 0, // Always refetch on mount to ensure fresh data
     gcTime: Infinity,
   });
  
@@ -156,7 +172,7 @@ export function ChatPage() {
       hasBootstrapData,
       hasCachedThread: !!cachedThread,
       shouldFetch,
-      enabled: shouldFetch,
+      enabled: !!id,
       isLoading,
       thread: thread ? { id: thread.id, threadId: thread.threadId, messageCount: thread.messages?.length } : null,
     });
@@ -174,11 +190,11 @@ export function ChatPage() {
       if (guestMessages.length === 0) {
         console.log("[ChatPage] Initial loading of thread data into guest state:", thread.messages.length);
         setGuestMessages(thread.messages);
-      } else if (thread.messages.length > guestMessages.length) {
-        // Only sync if the new messages are actual history, not just temp ones
+      } else if (thread.messages.length !== guestMessages.length) {
+        // Sync if counts differ and we don't have active temp messages that are about to be replaced
         const hasTempMessages = guestMessages.some(m => m.id?.startsWith("temp-"));
         if (!hasTempMessages) {
-          console.log("[ChatPage] Background sync of thread data into guest state:", thread.messages.length);
+          console.log("[ChatPage] Syncing thread data into guest state (counts differ):", thread.messages.length, "vs", guestMessages.length);
           setGuestMessages(thread.messages);
         }
       }
@@ -224,63 +240,70 @@ export function ChatPage() {
       });
       // Update thread data from chat API response instead of refetching
       if (data) {
+        const assistantMsg: Message = {
+          id: data.message_id || `temp-assistant-${Date.now()}`,
+          role: "assistant" as const,
+          content: data.assistantMessage,
+          replies: data.replies || [],
+          createdAt: new Date().toISOString(),
+        };
+
+        const userMsg: Message = {
+          id: `temp-user-${Date.now()}-confirmed`,
+          role: "user" as const,
+          content: variables,
+          createdAt: new Date().toISOString(),
+        };
+
         if (isGuest) {
+          // Update query cache for guests too, so it's ready on reload
+          queryClient.setQueryData(["thread", id], (old: Thread | undefined) => {
+            if (!old) return old;
+            const updated = { ...old };
+            updated.messages = [
+              ...old.messages.filter(m => !m.id?.startsWith("temp-")),
+              userMsg,
+              assistantMsg,
+            ];
+            if (data.title_name) updated.title = data.title_name;
+            if (data.chatCount !== undefined) updated.chatCount = data.chatCount;
+            if (data.chatLimit !== undefined) updated.chatLimit = data.chatLimit;
+            return updated;
+          });
+
           // For guest users, update local state
           if (data.assistantMessage) {
             console.log("[ChatPage] sendMessage.onSuccess: adding assistant message to guestMessages:", data.assistantMessage);
             setGuestMessages((prev) => {
               const newMessages: Message[] = [
-                ...prev,
-                {
-                  id: data.message_id || `temp-assistant-${Date.now()}`,
-                  role: "assistant" as const,
-                  content: data.assistantMessage,
-                  replies: data.replies || [],
-                  createdAt: new Date().toISOString(),
-                },
+                ...prev.filter(m => !m.id?.startsWith("temp-")),
+                userMsg,
+                assistantMsg,
               ];
               logAnalyticsEvent("chat_message_received", {
                 thread_id: id,
                 response_length: data.assistantMessage.length
               });
-              console.log("[ChatPage] sendMessage.onSuccess: updated guestMessages:", newMessages);
               return newMessages;
             });
-          } else {
-            console.warn("[ChatPage] sendMessage.onSuccess: no assistantMessage in response for guest");
           }
 
           // Update title if changed
           if (data.title_name && data.title_name !== guestThreadTitle) {
             setGuestThreadTitle(data.title_name);
           }
-
-          // Update chat count from API response if available, otherwise increment
+          
+          // ... rest of guest logic for counts/limits ...
           if (data.chatCount !== undefined) {
-            const newCount = data.chatCount;
-            setGuestChatCount(newCount);
-
+            setGuestChatCount(data.chatCount);
             // Check if we should show popup after count update
             if (isGuest && guestChatLimit !== null && guestChatLimit > 0) {
-              const messagesSinceLastPopup = newCount - lastPopupCount;
+              const messagesSinceLastPopup = data.chatCount - lastPopupCount;
               if (messagesSinceLastPopup >= guestChatLimit) {
                 setShowLimitPopup(true);
-                setLastPopupCount(newCount);
+                setLastPopupCount(data.chatCount);
               }
             }
-          } else {
-            setGuestChatCount((prev) => {
-              const newCount = prev + 1;
-              // Check if we should show popup after increment
-              if (isGuest && guestChatLimit !== null && guestChatLimit > 0) {
-                const messagesSinceLastPopup = newCount - lastPopupCount;
-                if (messagesSinceLastPopup >= guestChatLimit) {
-                  setShowLimitPopup(true);
-                  setLastPopupCount(newCount);
-                }
-              }
-              return newCount;
-            });
           }
           if (data.chatLimit !== undefined) {
             setGuestChatLimit(data.chatLimit);

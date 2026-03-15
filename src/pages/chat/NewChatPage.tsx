@@ -92,7 +92,7 @@ export function NewChatPage() {
         title: thread.title
       });
 
-      navigateToChatWithFirstUserMessage(initialMessage, thread.threadId, thread.title, thread.desc ?? undefined);
+      navigateToChatWithFirstUserMessage(initialMessage, thread.threadId, thread.title, thread.desc ?? undefined, thread.messages || []);
     } catch (error: any) {
       console.error("[NewChatPage] Error creating thread:", error);
       const errorMessage = extractErrorMessage(error, "Failed to create thread");
@@ -109,7 +109,7 @@ export function NewChatPage() {
     }
   };
 
-  const navigateToChatWithFirstUserMessage = (userMessage: string, tid: string, title?: string, desc?: string) => {
+  const navigateToChatWithFirstUserMessage = (userMessage: string, tid: string, title?: string, desc?: string, initialMessages: any[] = []) => {
     navigate(`/user/chat/${tid}`, {
       state: {
         bootstrapThread: {
@@ -117,7 +117,7 @@ export function NewChatPage() {
           threadId: tid,
           title: title || "New Chat",
           desc: desc || undefined,
-          messages: [],
+          messages: initialMessages,
         },
         autoSendText: userMessage,
       },

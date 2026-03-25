@@ -14,9 +14,10 @@ interface SignupPopupProps {
   currentThreadId?: string;
   onSuccess?: () => void;
   onSwitchToLogin?: () => void;
+  unclosable?: boolean;
 }
 
-export function SignupPopup({ isOpen, onClose, currentThreadId, onSuccess, onSwitchToLogin }: SignupPopupProps) {
+export function SignupPopup({ isOpen, onClose, currentThreadId, onSuccess, onSwitchToLogin, unclosable = false }: SignupPopupProps) {
   const navigate = useNavigate();
   const [formData, setFormData] = useState({ email: "", password: "", confirmPassword: "" });
   const [showPassword, setShowPassword] = useState(false);
@@ -317,12 +318,14 @@ export function SignupPopup({ isOpen, onClose, currentThreadId, onSuccess, onSwi
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4">
       <div className="relative w-full max-w-md rounded-3xl bg-white p-8 shadow-xl max-h-[90vh] overflow-y-auto">
-        <button
-          onClick={onClose}
-          className="absolute right-4 top-4 text-gray-400 hover:text-gray-600"
-        >
-          <X className="h-6 w-6" />
-        </button>
+        {!unclosable && (
+          <button
+            onClick={onClose}
+            className="absolute right-4 top-4 text-gray-400 hover:text-gray-600"
+          >
+            <X className="h-6 w-6" />
+          </button>
+        )}
 
         {/* Logo and Branding */}
         <div className="mb-4 flex flex-col items-center">

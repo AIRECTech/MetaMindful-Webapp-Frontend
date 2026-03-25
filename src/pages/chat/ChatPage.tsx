@@ -64,6 +64,7 @@ export function ChatPage() {
   const [showLimitPopup, setShowLimitPopup] = useState(false);
   const [showLoginPopup, setShowLoginPopup] = useState(false);
   const [showSignupPopup, setShowSignupPopup] = useState(false);
+  const [enforceAuth, setEnforceAuth] = useState(false);
   const [lastFailedMessage, setLastFailedMessage] = useState<string | null>(null); // Store last failed message for retry
   // Only show disclaimer for guest users
   const [showDisclaimer, setShowDisclaimer] = useState(() => {
@@ -291,6 +292,11 @@ export function ChatPage() {
           // Update title if changed
           if (data.title_name && data.title_name !== guestThreadTitle) {
             setGuestThreadTitle(data.title_name);
+          }
+          
+          if (isGuest && (data.user_wants_to_skip_exercise || data.exercise_completed)) {
+            setEnforceAuth(true);
+            setShowSignupPopup(true);
           }
           
           // ... rest of guest logic for counts/limits ...
@@ -1003,7 +1009,9 @@ export function ChatPage() {
         </div>
         <LoginPopup
           isOpen={showLoginPopup}
+          unclosable={enforceAuth}
           onClose={() => {
+            if (enforceAuth) return;
             setShowLoginPopup(false);
             setShowSignupPopup(false);
           }}
@@ -1015,7 +1023,9 @@ export function ChatPage() {
         />
         <SignupPopup
           isOpen={showSignupPopup}
+          unclosable={enforceAuth}
           onClose={() => {
+            if (enforceAuth) return;
             setShowLoginPopup(false);
             setShowSignupPopup(false);
           }}

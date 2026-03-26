@@ -58,13 +58,12 @@ export function ChatPage() {
   // For guest users, manage messages in local state instead of fetching thread
   const [guestMessages, setGuestMessages] = useState<Message[]>([]);
   const [guestThreadTitle, setGuestThreadTitle] = useState<string>("New Chat");
-  const [guestChatCount, setGuestChatCount] = useState<number>(0);
+
   const [guestChatLimit, setGuestChatLimit] = useState<number | null>(null);
   const [lastPopupCount, setLastPopupCount] = useState<number>(0); // Track count when popup was last shown
-  const [showLimitPopup, setShowLimitPopup] = useState(false);
+  const [showGuestAuthPrompt, setShowGuestAuthPrompt] = useState(false);
   const [showLoginPopup, setShowLoginPopup] = useState(false);
   const [showSignupPopup, setShowSignupPopup] = useState(false);
-  const [enforceAuth, setEnforceAuth] = useState(false);
   const [lastFailedMessage, setLastFailedMessage] = useState<string | null>(null); // Store last failed message for retry
   // Only show disclaimer for guest users
   const [showDisclaimer, setShowDisclaimer] = useState(() => {
@@ -72,6 +71,16 @@ export function ChatPage() {
     return isGuestUser();
   });
   const [suggestionUsed, setSuggestionUsed] = useState(false);
+
+  // Restore guest auth prompt state on reload
+  useEffect(() => {
+    if (isGuest && id) {
+      const shouldShow = localStorage.getItem(`guest_auth_prompt_${id}`);
+      if (shouldShow === 'true') {
+        setShowGuestAuthPrompt(true);
+      }
+    }
+  }, [id, isGuest]);
 
   const state = (location.state || {}) as {
     bootstrapThread?: Thread;
@@ -98,7 +107,6 @@ export function ChatPage() {
       setGuestThreadTitle(state.bootstrapThread.title || "New Chat");
       
       if (state.bootstrapThread.chatCount !== undefined) {
-        setGuestChatCount(state.bootstrapThread.chatCount);
         setLastPopupCount((prev) => prev === 0 ? state.bootstrapThread!.chatCount! : prev);
       }
       if (state.bootstrapThread.chatLimit !== undefined) {
@@ -208,7 +216,6 @@ export function ChatPage() {
     // Update chat count and limit from thread data
     if (thread.chatCount !== undefined) {
       const count = thread.chatCount;
-      setGuestChatCount(count);
       // Initialize lastPopupCount if not already set
       if (lastPopupCount === 0 && count > 0) {
         setLastPopupCount(count);
@@ -295,18 +302,18 @@ export function ChatPage() {
           }
           
           if (isGuest && (data.user_wants_to_skip_exercise || data.exercise_completed)) {
-            setEnforceAuth(true);
-            setShowSignupPopup(true);
+            setShowGuestAuthPrompt(true);
+            localStorage.setItem(`guest_auth_prompt_${id}`, 'true');
           }
           
           // ... rest of guest logic for counts/limits ...
           if (data.chatCount !== undefined) {
-            setGuestChatCount(data.chatCount);
             // Check if we should show popup after count update
             if (isGuest && guestChatLimit !== null && guestChatLimit > 0) {
               const messagesSinceLastPopup = data.chatCount - lastPopupCount;
               if (messagesSinceLastPopup >= guestChatLimit) {
-                setShowLimitPopup(true);
+                setShowGuestAuthPrompt(true);
+                localStorage.setItem(`guest_auth_prompt_${id}`, 'true');
                 setLastPopupCount(data.chatCount);
               }
             }
@@ -957,39 +964,35 @@ export function ChatPage() {
         </div>
       </div>
 
-      {/* Chat Limit Popup */}
-      {showLimitPopup && (
+      {/* Guest Auth Prompt Popup */}
+      {showGuestAuthPrompt && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white dark:bg-gray-800 rounded-xl p-6 max-w-md w-full mx-4 shadow-xl">
-            <h2 className="text-2xl font-bold text-gray-800 dark:text-gray-200 mb-4 text-center">
-              Save your progress
+          <div className="bg-white dark:bg-gray-800 rounded-xl p-8 max-w-md w-full mx-4 shadow-xl relative">
+            <button
+              onClick={() => {
+                setShowGuestAuthPrompt(false);
+                localStorage.removeItem(`guest_auth_prompt_${id}`);
+              }}
+              className="absolute right-4 top-4 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition"
+              aria-label="Close popup"
+            >
+              <X className="h-5 w-5" />
+            </button>
+            <h2 className="text-xl font-medium text-gray-800 dark:text-gray-200 mb-4 text-center mt-2">
+              Sign up or Login for free
             </h2>
-            <p className="text-gray-600 dark:text-gray-400 mb-6 text-center">
-              Guest chats don't stay forever. Log in or sign up to save this thread and create more.
+            <p className="text-gray-600 dark:text-gray-400 mb-8 text-center text-[15px] leading-relaxed">
+              Guest chats don't stay forever. Log in or sign up to continue this thread and create more.
             </p>
-            <div className="flex gap-3">
-              <button
-                onClick={() => {
-                  setShowLimitPopup(false);
-                  // Reset counter when skipped - next popup will show after another 10 messages
-                  setLastPopupCount(guestChatCount);
-                }}
-                className="flex-1 rounded-xl border border-gray-200 bg-white dark:bg-gray-800 dark:border-gray-700 px-5 py-3 text-sm font-semibold text-gray-800 dark:text-gray-200 transition hover:bg-gray-50 dark:hover:bg-gray-700"
-              >
-                Skip
-              </button>
-              <button
-                onClick={() => {
-                  setShowLimitPopup(false);
-                  // Reset counter when login clicked - next popup will show after another 10 messages
-                  setLastPopupCount(guestChatCount);
-                  setShowLoginPopup(true);
-                }}
-                className="flex-1 rounded-xl bg-yellow-400 px-5 py-3 text-sm font-semibold text-gray-800 transition hover:bg-yellow-500 disabled:opacity-50"
-              >
-                Login
-              </button>
-            </div>
+            <button
+              onClick={() => {
+                setShowGuestAuthPrompt(false);
+                setShowSignupPopup(true);
+              }}
+              className="w-full rounded-full bg-[#facc15] px-5 py-3 text-[15px] font-medium text-gray-900 transition hover:bg-[#eab308]"
+            >
+              Sign up or Login
+            </button>
           </div>
         </div>
       )}
@@ -1009,9 +1012,8 @@ export function ChatPage() {
         </div>
         <LoginPopup
           isOpen={showLoginPopup}
-          unclosable={enforceAuth}
+          unclosable={false}
           onClose={() => {
-            if (enforceAuth) return;
             setShowLoginPopup(false);
             setShowSignupPopup(false);
           }}
@@ -1023,9 +1025,8 @@ export function ChatPage() {
         />
         <SignupPopup
           isOpen={showSignupPopup}
-          unclosable={enforceAuth}
+          unclosable={false}
           onClose={() => {
-            if (enforceAuth) return;
             setShowLoginPopup(false);
             setShowSignupPopup(false);
           }}

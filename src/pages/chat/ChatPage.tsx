@@ -131,9 +131,7 @@ export function ChatPage() {
     queryFn: async () => {
       // Ensure token before fetching thread
       await ensureToken();
-      console.log("[ChatPage] Fetching thread with ID:", id);
       const res = await api.get(`/threads/${id}`);
-      console.log("[ChatPage] Thread fetched:", res.data.data);
       const fetchedThread = res.data.data as Thread;
       logAnalyticsEvent("thread_opened", {
         thread_id: id,
@@ -144,7 +142,6 @@ export function ChatPage() {
     initialData: () => {
       // If it's a reload, ignore saved state and force a fresh load from the database
       if (isReload) {
-        console.log("[ChatPage] Browser reload detected, ignoring preserved navigation state to force fresh API call.");
         return undefined;
       }
       
@@ -176,15 +173,6 @@ export function ChatPage() {
 
   // Debug logging
   useEffect(() => {
-    console.log("[ChatPage] Query state:", {
-      id,
-      hasBootstrapData,
-      hasCachedThread: !!cachedThread,
-      shouldFetch,
-      enabled: !!id,
-      isLoading,
-      thread: thread ? { id: thread.id, threadId: thread.threadId, messageCount: thread.messages?.length } : null,
-    });
   }, [id, hasBootstrapData, cachedThread, shouldFetch, isLoading, thread]);
 
   // When thread data is loaded (from API or cache), update guest state if needed
@@ -197,13 +185,11 @@ export function ChatPage() {
     // if the thread has more messages than local state (background sync)
     if (thread.messages && thread.messages.length > 0) {
       if (guestMessages.length === 0) {
-        console.log("[ChatPage] Initial loading of thread data into guest state:", thread.messages.length);
         setGuestMessages(thread.messages);
       } else if (thread.messages.length !== guestMessages.length) {
         // Sync if counts differ and we don't have active temp messages that are about to be replaced
         const hasTempMessages = guestMessages.some(m => m.id?.startsWith("temp-"));
         if (!hasTempMessages) {
-          console.log("[ChatPage] Syncing thread data into guest state (counts differ):", thread.messages.length, "vs", guestMessages.length);
           setGuestMessages(thread.messages);
         }
       }
@@ -239,7 +225,6 @@ export function ChatPage() {
       return res.data.data;
     },
     onSuccess: (data, variables) => {
-      console.log("[ChatPage] sendMessage.onSuccess: entered", { data: !!data, variables });
       setIsSending(false);
 
       logAnalyticsEvent("chat_message_sent", {
@@ -281,13 +266,14 @@ export function ChatPage() {
 
           // For guest users, update local state
           if (data.assistantMessage) {
-            console.log("[ChatPage] sendMessage.onSuccess: adding assistant message to guestMessages:", data.assistantMessage);
             setGuestMessages((prev) => {
+              console.log("BEFORE:", prev);
               const newMessages: Message[] = [
                 ...prev.filter(m => !m.id?.startsWith("temp-")),
                 userMsg,
                 assistantMsg,
               ];
+              console.log("AFTER:", newMessages);
               logAnalyticsEvent("chat_message_received", {
                 thread_id: id,
                 response_length: data.assistantMessage.length
@@ -382,11 +368,9 @@ export function ChatPage() {
       setIsSending(false);
     },
     onSettled: () => {
-      console.log("[ChatPage] sendMessage.onSettled");
       setIsSending(false);
     },
     onError: (error: any, variables: string) => {
-      console.log("[ChatPage] sendMessage.onError:", error);
       setIsSending(false);
       const errorMessage = extractErrorMessage(error, "Failed to send message");
 
@@ -501,11 +485,9 @@ export function ChatPage() {
   const sendText = (text: string) => {
     const trimmedMessage = text.trim();
     if (!trimmedMessage || isSending) {
-      console.log("[ChatPage] sendText: skipping - trimmed:", trimmedMessage, "isSending:", isSending);
       return;
     }
 
-    console.log("[ChatPage] sendText: sending message:", trimmedMessage, "isGuest:", isGuest);
     setIsSending(true);
 
     // Store message for potential retry
@@ -530,7 +512,6 @@ export function ChatPage() {
             createdAt: new Date().toISOString(),
           },
         ];
-        console.log("[ChatPage] sendText: updated guestMessages:", newMessages);
         return newMessages;
       });
     } else {
@@ -559,12 +540,10 @@ export function ChatPage() {
             createdAt: new Date().toISOString(),
           },
         ];
-        console.log("[ChatPage] sendText: updated thread messages:", newMessages);
         return { ...old, messages: newMessages };
       });
     }
 
-    console.log("[ChatPage] sendText: calling sendMessage.mutate");
     sendMessage.mutate(trimmedMessage);
   };
 
@@ -638,7 +617,6 @@ export function ChatPage() {
         }
       }
 
-      console.log("[ChatPage] Auto-send: ready, calling sendText");
       hasAutoSentRef.current = true;
       sendText(state.autoSendText!);
     };

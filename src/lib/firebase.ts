@@ -104,12 +104,12 @@ export async function logAnalyticsEvent(eventName: string, params?: any) {
     const analyticsInstance = await getFirebaseAnalytics();
     if (analyticsInstance) {
       logEvent(analyticsInstance, eventName, params);
-      console.log(`[Analytics] Event: ${eventName}`, params || "");
+      //  console.log(`[Analytics] Event: ${eventName}`, params || "");
     } else {
-      console.warn(`[Analytics] Failed to log event ${eventName}: Analytics not supported or initialized`);
+      //  console.warn(`[Analytics] Failed to log event ${eventName}: Analytics not supported or initialized`);
     }
   } catch (error) {
-    console.error(`[Analytics] Error logging event ${eventName}:`, error);
+    //  console.error(`[Analytics] Error logging event ${eventName}:`, error);
   }
 }
 

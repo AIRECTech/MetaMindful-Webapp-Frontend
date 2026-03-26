@@ -249,7 +249,7 @@ export function ChatPage() {
       // Update thread data from chat API response instead of refetching
       if (data) {
         const assistantMsg: Message = {
-          id: data.message_id || `temp-assistant-${Date.now()}`,
+          id: data.message_id || `local-assistant-${Date.now()}`,
           role: "assistant" as const,
           content: data.assistantMessage,
           replies: data.replies || [],
@@ -257,7 +257,7 @@ export function ChatPage() {
         };
 
         const userMsg: Message = {
-          id: `temp-user-${Date.now()}-confirmed`,
+          id: `local-user-${Date.now()}-confirmed`,
           role: "user" as const,
           content: variables,
           createdAt: new Date().toISOString(),
@@ -345,7 +345,7 @@ export function ChatPage() {
                 updated.messages = [
                   ...old.messages,
                   {
-                    id: data.message_id || `temp-assistant-${Date.now()}`,
+                    id: data.message_id || `local-assistant-${Date.now()}`,
                     role: "assistant",
                     content: data.assistantMessage,
                     replies: data.replies || [],

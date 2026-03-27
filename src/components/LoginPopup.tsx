@@ -342,11 +342,11 @@ export function LoginPopup({ isOpen, onClose, currentThreadId, onSuccess, onSwit
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4">
-      <div className="relative w-full max-w-md rounded-3xl bg-white p-8 shadow-xl">
+      <div className="relative w-full max-w-md rounded-3xl bg-white dark:bg-gray-800 p-8 shadow-xl max-h-[90vh] overflow-y-auto">
         {!unclosable && (
           <button
             onClick={onClose}
-            className="absolute right-4 top-4 text-gray-400 hover:text-gray-600"
+            className="absolute right-4 top-4 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
           >
             <X className="h-6 w-6" />
           </button>
@@ -356,11 +356,11 @@ export function LoginPopup({ isOpen, onClose, currentThreadId, onSuccess, onSwit
         <div className="mb-4 flex flex-col items-center">
           <div className="mb-3 flex items-center gap-2">
             <img src="/logo.png" alt="MetaMindful" className="h-8 w-auto" />
-            <span className="text-2xl font-semibold text-gray-800">MetaMindful</span>
+            <span className="text-2xl font-semibold text-gray-800 dark:text-gray-200">MetaMindful</span>
           </div>
         </div>
 
-        <p className="mb-6 text-center text-sm font-medium text-gray-700">Choose a log-in method</p>
+        <p className="mb-6 text-center text-sm font-medium text-gray-700 dark:text-gray-300">Choose a log-in method</p>
 
         {/* Social Login Buttons */}
         <div className="mb-6 flex gap-3">
@@ -368,9 +368,9 @@ export function LoginPopup({ isOpen, onClose, currentThreadId, onSuccess, onSwit
             type="button"
             onClick={handleAppleLogin}
             disabled={socialLogin.isPending}
-            className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm font-medium text-gray-700 transition hover:bg-gray-50 disabled:opacity-50"
+            className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-4 py-3 text-sm font-medium text-gray-700 dark:text-gray-300 transition hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50"
           >
-            <svg className="h-5 w-5" viewBox="0 0 24 24" fill="#000000">
+            <svg className="h-5 w-5 dark:fill-white" viewBox="0 0 24 24" fill="#000000">
               <path d="M17.05 20.28c-.98.95-2.05.88-3.08.4-1.09-.5-2.08-.48-3.24 0-1.44.62-2.2.44-3.06-.4C2.79 15.25 3.51 7.59 9.05 7.31c1.35.07 2.29.74 3.08.8 1.18-.24 2.31-.93 3.57-.84 1.51.12 2.65.72 3.4 1.8-3.12 1.87-2.38 5.98.48 7.13-.57 1.5-1.31 2.99-2.54 4.09l.01-.01zM12.03 7.25c-.15-2.23 1.66-4.07 3.74-4.25.29 2.58-2.34 4.5-3.74 4.25z" />
             </svg>
             Apple
@@ -379,7 +379,7 @@ export function LoginPopup({ isOpen, onClose, currentThreadId, onSuccess, onSwit
             type="button"
             onClick={handleGoogleLogin}
             disabled={socialLogin.isPending}
-            className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm font-medium text-gray-700 transition hover:bg-gray-50 disabled:opacity-50"
+            className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-4 py-3 text-sm font-medium text-gray-700 dark:text-gray-300 transition hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50"
           >
             <svg className="h-5 w-5" viewBox="0 0 24 24">
               <path
@@ -405,9 +405,9 @@ export function LoginPopup({ isOpen, onClose, currentThreadId, onSuccess, onSwit
 
         {/* OR Divider */}
         <div className="mb-6 flex items-center gap-4">
-          <div className="flex-1 border-t border-gray-200"></div>
-          <span className="text-xs font-medium text-gray-500">OR</span>
-          <div className="flex-1 border-t border-gray-200"></div>
+          <div className="flex-1 border-t border-gray-200 dark:border-gray-700"></div>
+          <span className="text-xs font-medium text-gray-500 dark:text-gray-400">OR</span>
+          <div className="flex-1 border-t border-gray-200 dark:border-gray-700"></div>
         </div>
 
         {/* Email and Password Fields */}
@@ -419,11 +419,11 @@ export function LoginPopup({ isOpen, onClose, currentThreadId, onSuccess, onSwit
           }}
         >
           <label className="relative block">
-            <Mail className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400" />
+            <Mail className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400 dark:text-gray-500" />
             <input
               type="email"
-              className={`w-full rounded-xl border bg-white px-4 py-3 pl-11 text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 ${
-                feedback.error ? "border-red-300 focus:ring-red-400" : "border-gray-200 focus:ring-yellow-400"
+              className={`w-full rounded-xl border bg-white dark:bg-gray-800 px-4 py-3 pl-11 text-gray-800 dark:text-gray-200 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 ${
+                feedback.error ? "border-red-300 dark:border-red-700 focus:ring-red-400" : "border-gray-200 dark:border-gray-700 focus:ring-yellow-400"
               }`}
               value={credentials.email}
               onChange={(event) => {
@@ -437,11 +437,11 @@ export function LoginPopup({ isOpen, onClose, currentThreadId, onSuccess, onSwit
           </label>
 
           <label className="relative block">
-            <Lock className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400" />
+            <Lock className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400 dark:text-gray-500" />
             <input
               type={showPassword ? "text" : "password"}
-              className={`w-full rounded-xl border bg-white px-4 py-3 pl-11 pr-11 text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 ${
-                feedback.error ? "border-red-300 focus:ring-red-400" : "border-gray-200 focus:ring-yellow-400"
+              className={`w-full rounded-xl border bg-white dark:bg-gray-800 px-4 py-3 pl-11 pr-11 text-gray-800 dark:text-gray-200 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 ${
+                feedback.error ? "border-red-300 dark:border-red-700 focus:ring-red-400" : "border-gray-200 dark:border-gray-700 focus:ring-yellow-400"
               }`}
               value={credentials.password}
               onChange={(event) => {
@@ -455,15 +455,15 @@ export function LoginPopup({ isOpen, onClose, currentThreadId, onSuccess, onSwit
             <button
               type="button"
               onClick={() => setShowPassword(!showPassword)}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-400"
             >
               {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
             </button>
           </label>
 
           {feedback.error && (
-            <div className="rounded-xl border border-red-200 bg-red-50 p-3">
-              <p className="text-sm text-red-600">{feedback.error}</p>
+            <div className="rounded-xl border border-red-200 dark:border-red-900 bg-red-50 dark:bg-red-900/30 p-3">
+              <p className="text-sm text-red-600 dark:text-red-400">{feedback.error}</p>
             </div>
           )}
 
@@ -474,9 +474,9 @@ export function LoginPopup({ isOpen, onClose, currentThreadId, onSuccess, onSwit
                 type="checkbox"
                 checked={rememberMe}
                 onChange={(e) => setRememberMe(e.target.checked)}
-                className="h-4 w-4 rounded border-gray-300 text-yellow-400 focus:ring-yellow-400"
+                className="h-4 w-4 rounded border-gray-300 dark:border-gray-600 text-yellow-400 focus:ring-yellow-400 bg-white dark:bg-gray-800"
               />
-              <span className="text-sm text-gray-700">Remember me</span>
+              <span className="text-sm text-gray-700 dark:text-gray-300">Remember me</span>
             </label>
             <button
               type="button"
@@ -484,7 +484,7 @@ export function LoginPopup({ isOpen, onClose, currentThreadId, onSuccess, onSwit
                 onClose();
                 navigate("/forgot-password");
               }}
-              className="text-sm text-gray-600 hover:text-gray-800 hover:underline"
+              className="text-sm text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 hover:underline"
             >
               Forgot password?
             </button>
@@ -501,7 +501,7 @@ export function LoginPopup({ isOpen, onClose, currentThreadId, onSuccess, onSwit
         </form>
 
         {/* Sign Up Link */}
-          <p className="mt-6 text-center text-sm text-gray-600">
+          <p className="mt-6 text-center text-sm text-gray-600 dark:text-gray-400">
             Don't have an account?{" "}
             <button
               type="button"
@@ -512,7 +512,7 @@ export function LoginPopup({ isOpen, onClose, currentThreadId, onSuccess, onSwit
                   onClose();
                 }
               }}
-              className="font-medium text-gray-800 hover:underline"
+              className="font-medium text-gray-800 dark:text-gray-200 hover:underline"
             >
               Sign up
             </button>

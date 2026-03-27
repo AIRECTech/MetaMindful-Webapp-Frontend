@@ -287,20 +287,40 @@ export function ChatPage() {
             setGuestThreadTitle(data.title_name);
           }
           
-          if (isGuest && (data.user_wants_to_skip_exercise || data.exercise_completed)) {
-            setShowGuestAuthPrompt(true);
-            localStorage.setItem(`guest_auth_prompt_${id}`, 'true');
-          }
-          
-          // ... rest of guest logic for counts/limits ...
-          if (data.chatCount !== undefined) {
-            // Check if we should show popup after count update
-            if (isGuest && guestChatLimit !== null && guestChatLimit > 0) {
-              const messagesSinceLastPopup = data.chatCount - lastPopupCount;
-              if (messagesSinceLastPopup >= guestChatLimit) {
+          if (isGuest) {
+            let isExerciseCompleted = localStorage.getItem(`exercise_completed_for_${id}`) === 'true';
+            if (data.user_wants_to_skip_exercise || data.exercise_completed) {
+              isExerciseCompleted = true;
+              localStorage.setItem(`exercise_completed_for_${id}`, 'true');
+            }
+
+            if (isExerciseCompleted) {
+              const dismissedAt = localStorage.getItem(`guest_auth_prompt_dismissed_at_${id}`);
+              const currentChatCount = data.chatCount || displayMessages.filter(m => m.role === 'user').length + 1;
+              
+              if (!dismissedAt) {
                 setShowGuestAuthPrompt(true);
                 localStorage.setItem(`guest_auth_prompt_${id}`, 'true');
-                setLastPopupCount(data.chatCount);
+              } else {
+                const dismissedAtCount = parseInt(dismissedAt, 10);
+                if (currentChatCount - dismissedAtCount >= 2) {
+                  setShowGuestAuthPrompt(true);
+                  localStorage.removeItem(`guest_auth_prompt_dismissed_at_${id}`);
+                  localStorage.setItem(`guest_auth_prompt_${id}`, 'true');
+                }
+              }
+            } else {
+              // Normal guestChatLimit logic
+              if (data.chatCount !== undefined) {
+                // Check if we should show popup after count update
+                if (guestChatLimit !== null && guestChatLimit > 0) {
+                  const messagesSinceLastPopup = data.chatCount - lastPopupCount;
+                  if (messagesSinceLastPopup >= guestChatLimit) {
+                    setShowGuestAuthPrompt(true);
+                    localStorage.setItem(`guest_auth_prompt_${id}`, 'true');
+                    setLastPopupCount(data.chatCount);
+                  }
+                }
               }
             }
           }
@@ -950,6 +970,10 @@ export function ChatPage() {
               onClick={() => {
                 setShowGuestAuthPrompt(false);
                 localStorage.removeItem(`guest_auth_prompt_${id}`);
+                if (localStorage.getItem(`exercise_completed_for_${id}`) === 'true') {
+                  const currentChatCount = thread?.chatCount ?? displayMessages.filter(m => m.role === 'user').length;
+                  localStorage.setItem(`guest_auth_prompt_dismissed_at_${id}`, currentChatCount.toString());
+                }
               }}
               className="absolute right-4 top-4 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition"
               aria-label="Close popup"

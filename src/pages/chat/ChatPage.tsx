@@ -58,10 +58,10 @@ export function ChatPage() {
   // For guest users, manage messages in local state instead of fetching thread
   const [guestMessages, setGuestMessages] = useState<Message[]>([]);
   const [guestThreadTitle, setGuestThreadTitle] = useState<string>("New Chat");
-  const [guestChatCount, setGuestChatCount] = useState<number>(0);
+
   const [guestChatLimit, setGuestChatLimit] = useState<number | null>(null);
   const [lastPopupCount, setLastPopupCount] = useState<number>(0); // Track count when popup was last shown
-  const [showLimitPopup, setShowLimitPopup] = useState(false);
+  const [showGuestAuthPrompt, setShowGuestAuthPrompt] = useState(false);
   const [showLoginPopup, setShowLoginPopup] = useState(false);
   const [showSignupPopup, setShowSignupPopup] = useState(false);
   const [lastFailedMessage, setLastFailedMessage] = useState<string | null>(null); // Store last failed message for retry
@@ -71,6 +71,16 @@ export function ChatPage() {
     return isGuestUser();
   });
   const [suggestionUsed, setSuggestionUsed] = useState(false);
+
+  // Restore guest auth prompt state on reload
+  useEffect(() => {
+    if (isGuest && id) {
+      const shouldShow = localStorage.getItem(`guest_auth_prompt_${id}`);
+      if (shouldShow === 'true') {
+        setShowGuestAuthPrompt(true);
+      }
+    }
+  }, [id, isGuest]);
 
   const state = (location.state || {}) as {
     bootstrapThread?: Thread;
@@ -97,7 +107,6 @@ export function ChatPage() {
       setGuestThreadTitle(state.bootstrapThread.title || "New Chat");
       
       if (state.bootstrapThread.chatCount !== undefined) {
-        setGuestChatCount(state.bootstrapThread.chatCount);
         setLastPopupCount((prev) => prev === 0 ? state.bootstrapThread!.chatCount! : prev);
       }
       if (state.bootstrapThread.chatLimit !== undefined) {
@@ -122,9 +131,7 @@ export function ChatPage() {
     queryFn: async () => {
       // Ensure token before fetching thread
       await ensureToken();
-      console.log("[ChatPage] Fetching thread with ID:", id);
       const res = await api.get(`/threads/${id}`);
-      console.log("[ChatPage] Thread fetched:", res.data.data);
       const fetchedThread = res.data.data as Thread;
       logAnalyticsEvent("thread_opened", {
         thread_id: id,
@@ -135,7 +142,6 @@ export function ChatPage() {
     initialData: () => {
       // If it's a reload, ignore saved state and force a fresh load from the database
       if (isReload) {
-        console.log("[ChatPage] Browser reload detected, ignoring preserved navigation state to force fresh API call.");
         return undefined;
       }
       
@@ -167,15 +173,6 @@ export function ChatPage() {
 
   // Debug logging
   useEffect(() => {
-    console.log("[ChatPage] Query state:", {
-      id,
-      hasBootstrapData,
-      hasCachedThread: !!cachedThread,
-      shouldFetch,
-      enabled: !!id,
-      isLoading,
-      thread: thread ? { id: thread.id, threadId: thread.threadId, messageCount: thread.messages?.length } : null,
-    });
   }, [id, hasBootstrapData, cachedThread, shouldFetch, isLoading, thread]);
 
   // When thread data is loaded (from API or cache), update guest state if needed
@@ -188,13 +185,11 @@ export function ChatPage() {
     // if the thread has more messages than local state (background sync)
     if (thread.messages && thread.messages.length > 0) {
       if (guestMessages.length === 0) {
-        console.log("[ChatPage] Initial loading of thread data into guest state:", thread.messages.length);
         setGuestMessages(thread.messages);
       } else if (thread.messages.length !== guestMessages.length) {
         // Sync if counts differ and we don't have active temp messages that are about to be replaced
         const hasTempMessages = guestMessages.some(m => m.id?.startsWith("temp-"));
         if (!hasTempMessages) {
-          console.log("[ChatPage] Syncing thread data into guest state (counts differ):", thread.messages.length, "vs", guestMessages.length);
           setGuestMessages(thread.messages);
         }
       }
@@ -207,7 +202,6 @@ export function ChatPage() {
     // Update chat count and limit from thread data
     if (thread.chatCount !== undefined) {
       const count = thread.chatCount;
-      setGuestChatCount(count);
       // Initialize lastPopupCount if not already set
       if (lastPopupCount === 0 && count > 0) {
         setLastPopupCount(count);
@@ -231,7 +225,6 @@ export function ChatPage() {
       return res.data.data;
     },
     onSuccess: (data, variables) => {
-      console.log("[ChatPage] sendMessage.onSuccess: entered", { data: !!data, variables });
       setIsSending(false);
 
       logAnalyticsEvent("chat_message_sent", {
@@ -241,7 +234,7 @@ export function ChatPage() {
       // Update thread data from chat API response instead of refetching
       if (data) {
         const assistantMsg: Message = {
-          id: data.message_id || `temp-assistant-${Date.now()}`,
+          id: data.message_id || `local-assistant-${Date.now()}`,
           role: "assistant" as const,
           content: data.assistantMessage,
           replies: data.replies || [],
@@ -249,7 +242,7 @@ export function ChatPage() {
         };
 
         const userMsg: Message = {
-          id: `temp-user-${Date.now()}-confirmed`,
+          id: `local-user-${Date.now()}-confirmed`,
           role: "user" as const,
           content: variables,
           createdAt: new Date().toISOString(),
@@ -273,13 +266,14 @@ export function ChatPage() {
 
           // For guest users, update local state
           if (data.assistantMessage) {
-            console.log("[ChatPage] sendMessage.onSuccess: adding assistant message to guestMessages:", data.assistantMessage);
             setGuestMessages((prev) => {
+              console.log("BEFORE:", prev);
               const newMessages: Message[] = [
                 ...prev.filter(m => !m.id?.startsWith("temp-")),
                 userMsg,
                 assistantMsg,
               ];
+              console.log("AFTER:", newMessages);
               logAnalyticsEvent("chat_message_received", {
                 thread_id: id,
                 response_length: data.assistantMessage.length
@@ -293,15 +287,40 @@ export function ChatPage() {
             setGuestThreadTitle(data.title_name);
           }
           
-          // ... rest of guest logic for counts/limits ...
-          if (data.chatCount !== undefined) {
-            setGuestChatCount(data.chatCount);
-            // Check if we should show popup after count update
-            if (isGuest && guestChatLimit !== null && guestChatLimit > 0) {
-              const messagesSinceLastPopup = data.chatCount - lastPopupCount;
-              if (messagesSinceLastPopup >= guestChatLimit) {
-                setShowLimitPopup(true);
-                setLastPopupCount(data.chatCount);
+          if (isGuest) {
+            let isExerciseCompleted = localStorage.getItem(`exercise_completed_for_${id}`) === 'true';
+            if (data.user_wants_to_skip_exercise || data.exercise_completed) {
+              isExerciseCompleted = true;
+              localStorage.setItem(`exercise_completed_for_${id}`, 'true');
+            }
+
+            if (isExerciseCompleted) {
+              const dismissedAt = localStorage.getItem(`guest_auth_prompt_dismissed_at_${id}`);
+              const currentChatCount = data.chatCount || displayMessages.filter(m => m.role === 'user').length + 1;
+              
+              if (!dismissedAt) {
+                setShowGuestAuthPrompt(true);
+                localStorage.setItem(`guest_auth_prompt_${id}`, 'true');
+              } else {
+                const dismissedAtCount = parseInt(dismissedAt, 10);
+                if (currentChatCount - dismissedAtCount >= 2) {
+                  setShowGuestAuthPrompt(true);
+                  localStorage.removeItem(`guest_auth_prompt_dismissed_at_${id}`);
+                  localStorage.setItem(`guest_auth_prompt_${id}`, 'true');
+                }
+              }
+            } else {
+              // Normal guestChatLimit logic
+              if (data.chatCount !== undefined) {
+                // Check if we should show popup after count update
+                if (guestChatLimit !== null && guestChatLimit > 0) {
+                  const messagesSinceLastPopup = data.chatCount - lastPopupCount;
+                  if (messagesSinceLastPopup >= guestChatLimit) {
+                    setShowGuestAuthPrompt(true);
+                    localStorage.setItem(`guest_auth_prompt_${id}`, 'true');
+                    setLastPopupCount(data.chatCount);
+                  }
+                }
               }
             }
           }
@@ -332,7 +351,7 @@ export function ChatPage() {
                 updated.messages = [
                   ...old.messages,
                   {
-                    id: data.message_id || `temp-assistant-${Date.now()}`,
+                    id: data.message_id || `local-assistant-${Date.now()}`,
                     role: "assistant",
                     content: data.assistantMessage,
                     replies: data.replies || [],
@@ -369,11 +388,9 @@ export function ChatPage() {
       setIsSending(false);
     },
     onSettled: () => {
-      console.log("[ChatPage] sendMessage.onSettled");
       setIsSending(false);
     },
     onError: (error: any, variables: string) => {
-      console.log("[ChatPage] sendMessage.onError:", error);
       setIsSending(false);
       const errorMessage = extractErrorMessage(error, "Failed to send message");
 
@@ -488,11 +505,9 @@ export function ChatPage() {
   const sendText = (text: string) => {
     const trimmedMessage = text.trim();
     if (!trimmedMessage || isSending) {
-      console.log("[ChatPage] sendText: skipping - trimmed:", trimmedMessage, "isSending:", isSending);
       return;
     }
 
-    console.log("[ChatPage] sendText: sending message:", trimmedMessage, "isGuest:", isGuest);
     setIsSending(true);
 
     // Store message for potential retry
@@ -517,7 +532,6 @@ export function ChatPage() {
             createdAt: new Date().toISOString(),
           },
         ];
-        console.log("[ChatPage] sendText: updated guestMessages:", newMessages);
         return newMessages;
       });
     } else {
@@ -546,12 +560,10 @@ export function ChatPage() {
             createdAt: new Date().toISOString(),
           },
         ];
-        console.log("[ChatPage] sendText: updated thread messages:", newMessages);
         return { ...old, messages: newMessages };
       });
     }
 
-    console.log("[ChatPage] sendText: calling sendMessage.mutate");
     sendMessage.mutate(trimmedMessage);
   };
 
@@ -625,7 +637,6 @@ export function ChatPage() {
         }
       }
 
-      console.log("[ChatPage] Auto-send: ready, calling sendText");
       hasAutoSentRef.current = true;
       sendText(state.autoSendText!);
     };
@@ -951,39 +962,39 @@ export function ChatPage() {
         </div>
       </div>
 
-      {/* Chat Limit Popup */}
-      {showLimitPopup && (
+      {/* Guest Auth Prompt Popup */}
+      {showGuestAuthPrompt && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white dark:bg-gray-800 rounded-xl p-6 max-w-md w-full mx-4 shadow-xl">
-            <h2 className="text-2xl font-bold text-gray-800 dark:text-gray-200 mb-4 text-center">
-              Save your progress
+          <div className="bg-white dark:bg-gray-800 rounded-xl p-8 max-w-md w-full mx-4 shadow-xl relative">
+            <button
+              onClick={() => {
+                setShowGuestAuthPrompt(false);
+                localStorage.removeItem(`guest_auth_prompt_${id}`);
+                if (localStorage.getItem(`exercise_completed_for_${id}`) === 'true') {
+                  const currentChatCount = thread?.chatCount ?? displayMessages.filter(m => m.role === 'user').length;
+                  localStorage.setItem(`guest_auth_prompt_dismissed_at_${id}`, currentChatCount.toString());
+                }
+              }}
+              className="absolute right-4 top-4 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition"
+              aria-label="Close popup"
+            >
+              <X className="h-5 w-5" />
+            </button>
+            <h2 className="text-xl font-medium text-gray-800 dark:text-gray-200 mb-4 text-center mt-2">
+              Sign up or Login for free
             </h2>
-            <p className="text-gray-600 dark:text-gray-400 mb-6 text-center">
-              Guest chats don't stay forever. Log in or sign up to save this thread and create more.
+            <p className="text-gray-600 dark:text-gray-400 mb-8 text-center text-[15px] leading-relaxed">
+              Guest chats don't stay forever. Log in or sign up to continue this thread and create more.
             </p>
-            <div className="flex gap-3">
-              <button
-                onClick={() => {
-                  setShowLimitPopup(false);
-                  // Reset counter when skipped - next popup will show after another 10 messages
-                  setLastPopupCount(guestChatCount);
-                }}
-                className="flex-1 rounded-xl border border-gray-200 bg-white dark:bg-gray-800 dark:border-gray-700 px-5 py-3 text-sm font-semibold text-gray-800 dark:text-gray-200 transition hover:bg-gray-50 dark:hover:bg-gray-700"
-              >
-                Skip
-              </button>
-              <button
-                onClick={() => {
-                  setShowLimitPopup(false);
-                  // Reset counter when login clicked - next popup will show after another 10 messages
-                  setLastPopupCount(guestChatCount);
-                  setShowLoginPopup(true);
-                }}
-                className="flex-1 rounded-xl bg-yellow-400 px-5 py-3 text-sm font-semibold text-gray-800 transition hover:bg-yellow-500 disabled:opacity-50"
-              >
-                Login
-              </button>
-            </div>
+            <button
+              onClick={() => {
+                setShowGuestAuthPrompt(false);
+                setShowSignupPopup(true);
+              }}
+              className="w-full rounded-full bg-[#facc15] px-5 py-3 text-[15px] font-medium text-gray-900 transition hover:bg-[#eab308]"
+            >
+              Sign up or Login
+            </button>
           </div>
         </div>
       )}
@@ -1003,6 +1014,7 @@ export function ChatPage() {
         </div>
         <LoginPopup
           isOpen={showLoginPopup}
+          unclosable={false}
           onClose={() => {
             setShowLoginPopup(false);
             setShowSignupPopup(false);
@@ -1015,6 +1027,7 @@ export function ChatPage() {
         />
         <SignupPopup
           isOpen={showSignupPopup}
+          unclosable={false}
           onClose={() => {
             setShowLoginPopup(false);
             setShowSignupPopup(false);

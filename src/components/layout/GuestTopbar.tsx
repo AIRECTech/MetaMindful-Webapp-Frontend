@@ -49,24 +49,24 @@ export function GuestTopbar({ userMessageCount = 0, onOpenThreadCard }: GuestTop
           </div>
         )}
         {userMessageCount === 2 && (
-          <div className="px-6 py-2 bg-white dark:bg-gray-800 border-[1.5px] border-yellow-400 rounded-[10px] shadow-sm text-sm font-medium text-gray-700 dark:text-gray-200 transition-all">
+          <div className="badge-style-yellow animate-border-hide">
             You have successfully created a new action
           </div>
         )}
         {userMessageCount === 3 && (
-          <div className="px-6 py-2 bg-white dark:bg-gray-800 border-[1.5px] border-yellow-400 rounded-[10px] shadow-sm text-sm font-medium text-gray-700 dark:text-gray-200 transition-all">
+          <div className="badge-style-yellow animate-border-hide">
             Nice work completing that action!
           </div>
         )}
         {userMessageCount === 4 && (
-          <div className="px-6 py-2 bg-white dark:bg-gray-800 border-[1.5px] border-yellow-400 rounded-[10px] shadow-sm text-sm font-medium text-gray-700 dark:text-gray-200 transition-all">
+          <div className="badge-style-yellow animate-border-hide">
             Reminder saved. One less thing for your mind to carry.
           </div>
         )}
         {userMessageCount >= 5 && (
           <button
             onClick={onOpenThreadCard}
-            className="px-6 py-2 flex items-center gap-2 bg-white dark:bg-gray-800 border-[1.5px] border-yellow-400 hover:bg-yellow-50 dark:hover:bg-gray-700 rounded-[10px] shadow-sm text-sm font-medium text-gray-700 dark:text-gray-200 transition-all"
+            className="badge-style-yellow animate-border-hide flex items-center gap-2 hover:bg-yellow-50 dark:hover:bg-gray-700"
           >
             Your Thread Card is ready to view
             <ChevronDown className="h-4 w-4" />

@@ -89,17 +89,8 @@ export function ChatPage() {
     autoSendText?: string;
   };
 
-  // Check if this is a browser reload (F5)
-  // If it is, we ignore preserved state and force a fresh load from the database
-  const isReload = useRef(
-    typeof window !== 'undefined' && 
-    window.performance && 
-    (window.performance.getEntriesByType('navigation')[0] as any)?.type === 'reload'
-  ).current;
-
   // If we navigated here from NewChatPage, we can prefill the cache and avoid /threads/:id
   useEffect(() => {
-    if (isReload) return; // Skip bootstrap state sync on reload
     if (!id || !state.bootstrapThread || state.bootstrapThread.threadId !== id) return;
 
     queryClient.setQueryData(["thread", id], state.bootstrapThread);
@@ -115,11 +106,11 @@ export function ChatPage() {
         setGuestChatLimit(state.bootstrapThread.chatLimit);
       }
     }
-  }, [id, isGuest, queryClient, state.bootstrapThread, isReload]);
+  }, [id, isGuest, queryClient, state.bootstrapThread]);
 
   // Check if we have bootstrap data from navigation state
   // Only trust bootstrap data if it's NOT a reload
-  const hasBootstrapData = !isReload && !!(state.bootstrapThread && state.bootstrapThread.threadId === id);
+  const hasBootstrapData = !!(state.bootstrapThread && (state.bootstrapThread.threadId === id || state.bootstrapThread.id === id));
   const cachedThread = id ? queryClient.getQueryData(["thread", id]) as Thread | undefined : undefined;
 
   // After window.location.href (full page reload), router state is lost and React Query cache is cleared
@@ -142,11 +133,6 @@ export function ChatPage() {
       return fetchedThread;
     },
     initialData: () => {
-      // If it's a reload, ignore saved state and force a fresh load from the database
-      if (isReload) {
-        return undefined;
-      }
-      
       // Only use bootstrap data if available (from router state)
       // Don't use cache here - let the query always fetch fresh data after signup/login (window.location.href)
       if (!id) return undefined;
@@ -619,32 +605,36 @@ export function ChatPage() {
   };
 
   useEffect(() => {
+    const sessionKey = `has_sent_auto_message_${id}`;
+    const alreadySentInSession = !!id && sessionStorage.getItem(sessionKey) === 'true';
+
+    // DIAGNOSTIC LOGS - useful for debugging auto-send issues
+    console.log("[ChatPage] Auto-send check:", {
+      id,
+      autoSendText: state.autoSendText,
+      hasAutoSent: hasAutoSentRef.current,
+      alreadySentInSession,
+      isGuest,
+      hasBootstrapData,
+      isSending
+    });
+
+    if (alreadySentInSession) {
+      hasAutoSentRef.current = true;
+      return;
+    }
+
     if (!state.autoSendText || hasAutoSentRef.current) return;
 
-    const checkAndSend = () => {
-      if (hasAutoSentRef.current) return;
-
-      // Don't use setTimeout unless necessary, but check if we are ready
-      if (isGuest) {
-        // Wait until location state is ready and hasBootstrapData is true
-        if (!id || !hasBootstrapData) {
-          setTimeout(checkAndSend, 10);
-          return;
-        }
-      } else {
-        const cachedThread = queryClient.getQueryData(["thread", id]);
-        if (!id || !cachedThread) {
-          setTimeout(checkAndSend, 10);
-          return;
-        }
-      }
-
+    // As long as we have an ID and we're not currently sending, we should trigger the auto-send
+    // This is more resilient than waiting for bootstrap data or cache synchronization
+    if (id && !isSending) {
+      console.log("[ChatPage] Conditions met, triggering auto-send");
       hasAutoSentRef.current = true;
+      sessionStorage.setItem(sessionKey, 'true');
       sendText(state.autoSendText!);
-    };
-
-    checkAndSend();
-  }, [id, state.autoSendText, state.bootstrapThread, isGuest, guestMessages.length, queryClient]);
+    }
+  }, [id, state.autoSendText, hasBootstrapData, isGuest, queryClient, isSending]);
 
   // Hide disclaimer after 2 user messages are sent
   useEffect(() => {
@@ -708,15 +698,16 @@ export function ChatPage() {
     <div className="flex flex-col h-full relative bg-gray-50 dark:bg-gray-900">
       <div className="flex-1 overflow-y-auto">
         <div className="max-w-4xl mx-auto px-4 pt-6 pb-12 space-y-6">
-          {(displayMessages.length === 0 && (isLoading || (state.autoSendText && !hasAutoSentRef.current))) ? (
+          {(displayMessages.length === 0 && (isLoading || isSending || (state.autoSendText && !hasAutoSentRef.current))) ? (
             <div className="text-center py-12">
+              {/* Show different spinner for different states */}
               <div className="flex items-center justify-center gap-2 mb-4">
                 <div className="w-2 h-2 bg-gray-400 dark:bg-gray-500 rounded-full animate-bounce" style={{ animationDelay: "0ms" }}></div>
                 <div className="w-2 h-2 bg-gray-400 dark:bg-gray-500 rounded-full animate-bounce" style={{ animationDelay: "150ms" }}></div>
                 <div className="w-2 h-2 bg-gray-400 dark:bg-gray-500 rounded-full animate-bounce" style={{ animationDelay: "300ms" }}></div>
               </div>
               <p className="text-gray-500 dark:text-gray-400">
-                {state.autoSendText ? "Setting up your chat..." : "Loading messages..."}
+                {(state.autoSendText && !hasAutoSentRef.current) || isSending ? "Setting up your chat..." : "Loading messages..."}
               </p>
             </div>
           ) : displayMessages.length === 0 ? (

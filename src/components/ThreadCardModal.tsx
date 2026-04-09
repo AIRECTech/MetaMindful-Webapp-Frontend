@@ -34,12 +34,12 @@ export function ThreadCardModal({ isOpen, onClose, details = DEFAULT_DETAILS }: 
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-start justify-center pt-28 px-4 pb-4 bg-white/30 backdrop-blur-sm transition-all duration-300">
+    <div className="fixed inset-0 z-50 flex items-start justify-center pt-10 md:pt-28 px-4 pb-4 bg-white/30 backdrop-blur-sm transition-all duration-300">
       {/* Click outside to close (optional, but good UX) */}
       <div className="absolute inset-0" onClick={onClose}></div>
       
       {/* Modal Container */}
-      <div className="relative bg-white border border-yellow-400 rounded-[10px] w-full max-w-[400px] shadow-[0_8px_30px_rgb(0,0,0,0.08)] flex flex-col max-h-[85vh]">
+      <div className="relative bg-white border border-yellow-400 rounded-[10px] w-full max-w-[400px] shadow-[0_8px_30px_rgb(0,0,0,0.08)] flex flex-col max-h-[80vh] md:max-h-[85vh]">
         
         {/* Header */}
         <div className="flex items-center justify-between px-6 pt-6 pb-2">

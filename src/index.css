@@ -59,4 +59,24 @@ body {
     -ms-overflow-style: none;
     scrollbar-width: none;
   }
+
+  .badge-style-yellow {
+    @apply px-6 py-2 bg-white dark:bg-gray-800 border-[1.5px] border-yellow-400 rounded-[10px] shadow-sm text-sm font-medium text-gray-700 dark:text-gray-200 transition-all;
+  }
+
+  .animate-border-hide {
+    animation: fadeOutBorder 2s forwards;
+  }
+
+  @keyframes fadeOutBorder {
+    0%,
+    80% {
+      border-color: #facc15; /* yellow-400 */
+      box-shadow: 0 0 12px rgba(250, 204, 21, 0.5);
+    }
+    100% {
+      border-color: transparent;
+      box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05); /* shadow-sm */
+    }
+  }
 }

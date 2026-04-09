@@ -29,10 +29,10 @@ export function GuestTopbar({ userMessageCount = 0, onOpenThreadCard }: GuestTop
   const [showSignupPopup, setShowSignupPopup] = useState(false);
 
   return (
-    <header className="flex items-center justify-between px-4 py-3 min-h-[64px] mt-[1rem] bg-transparent">
+    <header className="flex flex-wrap items-center justify-between px-4 py-3 min-h-[64px] bg-transparent">
       <button
         onClick={handleLogoClick}
-        className="flex items-center gap-3 hover:opacity-80 transition-opacity cursor-pointer w-[200px]"
+        className="flex items-center gap-3 hover:opacity-80 transition-opacity cursor-pointer w-auto md:w-[200px] order-1"
       >
         <img
           src="/guest_logo.png"
@@ -42,7 +42,7 @@ export function GuestTopbar({ userMessageCount = 0, onOpenThreadCard }: GuestTop
       </button>
 
       {/* Center content - Toasts */}
-      <div className="flex-1 flex justify-center items-center px-4">
+      <div className="w-full md:w-auto md:flex-1 flex justify-center items-center px-4 order-3 md:order-2 mt-4 md:mt-0">
         {userMessageCount === 1 && (
           <div className="px-6 py-2 bg-white dark:bg-gray-800 rounded-[10px] shadow-sm text-sm font-medium text-gray-600 dark:text-gray-300 transition-all">
             Collecting your small wins
@@ -74,8 +74,7 @@ export function GuestTopbar({ userMessageCount = 0, onOpenThreadCard }: GuestTop
         )}
       </div>
 
-      <div className="flex items-center justify-end gap-3 w-[200px]">
-
+      <div className="flex justify-end items-center gap-3 w-auto md:w-[200px] order-2 md:order-3 ml-auto md:ml-0">
         {/* Guest users: Show signup button only */}
         <button
           onClick={() => setShowSignupPopup(true)}

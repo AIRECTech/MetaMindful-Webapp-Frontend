@@ -13,6 +13,7 @@ import { LoginPopup } from "../../components/LoginPopup";
 import { SignupPopup } from "../../components/SignupPopup";
 import { Toaster } from "react-hot-toast";
 import { MessageFormatter } from "../../components/chat/MessageFormatter";
+import { ThreadCardModal } from "../../components/ThreadCardModal";
 
 interface Message {
   id: string;
@@ -64,6 +65,7 @@ export function ChatPage() {
   const [showGuestAuthPrompt, setShowGuestAuthPrompt] = useState(false);
   const [showLoginPopup, setShowLoginPopup] = useState(false);
   const [showSignupPopup, setShowSignupPopup] = useState(false);
+  const [showThreadCard, setShowThreadCard] = useState(false);
   const [lastFailedMessage, setLastFailedMessage] = useState<string | null>(null); // Store last failed message for retry
   // Only show disclaimer for guest users
   const [showDisclaimer, setShowDisclaimer] = useState(() => {
@@ -1008,7 +1010,10 @@ export function ChatPage() {
         <div className="h-screen bg-background text-foreground overflow-hidden">
           <Toaster position="top-right" toastOptions={{ duration: 4000 }} />
           <div className="flex h-full flex-col">
-            <GuestTopbar />
+            <GuestTopbar 
+              userMessageCount={displayMessages.filter(msg => msg.role === 'user').length}
+              onOpenThreadCard={() => setShowThreadCard(true)}
+            />
             <main className="flex-1 overflow-hidden">{chatContent}</main>
           </div>
         </div>
@@ -1037,6 +1042,10 @@ export function ChatPage() {
             setShowSignupPopup(false);
             setShowLoginPopup(true);
           }}
+        />
+        <ThreadCardModal
+          isOpen={showThreadCard}
+          onClose={() => setShowThreadCard(false)}
         />
       </>
     );

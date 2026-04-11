@@ -71,10 +71,13 @@ body {
   .animate-border-gradient {
     position: relative;
     border: none !important;
-    background: transparent !important;
     z-index: 0;
     overflow: hidden;
-    @apply rounded-[10px] shadow-sm;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 12px 20px;
+    @apply rounded-[10px] shadow-lg;
   }
 
   .animate-border-gradient::before {
@@ -86,13 +89,20 @@ body {
     width: 200%;
     height: 200%;
     background: conic-gradient(
-      #facc15,
-      #ffffff,
-      #facc15,
-      #ffffff,
-      #facc15
+      from 0deg,
+      transparent 0deg,
+      #facc15 90deg,
+      transparent 180deg,
+      #facc15 270deg,
+      transparent 360deg
     );
-    animation: rotate 3s linear infinite, fadeOutBorder 0.5s forwards 2s;
+    animation: rotate 3s linear infinite, fadeOut 0.5s forwards 3s;
+  }
+
+  .animate-border-gradient.is-expanded::before {
+    animation: rotate 3s linear infinite !important;
+    opacity: 1 !important;
+    visibility: visible !important;
   }
 
   .animate-border-gradient::after {
@@ -100,7 +110,22 @@ body {
     position: absolute;
     z-index: -1;
     inset: 1.5px;
-    @apply bg-white dark:bg-gray-800 rounded-[9px];
+    @apply bg-white/90 dark:bg-gray-800/90 rounded-[9px];
+    backdrop-filter: blur(8px);
+    animation: fadeOut 0.5s forwards 3s;
+  }
+
+  .animate-border-gradient.is-expanded::after {
+    animation: none !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+  }
+
+  @keyframes fadeOut {
+    to {
+      opacity: 0;
+      visibility: hidden;
+    }
   }
 
   @keyframes rotate {
@@ -133,5 +158,15 @@ body {
       border-color: transparent;
       box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05); /* shadow-sm */
     }
+  }
+
+  .expand-card-animation {
+    transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+    max-height: 40px;
+    overflow: hidden;
+  }
+
+  .expand-card-animation.expanded {
+    max-height: 500px;
   }
 }

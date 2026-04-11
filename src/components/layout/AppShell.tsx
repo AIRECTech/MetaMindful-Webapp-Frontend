@@ -32,7 +32,17 @@ export function AppShell({ children }: PropsWithChildren) {
 
   return (
     <div className="h-screen bg-background text-foreground overflow-hidden">
-      <Toaster position="top-right" toastOptions={{ duration: 4000 }} />
+      <Toaster
+        position="top-right"
+        toastOptions={{
+          duration: 4000,
+          className: "animate-border-gradient",
+          style: {
+            background: "transparent",
+            padding: "0", // Let the class handle padding/inset
+          },
+        }}
+      />
       <div className="flex h-full">
         {showSidebar ? <Sidebar /> : null}
         <div className="flex-1 flex flex-col overflow-hidden">

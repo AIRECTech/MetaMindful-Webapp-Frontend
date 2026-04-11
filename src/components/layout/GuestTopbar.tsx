@@ -44,7 +44,9 @@ export function GuestTopbar({ userMessageCount = 0, onOpenThreadCard }: GuestTop
       {/* Center content - Toasts */}
       <div className="w-full md:w-auto md:flex-1 flex justify-center items-center px-4 order-3 md:order-2 mt-4 md:mt-0">
         {userMessageCount === 1 && (
-          <div className="badge-style">Collecting your small wins</div>
+          <div className="badge-style">
+            Collecting your small wins
+          </div>
         )}
         {userMessageCount === 2 && (
           <div className="badge-style-yellow animate-border-gradient">
@@ -57,14 +59,14 @@ export function GuestTopbar({ userMessageCount = 0, onOpenThreadCard }: GuestTop
           </div>
         )}
         {userMessageCount === 4 && (
-          <div className="badge-style-yellow animate-border-gradient">
+          <div className="badge-style-yellow animate-border-gradient text-center">
             Reminder saved. One less thing for your mind to carry.
           </div>
         )}
         {userMessageCount >= 5 && (
           <button
             onClick={onOpenThreadCard}
-            className="badge-style-yellow animate-border-gradient flex items-center gap-2 hover:bg-yellow-50 dark:hover:bg-gray-700"
+            className="badge-style-yellow animate-border-gradient flex items-center gap-2 hover:opacity-90 transition-opacity"
           >
             Your Thread Card is ready to view <ChevronDown className="h-4 w-4" />
           </button>

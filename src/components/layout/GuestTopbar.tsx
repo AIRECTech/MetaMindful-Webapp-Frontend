@@ -44,32 +44,29 @@ export function GuestTopbar({ userMessageCount = 0, onOpenThreadCard }: GuestTop
       {/* Center content - Toasts */}
       <div className="w-full md:w-auto md:flex-1 flex justify-center items-center px-4 order-3 md:order-2 mt-4 md:mt-0">
         {userMessageCount === 1 && (
-          <div className="px-6 py-2 bg-white dark:bg-gray-800 rounded-[10px] shadow-sm text-sm font-medium text-gray-600 dark:text-gray-300 transition-all">
-            Collecting your small wins
-          </div>
+          <div className="badge-style">Collecting your small wins</div>
         )}
         {userMessageCount === 2 && (
-          <div className="badge-style-yellow animate-border-hide">
+          <div className="badge-style-yellow animate-border-gradient">
             You have successfully created a new action
           </div>
         )}
         {userMessageCount === 3 && (
-          <div className="badge-style-yellow animate-border-hide">
+          <div className="badge-style-yellow animate-border-gradient">
             Nice work completing that action!
           </div>
         )}
         {userMessageCount === 4 && (
-          <div className="badge-style-yellow animate-border-hide">
+          <div className="badge-style-yellow animate-border-gradient">
             Reminder saved. One less thing for your mind to carry.
           </div>
         )}
         {userMessageCount >= 5 && (
           <button
             onClick={onOpenThreadCard}
-            className="badge-style-yellow animate-border-hide flex items-center gap-2 hover:bg-yellow-50 dark:hover:bg-gray-700"
+            className="badge-style-yellow animate-border-gradient flex items-center gap-2 hover:bg-yellow-50 dark:hover:bg-gray-700"
           >
-            Your Thread Card is ready to view
-            <ChevronDown className="h-4 w-4" />
+            Your Thread Card is ready to view <ChevronDown className="h-4 w-4" />
           </button>
         )}
       </div>

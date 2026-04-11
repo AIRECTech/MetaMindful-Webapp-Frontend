@@ -60,8 +60,63 @@ body {
     scrollbar-width: none;
   }
 
+  .badge-style {
+    @apply px-6 py-2 bg-white dark:bg-gray-800 rounded-[10px] shadow-sm text-sm font-medium text-gray-600 dark:text-gray-300 transition-all;
+  }
+
   .badge-style-yellow {
     @apply px-6 py-2 bg-white dark:bg-gray-800 border-[1.5px] border-yellow-400 rounded-[10px] shadow-sm text-sm font-medium text-gray-700 dark:text-gray-200 transition-all;
+  }
+
+  .animate-border-gradient {
+    position: relative;
+    border: none !important;
+    background: transparent !important;
+    z-index: 0;
+    overflow: hidden;
+    @apply rounded-[10px] shadow-sm;
+  }
+
+  .animate-border-gradient::before {
+    content: "";
+    position: absolute;
+    z-index: -2;
+    left: -50%;
+    top: -50%;
+    width: 200%;
+    height: 200%;
+    background: conic-gradient(
+      #facc15,
+      #ffffff,
+      #facc15,
+      #ffffff,
+      #facc15
+    );
+    animation: rotate 3s linear infinite, fadeOutBorder 0.5s forwards 2s;
+  }
+
+  .animate-border-gradient::after {
+    content: "";
+    position: absolute;
+    z-index: -1;
+    inset: 1.5px;
+    @apply bg-white dark:bg-gray-800 rounded-[9px];
+  }
+
+  @keyframes rotate {
+    from {
+      transform: rotate(0deg);
+    }
+    to {
+      transform: rotate(360deg);
+    }
+  }
+
+  @keyframes fadeOutBorder {
+    to {
+      opacity: 0;
+      visibility: hidden;
+    }
   }
 
   .animate-border-hide {

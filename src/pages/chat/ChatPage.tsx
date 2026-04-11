@@ -66,6 +66,9 @@ export function ChatPage() {
   const [showLoginPopup, setShowLoginPopup] = useState(false);
   const [showSignupPopup, setShowSignupPopup] = useState(false);
   const [showThreadCard, setShowThreadCard] = useState(false);
+  const [hasExercise, setHasExercise] = useState(false);
+  const [hasAction, setHasAction] = useState(false);
+  const [threadCardDetails, setThreadCardDetails] = useState<{ label: string; value: string }[]>([]);
   const [lastFailedMessage, setLastFailedMessage] = useState<string | null>(null); // Store last failed message for retry
   // Only show disclaimer for guest users
   const [showDisclaimer, setShowDisclaimer] = useState(() => {
@@ -319,6 +322,36 @@ export function ChatPage() {
           // Update URL to /guest/:threadId if this is the first message and we're on /guest
           if (isGuest && data.threadId && window.location.pathname === "/guest") {
             navigate(`/guest/${data.threadId}`, { replace: true });
+          }
+
+          // Handle Conditional Toasts for Topbar Loop
+          if (data.action_workable_describtion) {
+            setHasAction(true);
+          }
+          if (data.action_completed) {
+            toast.dismiss();
+            toast("Nice work completing that action");
+          }
+          if (data.exercise_ID) {
+            setHasExercise(true);
+          }
+
+          // Handle Thread Card Data
+          const threadCard = data.session_context?.thread_card;
+          if (threadCard) {
+            const details = [
+              { label: "Pattern", value: threadCard.pattern || "" },
+              { label: "Goal", value: threadCard.goal || "" },
+              { label: "Insight", value: threadCard.insight || "" },
+              { label: "Move that help", value: threadCard.move_that_helped || "" },
+              { label: "Current trigger", value: threadCard.trigger || "" },
+              { label: "Progress", value: threadCard.progress || "" },
+              { label: "Workability shift", value: threadCard.workability_shift || "" },
+            ].filter(item => item.value !== "");
+            
+            if (details.length > 0) {
+              setThreadCardDetails(details);
+            }
           }
         } else {
           // For authenticated users, update query cache
@@ -1003,6 +1036,9 @@ export function ChatPage() {
           <div className="flex h-full flex-col">
             <GuestTopbar 
               userMessageCount={displayMessages.filter(msg => msg.role === 'user').length}
+              hasThreadCard={threadCardDetails.length > 0}
+              hasExercise={hasExercise}
+              hasAction={hasAction}
               onOpenThreadCard={() => setShowThreadCard(true)}
             />
             <main className="flex-1 overflow-hidden">{chatContent}</main>
@@ -1037,6 +1073,7 @@ export function ChatPage() {
         <ThreadCardModal
           isOpen={showThreadCard}
           onClose={() => setShowThreadCard(false)}
+          details={threadCardDetails.length > 0 ? threadCardDetails : undefined}
         />
       </>
     );

@@ -58,6 +58,9 @@ export function GuestChatPage() {
   const [showLoginPopup, setShowLoginPopup] = useState(false);
   const [showSignupPopup, setShowSignupPopup] = useState(false);
   const [showThreadCard, setShowThreadCard] = useState(false);
+  const [hasExercise, setHasExercise] = useState(false);
+  const [hasAction, setHasAction] = useState(false);
+  const [threadCardDetails, setThreadCardDetails] = useState<{ label: string; value: string }[]>([]);
   const [showDisclaimer, setShowDisclaimer] = useState(true); // Always show for guest users
   const hasCreatedThreadRef = useRef(false);
   const hasAutoSentQueryMessageRef = useRef(false); // Track if we've auto-sent the query message
@@ -90,8 +93,34 @@ export function GuestChatPage() {
       const res = await api.post("/threads", { title: "New Chat" });
       return res.data.data;
     },
-    onSuccess: (data) => {
+        onSuccess: (data) => {
       if (data?.threadId) {
+        // Handle Conditional Toasts for Topbar Loop
+        if (data.action_workable_describtion) {
+          setHasAction(true);
+        }
+        if (data.exercise_ID) {
+          setHasExercise(true);
+        }
+
+        // Handle Thread Card Data
+        const threadCard = data.session_context?.thread_card;
+        if (threadCard) {
+          const details = [
+            { label: "Pattern", value: threadCard.pattern || "" },
+            { label: "Goal", value: threadCard.goal || "" },
+            { label: "Insight", value: threadCard.insight || "" },
+            { label: "Move that help", value: threadCard.move_that_helped || "" },
+            { label: "Current trigger", value: threadCard.trigger || "" },
+            { label: "Progress", value: threadCard.progress || "" },
+            { label: "Workability shift", value: threadCard.workability_shift || "" },
+          ].filter(item => item.value !== "");
+          
+          if (details.length > 0) {
+            setThreadCardDetails(details);
+          }
+        }
+
         if (pendingMessage) {
           navigateToChatWithFirstUserMessage(pendingMessage, data.threadId, data.title, data.desc, data.messages || []);
         } else {
@@ -263,6 +292,9 @@ export function GuestChatPage() {
         <div className="flex h-full flex-col">
           <GuestTopbar 
             userMessageCount={userMessageCount} 
+            hasThreadCard={threadCardDetails.length > 0}
+            hasExercise={hasExercise}
+            hasAction={hasAction}
             onOpenThreadCard={() => setShowThreadCard(true)}
           />
           <div className="flex-1 flex flex-col relative bg-gray-50 dark:bg-gray-900 overflow-hidden">
@@ -445,6 +477,7 @@ export function GuestChatPage() {
       <ThreadCardModal 
         isOpen={showThreadCard} 
         onClose={() => setShowThreadCard(false)} 
+        details={threadCardDetails.length > 0 ? threadCardDetails : undefined}
       />
     </>
   );

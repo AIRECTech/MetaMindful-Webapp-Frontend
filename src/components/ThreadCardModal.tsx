@@ -9,13 +9,13 @@ interface ThreadCardModalProps {
 }
 
 const DEFAULT_DETAILS = [
-  { label: "Pattern", value: "When timelines appear, the thought \"I shouldn't be doing..." },
-  { label: "Goal", value: "Handle timelines without getting stuck in regret" },
-  { label: "Insight", value: "The thought \"I shouldn't be doing this all\" doesn't have..." },
-  { label: "Move that help", value: "Three Ns of Defusion: noticed the thought, named it..." },
-  { label: "Current trigger", value: "Timelines appearing" },
-  { label: "Progress", value: "Noticing hooks (the \"I shouldn't\" thought), choosing a..." },
-  { label: "Workability shift", value: "From stuck in regret to identifying a small actionable..." },
+  { label: "Pattern", value: "" },
+  { label: "Goal", value: "" },
+  { label: "Insight", value: "" },
+  { label: "Move that help", value: "" },
+  { label: "Current trigger", value: "" },
+  { label: "Progress", value: "" },
+  { label: "Workability shift", value: "" },
 ];
 
 export function ThreadCardModal({ isOpen, onClose, details = DEFAULT_DETAILS }: ThreadCardModalProps) {

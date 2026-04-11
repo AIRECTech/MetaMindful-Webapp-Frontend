@@ -71,13 +71,14 @@ body {
   .animate-border-gradient {
     position: relative;
     border: none !important;
+    background: transparent !important;
     z-index: 0;
     overflow: hidden;
     display: inline-flex;
     align-items: center;
     justify-content: center;
     padding: 12px 20px;
-    @apply rounded-[10px] shadow-lg;
+    @apply rounded-[10px];
   }
 
   .animate-border-gradient::before {
@@ -110,9 +111,8 @@ body {
     position: absolute;
     z-index: -1;
     inset: 1.5px;
-    @apply bg-white/90 dark:bg-gray-800/90 rounded-[9px];
+    @apply bg-white dark:bg-gray-800 rounded-[9px];
     backdrop-filter: blur(8px);
-    animation: fadeOut 0.5s forwards 3s;
   }
 
   .animate-border-gradient.is-expanded::after {

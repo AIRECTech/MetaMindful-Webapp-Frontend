@@ -337,7 +337,7 @@ export function ChatPage() {
           }
 
           // Handle Thread Card Data
-          const threadCard = data.session_context?.thread_card;
+          const threadCard = data.thread_card;
           if (threadCard) {
             const details = [
               { label: "Pattern", value: threadCard.pattern || "" },

@@ -5,6 +5,8 @@ import { api } from "../../lib/api";
 import { clearTokens, isAuthenticated } from "../../lib/auth";
 import { toast } from "react-hot-toast";
 
+import { ChatToasts } from "../chat/ChatToasts";
+
 export function Topbar() {
   const navigate = useNavigate();
   const authenticated = isAuthenticated();
@@ -22,11 +24,15 @@ export function Topbar() {
   };
 
   return (
-    <header className="flex items-center justify-between px-4 py-3">
+    <header className="flex items-center justify-between px-4 py-3 min-h-[64px]">
     
-        <div className="flex flex-col items-start">
+        <div className="flex flex-col items-start flex-1">
         </div>
-      <div className="flex items-center gap-3">
+
+        {/* Center content - Toasts */}
+        <ChatToasts />
+
+      <div className="flex items-center gap-3 flex-1 justify-end">
    
         
         {authenticated ? (

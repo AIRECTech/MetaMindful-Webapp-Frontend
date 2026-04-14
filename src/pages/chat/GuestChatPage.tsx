@@ -14,6 +14,7 @@ import { LoginPopup } from "../../components/LoginPopup";
 import { SignupPopup } from "../../components/SignupPopup";
 import { GuestTopbar } from "../../components/layout/GuestTopbar";
 import { ThreadCardModal } from "../../components/ThreadCardModal";
+import { useChatToast } from "../../contexts/ChatToastContext";
 import { Toaster } from "react-hot-toast";
 
 const suggestions = [
@@ -70,6 +71,43 @@ export function GuestChatPage() {
 
   // Default suggestions provided as constant
   const [currentSuggestions, setCurrentSuggestions] = useState<string[]>(suggestions);
+
+  const { 
+    setToastData, 
+    resetToasts, 
+    setOnOpenThreadCard, 
+    setOnOpenSignupPopup 
+  } = useChatToast();
+
+  const userMessageCount = pendingMessage ? 1 : messages.filter((m) => m.role === "user").length;
+
+  // Sync with ChatToastContext
+  useEffect(() => {
+    setToastData({
+      hasExercise,
+      hasAction,
+      hasThreadCard: threadCardDetails.length > 0,
+      userMessageCount
+    });
+  }, [hasExercise, hasAction, threadCardDetails, userMessageCount, setToastData]);
+
+  // Set modal trigger callbacks
+  useEffect(() => {
+    setOnOpenThreadCard(() => () => setShowThreadCard(true));
+    setOnOpenSignupPopup(() => () => setShowSignupPopup(true));
+    
+    return () => {
+      setOnOpenThreadCard(null);
+      setOnOpenSignupPopup(null);
+    };
+  }, [setOnOpenThreadCard, setOnOpenSignupPopup]);
+
+  // Reset toasts on unmount
+  useEffect(() => {
+    return () => {
+      resetToasts();
+    };
+  }, [resetToasts]);
 
   // Generate guest token and create thread on page load
   const generateToken = useQuery({
@@ -283,20 +321,13 @@ export function GuestChatPage() {
     );
   }
 
-  const userMessageCount = pendingMessage ? 1 : messages.filter((m) => m.role === "user").length;
 
   return (
     <>
       <div className="h-screen bg-background text-foreground overflow-hidden">
         <Toaster position="top-right" toastOptions={{ duration: 4000 }} />
         <div className="flex h-full flex-col">
-          <GuestTopbar 
-            userMessageCount={userMessageCount} 
-            hasThreadCard={threadCardDetails.length > 0}
-            hasExercise={hasExercise}
-            hasAction={hasAction}
-            onOpenThreadCard={() => setShowThreadCard(true)}
-          />
+          <GuestTopbar />
           <div className="flex-1 flex flex-col relative bg-gray-50 dark:bg-gray-900 overflow-hidden">
             {/* Initial greeting view / Loading view */}
             <div className="flex-1 flex items-center justify-center px-4">

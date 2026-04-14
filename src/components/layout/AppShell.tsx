@@ -8,6 +8,8 @@ import { isRealUser, isAuthenticated } from "../../lib/auth";
 import { initializePushNotifications } from "../../lib/notifications";
 import { toast } from "react-hot-toast";
 
+import { ChatToastProvider } from "../../contexts/ChatToastContext";
+
 export function AppShell({ children }: PropsWithChildren) {
   const showSidebar = isRealUser();
   const authenticated = isAuthenticated();
@@ -31,25 +33,27 @@ export function AppShell({ children }: PropsWithChildren) {
   }, [authenticated, queryClient]);
 
   return (
-    <div className="h-screen bg-background text-foreground overflow-hidden">
-      <Toaster
-        position="top-right"
-        toastOptions={{
-          duration: 4000,
-          className: "animate-border-gradient",
-          style: {
-            background: "transparent",
-            padding: "0", // Let the class handle padding/inset
-          },
-        }}
-      />
-      <div className="flex h-full">
-        {showSidebar ? <Sidebar /> : null}
-        <div className="flex-1 flex flex-col overflow-hidden">
-          <Topbar />
-          <main className="flex-1 overflow-hidden">{children}</main>
+    <ChatToastProvider>
+      <div className="h-screen bg-background text-foreground overflow-hidden">
+        <Toaster
+          position="top-right"
+          toastOptions={{
+            duration: 4000,
+            className: "animate-border-gradient",
+            style: {
+              background: "transparent",
+              padding: "0", // Let the class handle padding/inset
+            },
+          }}
+        />
+        <div className="flex h-full">
+          {showSidebar ? <Sidebar /> : null}
+          <div className="flex-1 flex flex-col overflow-hidden">
+            <Topbar />
+            <main className="flex-1 overflow-hidden">{children}</main>
+          </div>
         </div>
       </div>
-    </div>
+    </ChatToastProvider>
   );
 }

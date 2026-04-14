@@ -12,6 +12,7 @@ import { GuestTopbar } from "../../components/layout/GuestTopbar";
 import { LoginPopup } from "../../components/LoginPopup";
 import { SignupPopup } from "../../components/SignupPopup";
 import { Toaster } from "react-hot-toast";
+import { useChatToast } from "../../contexts/ChatToastContext";
 import { MessageFormatter } from "../../components/chat/MessageFormatter";
 import { ThreadCardModal } from "../../components/ThreadCardModal";
 
@@ -56,6 +57,13 @@ export function ChatPage() {
     logAnalyticsEvent("chat_screen_view", { thread_id: id });
   }, [id]);
 
+  const { 
+    setToastData, 
+    resetToasts, 
+    setOnOpenThreadCard, 
+    setOnOpenSignupPopup 
+  } = useChatToast();
+
   // For guest users, manage messages in local state instead of fetching thread
   const [guestMessages, setGuestMessages] = useState<Message[]>([]);
   const [guestThreadTitle, setGuestThreadTitle] = useState<string>("New Chat");
@@ -92,37 +100,10 @@ export function ChatPage() {
     autoSendText?: string;
   };
 
-  // If we navigated here from NewChatPage, we can prefill the cache and avoid /threads/:id
-  useEffect(() => {
-    if (!id || !state.bootstrapThread || state.bootstrapThread.threadId !== id) return;
-
-    queryClient.setQueryData(["thread", id], state.bootstrapThread);
-
-    if (isGuest) {
-      setGuestMessages((prev) => prev.length === 0 ? (state.bootstrapThread!.messages || []) : prev);
-      setGuestThreadTitle(state.bootstrapThread.title || "New Chat");
-      
-      if (state.bootstrapThread.chatCount !== undefined) {
-        setLastPopupCount((prev) => prev === 0 ? state.bootstrapThread!.chatCount! : prev);
-      }
-      if (state.bootstrapThread.chatLimit !== undefined) {
-        setGuestChatLimit(state.bootstrapThread.chatLimit);
-      }
-    }
-  }, [id, isGuest, queryClient, state.bootstrapThread]);
-
-  // Check if we have bootstrap data from navigation state
-  // Only trust bootstrap data if it's NOT a reload
-  const hasBootstrapData = !!(state.bootstrapThread && (state.bootstrapThread.threadId === id || state.bootstrapThread.id === id));
-  const cachedThread = id ? queryClient.getQueryData(["thread", id]) as Thread | undefined : undefined;
-
-  // After window.location.href (full page reload), router state is lost and React Query cache is cleared
-  // So hasBootstrapData is always false and cache is empty, which means we always fetch
-  // Only skip fetching if we have bootstrap data (from router state, not cache)
-  // After signup/login with window.location.href, there's no bootstrap data, so we always fetch
-  const shouldFetch = !!id && !hasBootstrapData;
-
-  const { data: thread, isLoading } = useQuery({
+  const { 
+    data: thread, 
+    isLoading 
+  } = useQuery({
     queryKey: ["thread", id],
     queryFn: async () => {
       // Ensure token before fetching thread
@@ -160,6 +141,64 @@ export function ChatPage() {
  
   // Use guest messages for guest users, thread messages for authenticated users
   const displayMessages = isGuest ? guestMessages : (thread?.messages || []);
+
+  // Sync with ChatToastContext
+  useEffect(() => {
+    setToastData({
+      hasExercise,
+      hasAction,
+      hasThreadCard: threadCardDetails.length > 0,
+      userMessageCount: displayMessages.filter(m => m.role === 'user').length
+    });
+  }, [hasExercise, hasAction, threadCardDetails, displayMessages, setToastData]);
+
+  // Set modal trigger callbacks
+  useEffect(() => {
+    setOnOpenThreadCard(() => () => setShowThreadCard(true));
+    setOnOpenSignupPopup(() => () => setShowSignupPopup(true));
+    
+    return () => {
+      setOnOpenThreadCard(null);
+      setOnOpenSignupPopup(null);
+    };
+  }, [setOnOpenThreadCard, setOnOpenSignupPopup]);
+
+  // Reset toasts on unmount
+  useEffect(() => {
+    return () => {
+      resetToasts();
+    };
+  }, [resetToasts]);
+
+  // If we navigated here from NewChatPage, we can prefill the cache and avoid /threads/:id
+  useEffect(() => {
+    if (!id || !state.bootstrapThread || state.bootstrapThread.threadId !== id) return;
+
+    queryClient.setQueryData(["thread", id], state.bootstrapThread);
+
+    if (isGuest) {
+      setGuestMessages((prev) => prev.length === 0 ? (state.bootstrapThread!.messages || []) : prev);
+      setGuestThreadTitle(state.bootstrapThread.title || "New Chat");
+      
+      if (state.bootstrapThread.chatCount !== undefined) {
+        setLastPopupCount((prev) => prev === 0 ? state.bootstrapThread!.chatCount! : prev);
+      }
+      if (state.bootstrapThread.chatLimit !== undefined) {
+        setGuestChatLimit(state.bootstrapThread.chatLimit);
+      }
+    }
+  }, [id, isGuest, queryClient, state.bootstrapThread]);
+
+  // Check if we have bootstrap data from navigation state
+  // Only trust bootstrap data if it's NOT a reload
+  const hasBootstrapData = !!(state.bootstrapThread && (state.bootstrapThread.threadId === id || state.bootstrapThread.id === id));
+  const cachedThread = id ? queryClient.getQueryData(["thread", id]) as Thread | undefined : undefined;
+
+  // After window.location.href (full page reload), router state is lost and React Query cache is cleared
+  // So hasBootstrapData is always false and cache is empty, which means we always fetch
+  // Only skip fetching if we have bootstrap data (from router state, not cache)
+  // After signup/login with window.location.href, there's no bootstrap data, so we always fetch
+  const shouldFetch = !!id && !hasBootstrapData;
 
 
   // Debug logging
@@ -1034,13 +1073,7 @@ export function ChatPage() {
         <div className="h-screen bg-background text-foreground overflow-hidden">
           <Toaster position="top-right" toastOptions={{ duration: 4000 }} />
           <div className="flex h-full flex-col">
-            <GuestTopbar 
-              userMessageCount={displayMessages.filter(msg => msg.role === 'user').length}
-              hasThreadCard={threadCardDetails.length > 0}
-              hasExercise={hasExercise}
-              hasAction={hasAction}
-              onOpenThreadCard={() => setShowThreadCard(true)}
-            />
+            <GuestTopbar />
             <main className="flex-1 overflow-hidden">{chatContent}</main>
           </div>
         </div>

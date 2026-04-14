@@ -30,7 +30,9 @@ export function Topbar() {
         </div>
 
         {/* Center content - Toasts */}
-        <ChatToasts />
+        <div className="flex-1 flex justify-center items-center px-4 min-h-[44px]">
+          <ChatToasts />
+        </div>
 
       <div className="flex items-center gap-3 flex-1 justify-end">
    

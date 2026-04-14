@@ -59,9 +59,22 @@ export function GuestChatPage() {
   const [showLoginPopup, setShowLoginPopup] = useState(false);
   const [showSignupPopup, setShowSignupPopup] = useState(false);
   const [showThreadCard, setShowThreadCard] = useState(false);
-  const [hasExercise, setHasExercise] = useState(false);
-  const [hasAction, setHasAction] = useState(false);
-  const [threadCardDetails, setThreadCardDetails] = useState<{ label: string; value: string }[]>([]);
+  const [hasExercise, setHasExercise] = useState(() => {
+    const tid = id || threadId;
+    if (!tid) return false;
+    return localStorage.getItem(`toast_has_exercise_${tid}`) === 'true';
+  });
+  const [hasAction, setHasAction] = useState(() => {
+    const tid = id || threadId;
+    if (!tid) return false;
+    return localStorage.getItem(`toast_has_action_${tid}`) === 'true';
+  });
+  const [threadCardDetails, setThreadCardDetails] = useState<{ label: string; value: string }[]>(() => {
+    const tid = id || threadId;
+    if (!tid) return [];
+    const saved = localStorage.getItem(`toast_thread_card_${tid}`);
+    return saved ? JSON.parse(saved) : [];
+  });
   const [showDisclaimer, setShowDisclaimer] = useState(true); // Always show for guest users
   const hasCreatedThreadRef = useRef(false);
   const hasAutoSentQueryMessageRef = useRef(false); // Track if we've auto-sent the query message
@@ -72,11 +85,11 @@ export function GuestChatPage() {
   // Default suggestions provided as constant
   const [currentSuggestions, setCurrentSuggestions] = useState<string[]>(suggestions);
 
-  const { 
-    setToastData, 
-    resetToasts, 
-    setOnOpenThreadCard, 
-    setOnOpenSignupPopup 
+  const {
+    setToastData,
+    resetToasts,
+    setOnOpenThreadCard,
+    setOnOpenSignupPopup
   } = useChatToast();
 
   const userMessageCount = pendingMessage ? 1 : messages.filter((m) => m.role === "user").length;
@@ -95,7 +108,7 @@ export function GuestChatPage() {
   useEffect(() => {
     setOnOpenThreadCard(() => () => setShowThreadCard(true));
     setOnOpenSignupPopup(() => () => setShowSignupPopup(true));
-    
+
     return () => {
       setOnOpenThreadCard(null);
       setOnOpenSignupPopup(null);
@@ -131,14 +144,29 @@ export function GuestChatPage() {
       const res = await api.post("/threads", { title: "New Chat" });
       return res.data.data;
     },
-        onSuccess: (data) => {
+    onSuccess: (data) => {
       if (data?.threadId) {
-        // Handle Conditional Toasts for Topbar Loop
+        // Handle Conditional Toasts (Detect created vs completed)
         if (data.action_workable_describtion) {
           setHasAction(true);
+          localStorage.setItem(`toast_has_action_${data.threadId}`, 'true');
         }
+        if (data.action_completed === true && hasAction) {
+          setHasAction(false);
+          localStorage.removeItem(`toast_has_action_${data.threadId}`);
+          toast.dismiss();
+          toast("Nice work completing that action");
+        }
+
         if (data.exercise_ID) {
           setHasExercise(true);
+          localStorage.setItem(`toast_has_exercise_${data.threadId}`, 'true');
+        }
+        if (data.exercise_completed === true && hasExercise) {
+          setHasExercise(false);
+          localStorage.removeItem(`toast_has_exercise_${data.threadId}`);
+          toast.dismiss();
+          toast("Nice work completing that exercise");
         }
 
         // Handle Thread Card Data
@@ -153,9 +181,10 @@ export function GuestChatPage() {
             { label: "Progress", value: threadCard.progress || "" },
             { label: "Workability shift", value: threadCard.workability_shift || "" },
           ].filter(item => item.value !== "");
-          
+
           if (details.length > 0) {
             setThreadCardDetails(details);
+            localStorage.setItem(`toast_thread_card_${data.threadId}`, JSON.stringify(details));
           }
         }
 
@@ -505,9 +534,9 @@ export function GuestChatPage() {
           setShowLoginPopup(true);
         }}
       />
-      <ThreadCardModal 
-        isOpen={showThreadCard} 
-        onClose={() => setShowThreadCard(false)} 
+      <ThreadCardModal
+        isOpen={showThreadCard}
+        onClose={() => setShowThreadCard(false)}
         details={threadCardDetails.length > 0 ? threadCardDetails : undefined}
       />
     </>

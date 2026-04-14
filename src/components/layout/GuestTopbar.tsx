@@ -35,7 +35,9 @@ export function GuestTopbar() {
       </button>
 
       {/* Center content - Toasts */}
-      <ChatToasts />
+      <div className="w-full md:w-auto md:flex-1 flex justify-center items-center px-4 order-3 md:order-2 mt-4 md:mt-0 min-h-[44px]">
+        <ChatToasts />
+      </div>
 
       <div className="flex justify-end items-center gap-3 w-auto md:w-[200px] order-2 md:order-3 ml-auto md:ml-0">
         {/* Guest users: Show signup button only */}

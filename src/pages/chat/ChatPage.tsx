@@ -57,11 +57,11 @@ export function ChatPage() {
     logAnalyticsEvent("chat_screen_view", { thread_id: id });
   }, [id]);
 
-  const { 
-    setToastData, 
-    resetToasts, 
-    setOnOpenThreadCard, 
-    setOnOpenSignupPopup 
+  const {
+    setToastData,
+    resetToasts,
+    setOnOpenThreadCard,
+    setOnOpenSignupPopup
   } = useChatToast();
 
   // For guest users, manage messages in local state instead of fetching thread
@@ -74,9 +74,19 @@ export function ChatPage() {
   const [showLoginPopup, setShowLoginPopup] = useState(false);
   const [showSignupPopup, setShowSignupPopup] = useState(false);
   const [showThreadCard, setShowThreadCard] = useState(false);
-  const [hasExercise, setHasExercise] = useState(false);
-  const [hasAction, setHasAction] = useState(false);
-  const [threadCardDetails, setThreadCardDetails] = useState<{ label: string; value: string }[]>([]);
+  const [hasExercise, setHasExercise] = useState(() => {
+    if (!id) return false;
+    return localStorage.getItem(`toast_has_exercise_${id}`) === 'true';
+  });
+  const [hasAction, setHasAction] = useState(() => {
+    if (!id) return false;
+    return localStorage.getItem(`toast_has_action_${id}`) === 'true';
+  });
+  const [threadCardDetails, setThreadCardDetails] = useState<{ label: string; value: string }[]>(() => {
+    if (!id) return [];
+    const saved = localStorage.getItem(`toast_thread_card_${id}`);
+    return saved ? JSON.parse(saved) : [];
+  });
   const [lastFailedMessage, setLastFailedMessage] = useState<string | null>(null); // Store last failed message for retry
   // Only show disclaimer for guest users
   const [showDisclaimer, setShowDisclaimer] = useState(() => {
@@ -100,9 +110,20 @@ export function ChatPage() {
     autoSendText?: string;
   };
 
-  const { 
-    data: thread, 
-    isLoading 
+  // Check if we have bootstrap data from navigation state
+  // Only trust bootstrap data if it's NOT a reload
+  const hasBootstrapData = !!(state.bootstrapThread && (state.bootstrapThread.threadId === id || state.bootstrapThread.id === id));
+  const cachedThread = id ? queryClient.getQueryData(["thread", id]) as Thread | undefined : undefined;
+
+  // After window.location.href (full page reload), router state is lost and React Query cache is cleared
+  // So hasBootstrapData is always false and cache is empty, which means we always fetch
+  // Only skip fetching if we have bootstrap data (from router state, not cache)
+  // After signup/login with window.location.href, there's no bootstrap data, so we always fetch
+  const shouldFetch = !!id && !hasBootstrapData;
+
+  const {
+    data: thread,
+    isLoading
   } = useQuery({
     queryKey: ["thread", id],
     queryFn: async () => {
@@ -138,7 +159,7 @@ export function ChatPage() {
     staleTime: 0, // Always refetch on mount to ensure fresh data
     gcTime: Infinity,
   });
- 
+
   // Use guest messages for guest users, thread messages for authenticated users
   const displayMessages = isGuest ? guestMessages : (thread?.messages || []);
 
@@ -156,7 +177,7 @@ export function ChatPage() {
   useEffect(() => {
     setOnOpenThreadCard(() => () => setShowThreadCard(true));
     setOnOpenSignupPopup(() => () => setShowSignupPopup(true));
-    
+
     return () => {
       setOnOpenThreadCard(null);
       setOnOpenSignupPopup(null);
@@ -179,7 +200,7 @@ export function ChatPage() {
     if (isGuest) {
       setGuestMessages((prev) => prev.length === 0 ? (state.bootstrapThread!.messages || []) : prev);
       setGuestThreadTitle(state.bootstrapThread.title || "New Chat");
-      
+
       if (state.bootstrapThread.chatCount !== undefined) {
         setLastPopupCount((prev) => prev === 0 ? state.bootstrapThread!.chatCount! : prev);
       }
@@ -189,16 +210,6 @@ export function ChatPage() {
     }
   }, [id, isGuest, queryClient, state.bootstrapThread]);
 
-  // Check if we have bootstrap data from navigation state
-  // Only trust bootstrap data if it's NOT a reload
-  const hasBootstrapData = !!(state.bootstrapThread && (state.bootstrapThread.threadId === id || state.bootstrapThread.id === id));
-  const cachedThread = id ? queryClient.getQueryData(["thread", id]) as Thread | undefined : undefined;
-
-  // After window.location.href (full page reload), router state is lost and React Query cache is cleared
-  // So hasBootstrapData is always false and cache is empty, which means we always fetch
-  // Only skip fetching if we have bootstrap data (from router state, not cache)
-  // After signup/login with window.location.href, there's no bootstrap data, so we always fetch
-  const shouldFetch = !!id && !hasBootstrapData;
 
 
   // Debug logging
@@ -223,7 +234,7 @@ export function ChatPage() {
           setGuestMessages(thread.messages);
         }
       }
-      
+
       if (thread.title && thread.title !== guestThreadTitle) {
         setGuestThreadTitle(thread.title);
       }
@@ -316,7 +327,7 @@ export function ChatPage() {
           if (data.title_name && data.title_name !== guestThreadTitle) {
             setGuestThreadTitle(data.title_name);
           }
-          
+
           if (isGuest) {
             let isExerciseCompleted = localStorage.getItem(`exercise_completed_for_${id}`) === 'true';
             if (data.user_wants_to_skip_exercise || data.exercise_completed) {
@@ -327,7 +338,7 @@ export function ChatPage() {
             if (isExerciseCompleted) {
               const dismissedAt = localStorage.getItem(`guest_auth_prompt_dismissed_at_${id}`);
               const currentChatCount = data.chatCount || displayMessages.filter(m => m.role === 'user').length + 1;
-              
+
               if (!dismissedAt) {
                 setShowGuestAuthPrompt(true);
                 localStorage.setItem(`guest_auth_prompt_${id}`, 'true');
@@ -362,37 +373,51 @@ export function ChatPage() {
           if (isGuest && data.threadId && window.location.pathname === "/guest") {
             navigate(`/guest/${data.threadId}`, { replace: true });
           }
+        }
 
-          // Handle Conditional Toasts for Topbar Loop
-          if (data.action_workable_describtion) {
-            setHasAction(true);
-          }
-          if (data.action_completed) {
-            toast.dismiss();
-            toast("Nice work completing that action");
-          }
-          if (data.exercise_ID) {
-            setHasExercise(true);
-          }
+        // Handle Conditional Toasts (Detect created vs completed)
+        if (data.action_workable_describtion) {
+          setHasAction(true);
+          if (id) localStorage.setItem(`toast_has_action_${id}`, 'true');
+        }
+         if (data.action_completed === true && hasAction) {
+           setHasAction(false);
+           if (id) localStorage.removeItem(`toast_has_action_${id}`);
+           toast.dismiss();
+           toast("Nice work completing that action");
+         }
+         
+         if (data.exercise_ID) {
+           setHasExercise(true);
+           if (id) localStorage.setItem(`toast_has_exercise_${id}`, 'true');
+         }
+         if (data.exercise_completed === true && hasExercise) {
+           setHasExercise(false);
+           if (id) localStorage.removeItem(`toast_has_exercise_${id}`);
+           toast.dismiss();
+           toast("Nice work completing that exercise");
+         }
 
-          // Handle Thread Card Data
-          const threadCard = data.thread_card;
-          if (threadCard) {
-            const details = [
-              { label: "Pattern", value: threadCard.pattern || "" },
-              { label: "Goal", value: threadCard.goal || "" },
-              { label: "Insight", value: threadCard.insight || "" },
-              { label: "Move that help", value: threadCard.move_that_helped || "" },
-              { label: "Current trigger", value: threadCard.trigger || "" },
-              { label: "Progress", value: threadCard.progress || "" },
-              { label: "Workability shift", value: threadCard.workability_shift || "" },
-            ].filter(item => item.value !== "");
-            
-            if (details.length > 0) {
-              setThreadCardDetails(details);
-            }
+         // Handle Thread Card Data
+         const threadCard = data.thread_card;
+         if (threadCard) {
+          const details = [
+            { label: "Pattern", value: threadCard.pattern || "" },
+            { label: "Goal", value: threadCard.goal || "" },
+            { label: "Insight", value: threadCard.insight || "" },
+            { label: "Move that help", value: threadCard.move_that_helped || "" },
+            { label: "Current trigger", value: threadCard.trigger || "" },
+            { label: "Progress", value: threadCard.progress || "" },
+            { label: "Workability shift", value: threadCard.workability_shift || "" },
+          ].filter(item => item.value !== "");
+
+          if (details.length > 0) {
+            setThreadCardDetails(details);
+            if (id) localStorage.setItem(`toast_thread_card_${id}`, JSON.stringify(details));
           }
-        } else {
+        }
+
+        if (!isGuest) {
           // For authenticated users, update query cache
           if (thread) {
             // Update thread detail cache (title and/or messages)
@@ -556,7 +581,7 @@ export function ChatPage() {
       textarea.style.height = `${Math.min(textarea.scrollHeight, 200)}px`; // Max height of 200px
     }
   }, [message]);
- 
+
   // Auto-scroll to bottom of chat
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });

@@ -78,9 +78,17 @@ export function ChatPage() {
     if (!id) return false;
     return localStorage.getItem(`toast_has_exercise_${id}`) === 'true';
   });
+  const [hasExerciseCompleted, setHasExerciseCompleted] = useState(() => {
+    if (!id) return false;
+    return localStorage.getItem(`toast_exercise_completed_${id}`) === 'true';
+  });
   const [hasAction, setHasAction] = useState(() => {
     if (!id) return false;
     return localStorage.getItem(`toast_has_action_${id}`) === 'true';
+  });
+  const [hasActionCompleted, setHasActionCompleted] = useState(() => {
+    if (!id) return false;
+    return localStorage.getItem(`toast_action_completed_${id}`) === 'true';
   });
   const [threadCardDetails, setThreadCardDetails] = useState<{ label: string; value: string }[]>(() => {
     if (!id) return [];
@@ -167,11 +175,13 @@ export function ChatPage() {
   useEffect(() => {
     setToastData({
       hasExercise,
+      hasExerciseCompleted,
       hasAction,
+      hasActionCompleted,
       hasThreadCard: threadCardDetails.length > 0,
       userMessageCount: displayMessages.filter(m => m.role === 'user').length
     });
-  }, [hasExercise, hasAction, threadCardDetails, displayMessages, setToastData]);
+  }, [hasExercise, hasExerciseCompleted, hasAction, hasActionCompleted, threadCardDetails, displayMessages, setToastData]);
 
   // Set modal trigger callbacks
   useEffect(() => {
@@ -378,25 +388,37 @@ export function ChatPage() {
         // Handle Conditional Toasts (Detect created vs completed)
         if (data.action_workable_describtion) {
           setHasAction(true);
-          if (id) localStorage.setItem(`toast_has_action_${id}`, 'true');
+          setHasActionCompleted(false);
+          if (id) {
+            localStorage.setItem(`toast_has_action_${id}`, 'true');
+            localStorage.removeItem(`toast_action_completed_${id}`);
+          }
         }
-         if (data.action_completed === true && hasAction) {
-           setHasAction(false);
-           if (id) localStorage.removeItem(`toast_has_action_${id}`);
-           toast.dismiss();
-           toast("Nice work completing that action");
-         }
-         
-         if (data.exercise_ID) {
-           setHasExercise(true);
-           if (id) localStorage.setItem(`toast_has_exercise_${id}`, 'true');
-         }
-         if (data.exercise_completed === true && hasExercise) {
-           setHasExercise(false);
-           if (id) localStorage.removeItem(`toast_has_exercise_${id}`);
-           toast.dismiss();
-           toast("Nice work completing that exercise");
-         }
+        if (data.action_completed === true && hasAction) {
+          setHasAction(false);
+          setHasActionCompleted(true);
+          if (id) {
+            localStorage.removeItem(`toast_has_action_${id}`);
+            localStorage.setItem(`toast_action_completed_${id}`, 'true');
+          }
+        }
+
+        if (data.exercise_ID) {
+          setHasExercise(true);
+          setHasExerciseCompleted(false);
+          if (id) {
+            localStorage.setItem(`toast_has_exercise_${id}`, 'true');
+            localStorage.removeItem(`toast_exercise_completed_${id}`);
+          }
+        }
+        if (data.exercise_completed === true && hasExercise) {
+          setHasExercise(false);
+          setHasExerciseCompleted(true);
+          if (id) {
+            localStorage.removeItem(`toast_has_exercise_${id}`);
+            localStorage.setItem(`toast_exercise_completed_${id}`, 'true');
+          }
+        }
 
          // Handle Thread Card Data
          const threadCard = data.thread_card;

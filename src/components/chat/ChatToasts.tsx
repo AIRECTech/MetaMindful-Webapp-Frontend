@@ -3,14 +3,17 @@ import { useEffect, useState } from "react";
 import { useChatToast } from "../../contexts/ChatToastContext";
 import { useLocation } from "react-router-dom";
 
+const IOS_APP_URL = "https://apps.apple.com/us/app/metamindful/id6569248759";
+
 export function ChatToasts() {
   const { 
     userMessageCount,
     hasThreadCard, 
     hasExercise, 
-    hasAction, 
+    hasAction,
+    hasExerciseCompleted,
+    hasActionCompleted,
     onOpenThreadCard,
-    onOpenSignupPopup
   } = useChatToast();
   
   const location = useLocation();
@@ -18,7 +21,10 @@ export function ChatToasts() {
 
   const [activeBadgeIndex, setActiveBadgeIndex] = useState(0);
 
+  // Priority: completions first, then active, then thread card
   const activeBadges: string[] = [];
+  if (hasActionCompleted) activeBadges.push('action_completed');
+  if (hasExerciseCompleted) activeBadges.push('exercise_completed');
   if (hasThreadCard) activeBadges.push('thread');
   if (hasExercise) activeBadges.push('exercise');
   if (hasAction) activeBadges.push('action');
@@ -50,9 +56,26 @@ export function ChatToasts() {
     );
   }
 
+  const currentBadge = activeBadges[activeBadgeIndex];
+
   return (
     <div className="flex justify-center items-center w-full">
-      {activeBadges[activeBadgeIndex] === 'thread' && (
+      {currentBadge === 'action_completed' && (
+        <div className="badge-style-yellow animate-border-gradient text-center transition-all duration-500">
+          Nice work completing that action!
+        </div>
+      )}
+      {currentBadge === 'exercise_completed' && (
+        <a
+          href={IOS_APP_URL}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="badge-style-yellow animate-border-gradient flex items-center gap-2 hover:opacity-90 transition-all duration-500 text-center"
+        >
+          Nice work! Download the app to find this in your Exercise Library
+        </a>
+      )}
+      {currentBadge === 'thread' && (
         <button
           onClick={() => onOpenThreadCard?.()}
           className="badge-style-yellow animate-border-gradient flex items-center gap-2 hover:opacity-90 transition-all duration-500"
@@ -60,15 +83,17 @@ export function ChatToasts() {
           Your Thread Card is ready to view <ChevronDown className="h-4 w-4" />
         </button>
       )}
-      {activeBadges[activeBadgeIndex] === 'exercise' && (
-        <button
-          onClick={() => onOpenSignupPopup?.()}
+      {currentBadge === 'exercise' && (
+        <a
+          href={IOS_APP_URL}
+          target="_blank"
+          rel="noopener noreferrer"
           className="badge-style-yellow animate-border-gradient hover:opacity-90 transition-all duration-500 text-center"
         >
-          Nice work! <span className="font-bold underline">Sign up</span> to store this exercise in Exercise library
-        </button>
+          New exercise added! Try it anytime from exercise library
+        </a>
       )}
-      {activeBadges[activeBadgeIndex] === 'action' && (
+      {currentBadge === 'action' && (
         <div className="badge-style-yellow animate-border-gradient text-center transition-all duration-500">
           You have successfully created a new action
         </div>

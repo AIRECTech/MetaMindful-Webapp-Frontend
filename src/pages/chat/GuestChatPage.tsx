@@ -64,10 +64,20 @@ export function GuestChatPage() {
     if (!tid) return false;
     return localStorage.getItem(`toast_has_exercise_${tid}`) === 'true';
   });
+  const [hasExerciseCompleted, setHasExerciseCompleted] = useState(() => {
+    const tid = id || threadId;
+    if (!tid) return false;
+    return localStorage.getItem(`toast_exercise_completed_${tid}`) === 'true';
+  });
   const [hasAction, setHasAction] = useState(() => {
     const tid = id || threadId;
     if (!tid) return false;
     return localStorage.getItem(`toast_has_action_${tid}`) === 'true';
+  });
+  const [hasActionCompleted, setHasActionCompleted] = useState(() => {
+    const tid = id || threadId;
+    if (!tid) return false;
+    return localStorage.getItem(`toast_action_completed_${tid}`) === 'true';
   });
   const [threadCardDetails, setThreadCardDetails] = useState<{ label: string; value: string }[]>(() => {
     const tid = id || threadId;
@@ -98,11 +108,13 @@ export function GuestChatPage() {
   useEffect(() => {
     setToastData({
       hasExercise,
+      hasExerciseCompleted,
       hasAction,
+      hasActionCompleted,
       hasThreadCard: threadCardDetails.length > 0,
       userMessageCount
     });
-  }, [hasExercise, hasAction, threadCardDetails, userMessageCount, setToastData]);
+  }, [hasExercise, hasExerciseCompleted, hasAction, hasActionCompleted, threadCardDetails, userMessageCount, setToastData]);
 
   // Set modal trigger callbacks
   useEffect(() => {
@@ -149,24 +161,28 @@ export function GuestChatPage() {
         // Handle Conditional Toasts (Detect created vs completed)
         if (data.action_workable_describtion) {
           setHasAction(true);
+          setHasActionCompleted(false);
           localStorage.setItem(`toast_has_action_${data.threadId}`, 'true');
+          localStorage.removeItem(`toast_action_completed_${data.threadId}`);
         }
         if (data.action_completed === true && hasAction) {
           setHasAction(false);
+          setHasActionCompleted(true);
           localStorage.removeItem(`toast_has_action_${data.threadId}`);
-          toast.dismiss();
-          toast("Nice work completing that action");
+          localStorage.setItem(`toast_action_completed_${data.threadId}`, 'true');
         }
 
         if (data.exercise_ID) {
           setHasExercise(true);
+          setHasExerciseCompleted(false);
           localStorage.setItem(`toast_has_exercise_${data.threadId}`, 'true');
+          localStorage.removeItem(`toast_exercise_completed_${data.threadId}`);
         }
         if (data.exercise_completed === true && hasExercise) {
           setHasExercise(false);
+          setHasExerciseCompleted(true);
           localStorage.removeItem(`toast_has_exercise_${data.threadId}`);
-          toast.dismiss();
-          toast("Nice work completing that exercise");
+          localStorage.setItem(`toast_exercise_completed_${data.threadId}`, 'true');
         }
 
         // Handle Thread Card Data

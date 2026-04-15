@@ -5,6 +5,8 @@ interface ToastState {
   hasThreadCard: boolean;
   hasExercise: boolean;
   hasAction: boolean;
+  hasExerciseCompleted: boolean;
+  hasActionCompleted: boolean;
 }
 
 interface ChatToastContextType extends ToastState {
@@ -26,6 +28,8 @@ export function ChatToastProvider({ children }: { children: ReactNode }) {
     hasThreadCard: false,
     hasExercise: false,
     hasAction: false,
+    hasExerciseCompleted: false,
+    hasActionCompleted: false,
   });
 
   const [onOpenThreadCard, setOnOpenThreadCard] = useState<(() => void) | null>(null);
@@ -41,6 +45,8 @@ export function ChatToastProvider({ children }: { children: ReactNode }) {
       hasThreadCard: false,
       hasExercise: false,
       hasAction: false,
+      hasExerciseCompleted: false,
+      hasActionCompleted: false,
     });
   }, []);
 

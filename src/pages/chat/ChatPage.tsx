@@ -450,7 +450,6 @@ export function ChatPage() {
             { label: "Move that help", value: threadCard.move_that_helped || "" },
             { label: "Current trigger", value: threadCard.trigger || "" },
             { label: "Progress", value: threadCard.progress || "" },
-            { label: "Workability shift", value: threadCard.workability_shift || "" },
           ].filter(item => item.value !== "");
 
           if (details.length > 0) {

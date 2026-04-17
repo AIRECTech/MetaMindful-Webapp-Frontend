@@ -15,7 +15,6 @@ const DEFAULT_DETAILS = [
   { label: "Move that help", value: "" },
   { label: "Current trigger", value: "" },
   { label: "Progress", value: "" },
-  { label: "Workability shift", value: "" },
 ];
 
 export function ThreadCardModal({ isOpen, onClose, details = DEFAULT_DETAILS }: ThreadCardModalProps) {

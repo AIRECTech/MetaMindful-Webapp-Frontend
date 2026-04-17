@@ -393,6 +393,11 @@ export function ChatPage() {
             localStorage.setItem(`toast_has_action_${id}`, 'true');
             localStorage.removeItem(`toast_action_completed_${id}`);
           }
+        } else if (data.action_workable_describtion === "") {
+          setHasAction(false);
+          if (id) {
+            localStorage.removeItem(`toast_has_action_${id}`);
+          }
         }
         if (data.action_completed === true && hasAction) {
           setHasAction(false);
@@ -400,6 +405,11 @@ export function ChatPage() {
           if (id) {
             localStorage.removeItem(`toast_has_action_${id}`);
             localStorage.setItem(`toast_action_completed_${id}`, 'true');
+          }
+        } else if (data.action_completed === false) {
+          setHasActionCompleted(false);
+          if (id) {
+            localStorage.removeItem(`toast_action_completed_${id}`);
           }
         }
 
@@ -410,6 +420,11 @@ export function ChatPage() {
             localStorage.setItem(`toast_has_exercise_${id}`, 'true');
             localStorage.removeItem(`toast_exercise_completed_${id}`);
           }
+        } else if (data.exercise_ID === "") {
+          setHasExercise(false);
+          if (id) {
+            localStorage.removeItem(`toast_has_exercise_${id}`);
+          }
         }
         if (data.exercise_completed === true && hasExercise) {
           setHasExercise(false);
@@ -417,6 +432,11 @@ export function ChatPage() {
           if (id) {
             localStorage.removeItem(`toast_has_exercise_${id}`);
             localStorage.setItem(`toast_exercise_completed_${id}`, 'true');
+          }
+        } else if (data.exercise_completed === false) {
+          setHasExerciseCompleted(false);
+          if (id) {
+            localStorage.removeItem(`toast_exercise_completed_${id}`);
           }
         }
 

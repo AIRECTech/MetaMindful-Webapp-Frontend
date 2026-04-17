@@ -164,12 +164,18 @@ export function GuestChatPage() {
           setHasActionCompleted(false);
           localStorage.setItem(`toast_has_action_${data.threadId}`, 'true');
           localStorage.removeItem(`toast_action_completed_${data.threadId}`);
+        } else if (data.action_workable_describtion === "") {
+          setHasAction(false);
+          localStorage.removeItem(`toast_has_action_${data.threadId}`);
         }
         if (data.action_completed === true && hasAction) {
           setHasAction(false);
           setHasActionCompleted(true);
           localStorage.removeItem(`toast_has_action_${data.threadId}`);
           localStorage.setItem(`toast_action_completed_${data.threadId}`, 'true');
+        } else if (data.action_completed === false) {
+          setHasActionCompleted(false);
+          localStorage.removeItem(`toast_action_completed_${data.threadId}`);
         }
 
         if (data.exercise_ID) {
@@ -177,12 +183,18 @@ export function GuestChatPage() {
           setHasExerciseCompleted(false);
           localStorage.setItem(`toast_has_exercise_${data.threadId}`, 'true');
           localStorage.removeItem(`toast_exercise_completed_${data.threadId}`);
+        } else if (data.exercise_ID === "") {
+          setHasExercise(false);
+          localStorage.removeItem(`toast_has_exercise_${data.threadId}`);
         }
         if (data.exercise_completed === true && hasExercise) {
           setHasExercise(false);
           setHasExerciseCompleted(true);
           localStorage.removeItem(`toast_has_exercise_${data.threadId}`);
           localStorage.setItem(`toast_exercise_completed_${data.threadId}`, 'true');
+        } else if (data.exercise_completed === false) {
+          setHasExerciseCompleted(false);
+          localStorage.removeItem(`toast_exercise_completed_${data.threadId}`);
         }
 
         // Handle Thread Card Data

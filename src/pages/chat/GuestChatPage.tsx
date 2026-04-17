@@ -168,7 +168,7 @@ export function GuestChatPage() {
           setHasAction(false);
           localStorage.removeItem(`toast_has_action_${data.threadId}`);
         }
-        if (data.action_completed === true && hasAction) {
+        if (data.action_completed === true) {
           setHasAction(false);
           setHasActionCompleted(true);
           localStorage.removeItem(`toast_has_action_${data.threadId}`);
@@ -187,7 +187,7 @@ export function GuestChatPage() {
           setHasExercise(false);
           localStorage.removeItem(`toast_has_exercise_${data.threadId}`);
         }
-        if (data.exercise_completed === true && hasExercise) {
+        if (data.exercise_completed === true) {
           setHasExercise(false);
           setHasExerciseCompleted(true);
           localStorage.removeItem(`toast_has_exercise_${data.threadId}`);

@@ -399,7 +399,7 @@ export function ChatPage() {
             localStorage.removeItem(`toast_has_action_${id}`);
           }
         }
-        if (data.action_completed === true && hasAction) {
+        if (data.action_completed === true) {
           setHasAction(false);
           setHasActionCompleted(true);
           if (id) {
@@ -426,7 +426,7 @@ export function ChatPage() {
             localStorage.removeItem(`toast_has_exercise_${id}`);
           }
         }
-        if (data.exercise_completed === true && hasExercise) {
+        if (data.exercise_completed === true) {
           setHasExercise(false);
           setHasExerciseCompleted(true);
           if (id) {

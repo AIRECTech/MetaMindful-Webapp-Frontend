@@ -59,4 +59,114 @@ body {
     -ms-overflow-style: none;
     scrollbar-width: none;
   }
+
+  .badge-style {
+    @apply px-6 py-2 bg-white dark:bg-gray-800 rounded-[10px] shadow-sm text-sm font-medium text-gray-600 dark:text-gray-300 transition-all;
+  }
+
+  .badge-style-yellow {
+    @apply px-6 py-2 bg-white dark:bg-gray-800 border-[1.5px] border-yellow-400 rounded-[10px] shadow-sm text-sm font-medium text-gray-700 dark:text-gray-200 transition-all;
+  }
+
+  .animate-border-gradient {
+    position: relative;
+    border: none !important;
+    background: transparent !important;
+    z-index: 0;
+    overflow: hidden;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 12px 20px;
+    @apply rounded-[10px];
+  }
+
+  .animate-border-gradient::before {
+    content: "";
+    position: absolute;
+    z-index: -2;
+    left: -50%;
+    top: -50%;
+    width: 200%;
+    height: 200%;
+    background: conic-gradient(
+      from 0deg,
+      transparent 0deg,
+      #facc15 90deg,
+      transparent 180deg,
+      #facc15 270deg,
+      transparent 360deg
+    );
+    animation: rotate 3s linear infinite, fadeOut 0.5s forwards 3s;
+  }
+
+  .animate-border-gradient.is-expanded::before {
+    animation: rotate 3s linear infinite !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+  }
+
+  .animate-border-gradient::after {
+    content: "";
+    position: absolute;
+    z-index: -1;
+    inset: 1.5px;
+    @apply bg-white dark:bg-gray-800 rounded-[9px];
+    backdrop-filter: blur(8px);
+  }
+
+  .animate-border-gradient.is-expanded::after {
+    animation: none !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+  }
+
+  @keyframes fadeOut {
+    to {
+      opacity: 0;
+      visibility: hidden;
+    }
+  }
+
+  @keyframes rotate {
+    from {
+      transform: rotate(0deg);
+    }
+    to {
+      transform: rotate(360deg);
+    }
+  }
+
+  @keyframes fadeOutBorder {
+    to {
+      opacity: 0;
+      visibility: hidden;
+    }
+  }
+
+  .animate-border-hide {
+    animation: fadeOutBorder 2s forwards;
+  }
+
+  @keyframes fadeOutBorder {
+    0%,
+    80% {
+      border-color: #facc15; /* yellow-400 */
+      box-shadow: 0 0 12px rgba(250, 204, 21, 0.5);
+    }
+    100% {
+      border-color: transparent;
+      box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05); /* shadow-sm */
+    }
+  }
+
+  .expand-card-animation {
+    transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+    max-height: 40px;
+    overflow: hidden;
+  }
+
+  .expand-card-animation.expanded {
+    max-height: 500px;
+  }
 }

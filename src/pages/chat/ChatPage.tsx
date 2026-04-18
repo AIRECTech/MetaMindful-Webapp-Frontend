@@ -12,7 +12,9 @@ import { GuestTopbar } from "../../components/layout/GuestTopbar";
 import { LoginPopup } from "../../components/LoginPopup";
 import { SignupPopup } from "../../components/SignupPopup";
 import { Toaster } from "react-hot-toast";
+import { useChatToast } from "../../contexts/ChatToastContext";
 import { MessageFormatter } from "../../components/chat/MessageFormatter";
+import { ThreadCardModal } from "../../components/ThreadCardModal";
 
 interface Message {
   id: string;
@@ -55,6 +57,13 @@ export function ChatPage() {
     logAnalyticsEvent("chat_screen_view", { thread_id: id });
   }, [id]);
 
+  const {
+    setToastData,
+    resetToasts,
+    setOnOpenThreadCard,
+    setOnOpenSignupPopup
+  } = useChatToast();
+
   // For guest users, manage messages in local state instead of fetching thread
   const [guestMessages, setGuestMessages] = useState<Message[]>([]);
   const [guestThreadTitle, setGuestThreadTitle] = useState<string>("New Chat");
@@ -64,6 +73,28 @@ export function ChatPage() {
   const [showGuestAuthPrompt, setShowGuestAuthPrompt] = useState(false);
   const [showLoginPopup, setShowLoginPopup] = useState(false);
   const [showSignupPopup, setShowSignupPopup] = useState(false);
+  const [showThreadCard, setShowThreadCard] = useState(false);
+  const [hasExercise, setHasExercise] = useState(() => {
+    if (!id) return false;
+    return localStorage.getItem(`toast_has_exercise_${id}`) === 'true';
+  });
+  const [hasExerciseCompleted, setHasExerciseCompleted] = useState(() => {
+    if (!id) return false;
+    return localStorage.getItem(`toast_exercise_completed_${id}`) === 'true';
+  });
+  const [hasAction, setHasAction] = useState(() => {
+    if (!id) return false;
+    return localStorage.getItem(`toast_has_action_${id}`) === 'true';
+  });
+  const [hasActionCompleted, setHasActionCompleted] = useState(() => {
+    if (!id) return false;
+    return localStorage.getItem(`toast_action_completed_${id}`) === 'true';
+  });
+  const [threadCardDetails, setThreadCardDetails] = useState<{ label: string; value: string }[]>(() => {
+    if (!id) return [];
+    const saved = localStorage.getItem(`toast_thread_card_${id}`);
+    return saved ? JSON.parse(saved) : [];
+  });
   const [lastFailedMessage, setLastFailedMessage] = useState<string | null>(null); // Store last failed message for retry
   // Only show disclaimer for guest users
   const [showDisclaimer, setShowDisclaimer] = useState(() => {
@@ -87,37 +118,9 @@ export function ChatPage() {
     autoSendText?: string;
   };
 
-  // Check if this is a browser reload (F5)
-  // If it is, we ignore preserved state and force a fresh load from the database
-  const isReload = useRef(
-    typeof window !== 'undefined' && 
-    window.performance && 
-    (window.performance.getEntriesByType('navigation')[0] as any)?.type === 'reload'
-  ).current;
-
-  // If we navigated here from NewChatPage, we can prefill the cache and avoid /threads/:id
-  useEffect(() => {
-    if (isReload) return; // Skip bootstrap state sync on reload
-    if (!id || !state.bootstrapThread || state.bootstrapThread.threadId !== id) return;
-
-    queryClient.setQueryData(["thread", id], state.bootstrapThread);
-
-    if (isGuest) {
-      setGuestMessages((prev) => prev.length === 0 ? (state.bootstrapThread!.messages || []) : prev);
-      setGuestThreadTitle(state.bootstrapThread.title || "New Chat");
-      
-      if (state.bootstrapThread.chatCount !== undefined) {
-        setLastPopupCount((prev) => prev === 0 ? state.bootstrapThread!.chatCount! : prev);
-      }
-      if (state.bootstrapThread.chatLimit !== undefined) {
-        setGuestChatLimit(state.bootstrapThread.chatLimit);
-      }
-    }
-  }, [id, isGuest, queryClient, state.bootstrapThread, isReload]);
-
   // Check if we have bootstrap data from navigation state
   // Only trust bootstrap data if it's NOT a reload
-  const hasBootstrapData = !isReload && !!(state.bootstrapThread && state.bootstrapThread.threadId === id);
+  const hasBootstrapData = !!(state.bootstrapThread && (state.bootstrapThread.threadId === id || state.bootstrapThread.id === id));
   const cachedThread = id ? queryClient.getQueryData(["thread", id]) as Thread | undefined : undefined;
 
   // After window.location.href (full page reload), router state is lost and React Query cache is cleared
@@ -126,7 +129,10 @@ export function ChatPage() {
   // After signup/login with window.location.href, there's no bootstrap data, so we always fetch
   const shouldFetch = !!id && !hasBootstrapData;
 
-  const { data: thread, isLoading } = useQuery({
+  const {
+    data: thread,
+    isLoading
+  } = useQuery({
     queryKey: ["thread", id],
     queryFn: async () => {
       // Ensure token before fetching thread
@@ -140,11 +146,6 @@ export function ChatPage() {
       return fetchedThread;
     },
     initialData: () => {
-      // If it's a reload, ignore saved state and force a fresh load from the database
-      if (isReload) {
-        return undefined;
-      }
-      
       // Only use bootstrap data if available (from router state)
       // Don't use cache here - let the query always fetch fresh data after signup/login (window.location.href)
       if (!id) return undefined;
@@ -166,9 +167,59 @@ export function ChatPage() {
     staleTime: 0, // Always refetch on mount to ensure fresh data
     gcTime: Infinity,
   });
- 
+
   // Use guest messages for guest users, thread messages for authenticated users
   const displayMessages = isGuest ? guestMessages : (thread?.messages || []);
+
+  // Sync with ChatToastContext
+  useEffect(() => {
+    setToastData({
+      hasExercise,
+      hasExerciseCompleted,
+      hasAction,
+      hasActionCompleted,
+      hasThreadCard: threadCardDetails.length > 0,
+      userMessageCount: displayMessages.filter(m => m.role === 'user').length
+    });
+  }, [hasExercise, hasExerciseCompleted, hasAction, hasActionCompleted, threadCardDetails, displayMessages, setToastData]);
+
+  // Set modal trigger callbacks
+  useEffect(() => {
+    setOnOpenThreadCard(() => () => setShowThreadCard(true));
+    setOnOpenSignupPopup(() => () => setShowSignupPopup(true));
+
+    return () => {
+      setOnOpenThreadCard(null);
+      setOnOpenSignupPopup(null);
+    };
+  }, [setOnOpenThreadCard, setOnOpenSignupPopup]);
+
+  // Reset toasts on unmount
+  useEffect(() => {
+    return () => {
+      resetToasts();
+    };
+  }, [resetToasts]);
+
+  // If we navigated here from NewChatPage, we can prefill the cache and avoid /threads/:id
+  useEffect(() => {
+    if (!id || !state.bootstrapThread || state.bootstrapThread.threadId !== id) return;
+
+    queryClient.setQueryData(["thread", id], state.bootstrapThread);
+
+    if (isGuest) {
+      setGuestMessages((prev) => prev.length === 0 ? (state.bootstrapThread!.messages || []) : prev);
+      setGuestThreadTitle(state.bootstrapThread.title || "New Chat");
+
+      if (state.bootstrapThread.chatCount !== undefined) {
+        setLastPopupCount((prev) => prev === 0 ? state.bootstrapThread!.chatCount! : prev);
+      }
+      if (state.bootstrapThread.chatLimit !== undefined) {
+        setGuestChatLimit(state.bootstrapThread.chatLimit);
+      }
+    }
+  }, [id, isGuest, queryClient, state.bootstrapThread]);
+
 
 
   // Debug logging
@@ -193,7 +244,7 @@ export function ChatPage() {
           setGuestMessages(thread.messages);
         }
       }
-      
+
       if (thread.title && thread.title !== guestThreadTitle) {
         setGuestThreadTitle(thread.title);
       }
@@ -286,7 +337,7 @@ export function ChatPage() {
           if (data.title_name && data.title_name !== guestThreadTitle) {
             setGuestThreadTitle(data.title_name);
           }
-          
+
           if (isGuest) {
             let isExerciseCompleted = localStorage.getItem(`exercise_completed_for_${id}`) === 'true';
             if (data.user_wants_to_skip_exercise || data.exercise_completed) {
@@ -297,7 +348,7 @@ export function ChatPage() {
             if (isExerciseCompleted) {
               const dismissedAt = localStorage.getItem(`guest_auth_prompt_dismissed_at_${id}`);
               const currentChatCount = data.chatCount || displayMessages.filter(m => m.role === 'user').length + 1;
-              
+
               if (!dismissedAt) {
                 setShowGuestAuthPrompt(true);
                 localStorage.setItem(`guest_auth_prompt_${id}`, 'true');
@@ -332,7 +383,82 @@ export function ChatPage() {
           if (isGuest && data.threadId && window.location.pathname === "/guest") {
             navigate(`/guest/${data.threadId}`, { replace: true });
           }
-        } else {
+        }
+
+        // Handle Conditional Toasts (Detect created vs completed)
+        if (data.action_workable_describtion) {
+          setHasAction(true);
+          setHasActionCompleted(false);
+          if (id) {
+            localStorage.setItem(`toast_has_action_${id}`, 'true');
+            localStorage.removeItem(`toast_action_completed_${id}`);
+          }
+        } else if (data.action_workable_describtion === "") {
+          setHasAction(false);
+          if (id) {
+            localStorage.removeItem(`toast_has_action_${id}`);
+          }
+        }
+        if (data.action_completed === true) {
+          setHasAction(false);
+          setHasActionCompleted(true);
+          if (id) {
+            localStorage.removeItem(`toast_has_action_${id}`);
+            localStorage.setItem(`toast_action_completed_${id}`, 'true');
+          }
+        } else if (data.action_completed === false) {
+          setHasActionCompleted(false);
+          if (id) {
+            localStorage.removeItem(`toast_action_completed_${id}`);
+          }
+        }
+
+        if (data.exercise_ID) {
+          setHasExercise(true);
+          setHasExerciseCompleted(false);
+          if (id) {
+            localStorage.setItem(`toast_has_exercise_${id}`, 'true');
+            localStorage.removeItem(`toast_exercise_completed_${id}`);
+          }
+        } else if (data.exercise_ID === "") {
+          setHasExercise(false);
+          if (id) {
+            localStorage.removeItem(`toast_has_exercise_${id}`);
+          }
+        }
+        if (data.exercise_completed === true) {
+          setHasExercise(false);
+          setHasExerciseCompleted(true);
+          if (id) {
+            localStorage.removeItem(`toast_has_exercise_${id}`);
+            localStorage.setItem(`toast_exercise_completed_${id}`, 'true');
+          }
+        } else if (data.exercise_completed === false) {
+          setHasExerciseCompleted(false);
+          if (id) {
+            localStorage.removeItem(`toast_exercise_completed_${id}`);
+          }
+        }
+
+         // Handle Thread Card Data
+         const threadCard = data.thread_card;
+         if (threadCard) {
+          const details = [
+            { label: "Pattern", value: threadCard.pattern || "" },
+            { label: "Goal", value: threadCard.goal || "" },
+            { label: "Insight", value: threadCard.insight || "" },
+            { label: "Move that help", value: threadCard.move_that_helped || "" },
+            { label: "Current trigger", value: threadCard.trigger || "" },
+            { label: "Progress", value: threadCard.progress || "" },
+          ].filter(item => item.value !== "");
+
+          if (details.length > 0) {
+            setThreadCardDetails(details);
+            if (id) localStorage.setItem(`toast_thread_card_${id}`, JSON.stringify(details));
+          }
+        }
+
+        if (!isGuest) {
           // For authenticated users, update query cache
           if (thread) {
             // Update thread detail cache (title and/or messages)
@@ -496,7 +622,7 @@ export function ChatPage() {
       textarea.style.height = `${Math.min(textarea.scrollHeight, 200)}px`; // Max height of 200px
     }
   }, [message]);
- 
+
   // Auto-scroll to bottom of chat
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -617,32 +743,36 @@ export function ChatPage() {
   };
 
   useEffect(() => {
+    const sessionKey = `has_sent_auto_message_${id}`;
+    const alreadySentInSession = !!id && sessionStorage.getItem(sessionKey) === 'true';
+
+    // DIAGNOSTIC LOGS - useful for debugging auto-send issues
+    console.log("[ChatPage] Auto-send check:", {
+      id,
+      autoSendText: state.autoSendText,
+      hasAutoSent: hasAutoSentRef.current,
+      alreadySentInSession,
+      isGuest,
+      hasBootstrapData,
+      isSending
+    });
+
+    if (alreadySentInSession) {
+      hasAutoSentRef.current = true;
+      return;
+    }
+
     if (!state.autoSendText || hasAutoSentRef.current) return;
 
-    const checkAndSend = () => {
-      if (hasAutoSentRef.current) return;
-
-      // Don't use setTimeout unless necessary, but check if we are ready
-      if (isGuest) {
-        // Wait until location state is ready and hasBootstrapData is true
-        if (!id || !hasBootstrapData) {
-          setTimeout(checkAndSend, 10);
-          return;
-        }
-      } else {
-        const cachedThread = queryClient.getQueryData(["thread", id]);
-        if (!id || !cachedThread) {
-          setTimeout(checkAndSend, 10);
-          return;
-        }
-      }
-
+    // As long as we have an ID and we're not currently sending, we should trigger the auto-send
+    // This is more resilient than waiting for bootstrap data or cache synchronization
+    if (id && !isSending) {
+      console.log("[ChatPage] Conditions met, triggering auto-send");
       hasAutoSentRef.current = true;
+      sessionStorage.setItem(sessionKey, 'true');
       sendText(state.autoSendText!);
-    };
-
-    checkAndSend();
-  }, [id, state.autoSendText, state.bootstrapThread, isGuest, guestMessages.length, queryClient]);
+    }
+  }, [id, state.autoSendText, hasBootstrapData, isGuest, queryClient, isSending]);
 
   // Hide disclaimer after 2 user messages are sent
   useEffect(() => {
@@ -706,15 +836,16 @@ export function ChatPage() {
     <div className="flex flex-col h-full relative bg-gray-50 dark:bg-gray-900">
       <div className="flex-1 overflow-y-auto">
         <div className="max-w-4xl mx-auto px-4 pt-6 pb-12 space-y-6">
-          {(displayMessages.length === 0 && (isLoading || (state.autoSendText && !hasAutoSentRef.current))) ? (
+          {(displayMessages.length === 0 && (isLoading || isSending || (state.autoSendText && !hasAutoSentRef.current))) ? (
             <div className="text-center py-12">
+              {/* Show different spinner for different states */}
               <div className="flex items-center justify-center gap-2 mb-4">
                 <div className="w-2 h-2 bg-gray-400 dark:bg-gray-500 rounded-full animate-bounce" style={{ animationDelay: "0ms" }}></div>
                 <div className="w-2 h-2 bg-gray-400 dark:bg-gray-500 rounded-full animate-bounce" style={{ animationDelay: "150ms" }}></div>
                 <div className="w-2 h-2 bg-gray-400 dark:bg-gray-500 rounded-full animate-bounce" style={{ animationDelay: "300ms" }}></div>
               </div>
               <p className="text-gray-500 dark:text-gray-400">
-                {state.autoSendText ? "Setting up your chat..." : "Loading messages..."}
+                {(state.autoSendText && !hasAutoSentRef.current) || isSending ? "Setting up your chat..." : "Loading messages..."}
               </p>
             </div>
           ) : displayMessages.length === 0 ? (
@@ -1037,6 +1168,11 @@ export function ChatPage() {
             setShowSignupPopup(false);
             setShowLoginPopup(true);
           }}
+        />
+        <ThreadCardModal
+          isOpen={showThreadCard}
+          onClose={() => setShowThreadCard(false)}
+          details={threadCardDetails.length > 0 ? threadCardDetails : undefined}
         />
       </>
     );

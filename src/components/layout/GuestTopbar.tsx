@@ -1,85 +1,46 @@
-import { Moon, Sun } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
-import { useState, useEffect } from "react";
-import { getDarkMode, toggleDarkMode as toggleDarkModeUtil } from "../../lib/darkMode";
+import { useEffect, useState } from "react";
 import { LoginPopup } from "../LoginPopup";
 import { SignupPopup } from "../SignupPopup";
+import { ChatToasts } from "../chat/ChatToasts";
 
 export function GuestTopbar() {
   const navigate = useNavigate();
   const params = useParams();
-  // Get threadId from URL params if on a chat page
   const threadId = params.id;
-  
-  const [darkMode, setDarkMode] = useState(() => {
-    return getDarkMode();
-  });
-  const [showLoginPopup, setShowLoginPopup] = useState(false);
-  const [showSignupPopup, setShowSignupPopup] = useState(false);
 
-  // Sync dark mode state with DOM changes
+  // Force light mode for guest users
   useEffect(() => {
-    const observer = new MutationObserver(() => {
-      const isDark = document.documentElement.classList.contains("dark");
-      if (isDark !== darkMode) {
-        setDarkMode(isDark);
-      }
-    });
-
-    observer.observe(document.documentElement, {
-      attributes: true,
-      attributeFilter: ["class"],
-    });
-
-    return () => observer.disconnect();
-  }, [darkMode]);
-
-  const toggleDarkMode = () => {
-    const newMode = toggleDarkModeUtil();
-    setDarkMode(newMode);
-  };
+    document.documentElement.classList.remove("dark");
+  }, []);
 
   const handleLogoClick = () => {
     navigate("/");
   };
 
+  const [showLoginPopup, setShowLoginPopup] = useState(false);
+  const [showSignupPopup, setShowSignupPopup] = useState(false);
+
   return (
-    <header className="flex items-center justify-between px-4 py-3">
+    <header className="flex flex-wrap items-center justify-between px-4 py-3 min-h-[64px] bg-transparent">
       <button
         onClick={handleLogoClick}
-        className="flex items-center gap-3 hover:opacity-80 transition-opacity cursor-pointer"
+        className="flex items-center gap-3 hover:opacity-80 transition-opacity cursor-pointer w-auto md:w-[200px] order-1"
       >
-        <img 
-          src="/logo.png" 
-          alt="MetaMindful" 
-          className="h-8 w-auto"
+        <img
+          src="/guest_logo.png"
+          alt="Guest Mode"
+          className="h-[3rem] md:h-[5rem] w-auto"
         />
-        <div className="flex flex-col items-start">
-          <span className="text-lg font-bold text-gray-800 dark:text-gray-200">MetaMindful</span>
-          <span className="text-xs text-gray-500 dark:text-gray-400 font-medium">Guest mode</span>
-        </div>
       </button>
-      <div className="flex items-center gap-3">
-        {/* Dark mode toggle */}
-        <button
-          onClick={toggleDarkMode}
-          className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800 transition"
-          title={darkMode ? "Switch to light mode" : "Switch to dark mode"}
-        >
-          {darkMode ? (
-            <Sun className="h-4 w-4 text-gray-700 dark:text-gray-300" />
-          ) : (
-            <Moon className="h-4 w-4 text-gray-700 dark:text-gray-300" />
-          )}
-        </button>
-        
-        {/* Guest users: Show login and signup buttons only */}
-        <button
-          onClick={() => setShowLoginPopup(true)}
-          className="px-4 py-2 bg-white dark:bg-gray-800 border-2 border-yellow-400 text-gray-800 dark:text-gray-200 font-medium rounded-lg text-sm transition hover:bg-gray-50 dark:hover:bg-gray-700"
-        >
-          Log in
-        </button>
+
+      {/* Center content - Toasts */}
+      <div className="w-full md:w-auto md:flex-1 flex justify-center items-center px-4 order-3 md:order-2 mt-4 md:mt-0 min-h-[44px]">
+        <ChatToasts />
+      </div>
+
+      <div className="flex justify-end items-center gap-3 w-auto md:w-[200px] order-2 md:order-3 ml-auto md:ml-0">
+        {/* Guest users: Show signup button only */}
         <button
           onClick={() => setShowSignupPopup(true)}
           className="px-4 py-2 bg-yellow-400 hover:bg-yellow-500 text-gray-800 font-medium rounded-lg text-sm transition"

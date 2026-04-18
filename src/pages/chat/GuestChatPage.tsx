@@ -13,6 +13,8 @@ import { ChatPage } from "./ChatPage";
 import { LoginPopup } from "../../components/LoginPopup";
 import { SignupPopup } from "../../components/SignupPopup";
 import { GuestTopbar } from "../../components/layout/GuestTopbar";
+import { ThreadCardModal } from "../../components/ThreadCardModal";
+import { useChatToast } from "../../contexts/ChatToastContext";
 import { Toaster } from "react-hot-toast";
 
 const suggestions = [
@@ -56,6 +58,33 @@ export function GuestChatPage() {
   const [threadDesc, setThreadDesc] = useState<string | null>(null);
   const [showLoginPopup, setShowLoginPopup] = useState(false);
   const [showSignupPopup, setShowSignupPopup] = useState(false);
+  const [showThreadCard, setShowThreadCard] = useState(false);
+  const [hasExercise, setHasExercise] = useState(() => {
+    const tid = id || threadId;
+    if (!tid) return false;
+    return localStorage.getItem(`toast_has_exercise_${tid}`) === 'true';
+  });
+  const [hasExerciseCompleted, setHasExerciseCompleted] = useState(() => {
+    const tid = id || threadId;
+    if (!tid) return false;
+    return localStorage.getItem(`toast_exercise_completed_${tid}`) === 'true';
+  });
+  const [hasAction, setHasAction] = useState(() => {
+    const tid = id || threadId;
+    if (!tid) return false;
+    return localStorage.getItem(`toast_has_action_${tid}`) === 'true';
+  });
+  const [hasActionCompleted, setHasActionCompleted] = useState(() => {
+    const tid = id || threadId;
+    if (!tid) return false;
+    return localStorage.getItem(`toast_action_completed_${tid}`) === 'true';
+  });
+  const [threadCardDetails, setThreadCardDetails] = useState<{ label: string; value: string }[]>(() => {
+    const tid = id || threadId;
+    if (!tid) return [];
+    const saved = localStorage.getItem(`toast_thread_card_${tid}`);
+    return saved ? JSON.parse(saved) : [];
+  });
   const [showDisclaimer, setShowDisclaimer] = useState(true); // Always show for guest users
   const hasCreatedThreadRef = useRef(false);
   const hasAutoSentQueryMessageRef = useRef(false); // Track if we've auto-sent the query message
@@ -65,6 +94,45 @@ export function GuestChatPage() {
 
   // Default suggestions provided as constant
   const [currentSuggestions, setCurrentSuggestions] = useState<string[]>(suggestions);
+
+  const {
+    setToastData,
+    resetToasts,
+    setOnOpenThreadCard,
+    setOnOpenSignupPopup
+  } = useChatToast();
+
+  const userMessageCount = pendingMessage ? 1 : messages.filter((m) => m.role === "user").length;
+
+  // Sync with ChatToastContext
+  useEffect(() => {
+    setToastData({
+      hasExercise,
+      hasExerciseCompleted,
+      hasAction,
+      hasActionCompleted,
+      hasThreadCard: threadCardDetails.length > 0,
+      userMessageCount
+    });
+  }, [hasExercise, hasExerciseCompleted, hasAction, hasActionCompleted, threadCardDetails, userMessageCount, setToastData]);
+
+  // Set modal trigger callbacks
+  useEffect(() => {
+    setOnOpenThreadCard(() => () => setShowThreadCard(true));
+    setOnOpenSignupPopup(() => () => setShowSignupPopup(true));
+
+    return () => {
+      setOnOpenThreadCard(null);
+      setOnOpenSignupPopup(null);
+    };
+  }, [setOnOpenThreadCard, setOnOpenSignupPopup]);
+
+  // Reset toasts on unmount
+  useEffect(() => {
+    return () => {
+      resetToasts();
+    };
+  }, [resetToasts]);
 
   // Generate guest token and create thread on page load
   const generateToken = useQuery({
@@ -90,6 +158,63 @@ export function GuestChatPage() {
     },
     onSuccess: (data) => {
       if (data?.threadId) {
+        // Handle Conditional Toasts (Detect created vs completed)
+        if (data.action_workable_describtion) {
+          setHasAction(true);
+          setHasActionCompleted(false);
+          localStorage.setItem(`toast_has_action_${data.threadId}`, 'true');
+          localStorage.removeItem(`toast_action_completed_${data.threadId}`);
+        } else if (data.action_workable_describtion === "") {
+          setHasAction(false);
+          localStorage.removeItem(`toast_has_action_${data.threadId}`);
+        }
+        if (data.action_completed === true) {
+          setHasAction(false);
+          setHasActionCompleted(true);
+          localStorage.removeItem(`toast_has_action_${data.threadId}`);
+          localStorage.setItem(`toast_action_completed_${data.threadId}`, 'true');
+        } else if (data.action_completed === false) {
+          setHasActionCompleted(false);
+          localStorage.removeItem(`toast_action_completed_${data.threadId}`);
+        }
+
+        if (data.exercise_ID) {
+          setHasExercise(true);
+          setHasExerciseCompleted(false);
+          localStorage.setItem(`toast_has_exercise_${data.threadId}`, 'true');
+          localStorage.removeItem(`toast_exercise_completed_${data.threadId}`);
+        } else if (data.exercise_ID === "") {
+          setHasExercise(false);
+          localStorage.removeItem(`toast_has_exercise_${data.threadId}`);
+        }
+        if (data.exercise_completed === true) {
+          setHasExercise(false);
+          setHasExerciseCompleted(true);
+          localStorage.removeItem(`toast_has_exercise_${data.threadId}`);
+          localStorage.setItem(`toast_exercise_completed_${data.threadId}`, 'true');
+        } else if (data.exercise_completed === false) {
+          setHasExerciseCompleted(false);
+          localStorage.removeItem(`toast_exercise_completed_${data.threadId}`);
+        }
+
+        // Handle Thread Card Data
+        const threadCard = data.thread_card;
+        if (threadCard) {
+          const details = [
+            { label: "Pattern", value: threadCard.pattern || "" },
+            { label: "Goal", value: threadCard.goal || "" },
+            { label: "Insight", value: threadCard.insight || "" },
+            { label: "Move that help", value: threadCard.move_that_helped || "" },
+            { label: "Current trigger", value: threadCard.trigger || "" },
+            { label: "Progress", value: threadCard.progress || "" },
+          ].filter(item => item.value !== "");
+
+          if (details.length > 0) {
+            setThreadCardDetails(details);
+            localStorage.setItem(`toast_thread_card_${data.threadId}`, JSON.stringify(details));
+          }
+        }
+
         if (pendingMessage) {
           navigateToChatWithFirstUserMessage(pendingMessage, data.threadId, data.title, data.desc, data.messages || []);
         } else {
@@ -251,6 +376,7 @@ export function GuestChatPage() {
       </div>
     );
   }
+
 
   return (
     <>
@@ -434,6 +560,11 @@ export function GuestChatPage() {
           setShowSignupPopup(false);
           setShowLoginPopup(true);
         }}
+      />
+      <ThreadCardModal
+        isOpen={showThreadCard}
+        onClose={() => setShowThreadCard(false)}
+        details={threadCardDetails.length > 0 ? threadCardDetails : undefined}
       />
     </>
   );

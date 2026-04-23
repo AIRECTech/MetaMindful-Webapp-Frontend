@@ -1179,5 +1179,14 @@ export function ChatPage() {
   }
 
   // For authenticated users, return content directly (AppShell will wrap it)
-  return chatContent;
+  return (
+    <>
+      {chatContent}
+      <ThreadCardModal
+        isOpen={showThreadCard}
+        onClose={() => setShowThreadCard(false)}
+        details={threadCardDetails.length > 0 ? threadCardDetails : undefined}
+      />
+    </>
+  );
 }

@@ -106,6 +106,7 @@ export function GuestChatPage() {
 
   // Sync with ChatToastContext
   useEffect(() => {
+    if (id) return;
     setToastData({
       hasExercise,
       hasExerciseCompleted,
@@ -114,10 +115,11 @@ export function GuestChatPage() {
       hasThreadCard: threadCardDetails.length > 0,
       userMessageCount
     });
-  }, [hasExercise, hasExerciseCompleted, hasAction, hasActionCompleted, threadCardDetails, userMessageCount, setToastData]);
+  }, [id, hasExercise, hasExerciseCompleted, hasAction, hasActionCompleted, threadCardDetails, userMessageCount, setToastData]);
 
   // Set modal trigger callbacks
   useEffect(() => {
+    if (id) return;
     setOnOpenThreadCard(() => () => setShowThreadCard(true));
     setOnOpenSignupPopup(() => () => setShowSignupPopup(true));
 
@@ -125,14 +127,14 @@ export function GuestChatPage() {
       setOnOpenThreadCard(null);
       setOnOpenSignupPopup(null);
     };
-  }, [setOnOpenThreadCard, setOnOpenSignupPopup]);
+  }, [id, setOnOpenThreadCard, setOnOpenSignupPopup]);
 
   // Reset toasts on unmount
   useEffect(() => {
     return () => {
-      resetToasts();
+      if (!id) resetToasts();
     };
-  }, [resetToasts]);
+  }, [id, resetToasts]);
 
   // Generate guest token and create thread on page load
   const generateToken = useQuery({

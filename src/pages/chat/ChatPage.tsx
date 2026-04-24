@@ -185,8 +185,8 @@ export function ChatPage() {
 
   // Set modal trigger callbacks
   useEffect(() => {
-    setOnOpenThreadCard(() => () => setShowThreadCard(true));
-    setOnOpenSignupPopup(() => () => setShowSignupPopup(true));
+    setOnOpenThreadCard(() => setShowThreadCard(true));
+    setOnOpenSignupPopup(() => setShowSignupPopup(true));
 
     return () => {
       setOnOpenThreadCard(null);

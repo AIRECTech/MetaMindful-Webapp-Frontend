@@ -120,8 +120,8 @@ export function GuestChatPage() {
   // Set modal trigger callbacks
   useEffect(() => {
     if (id) return;
-    setOnOpenThreadCard(() => () => setShowThreadCard(true));
-    setOnOpenSignupPopup(() => () => setShowSignupPopup(true));
+    setOnOpenThreadCard(() => setShowThreadCard(true));
+    setOnOpenSignupPopup(() => setShowSignupPopup(true));
 
     return () => {
       setOnOpenThreadCard(null);

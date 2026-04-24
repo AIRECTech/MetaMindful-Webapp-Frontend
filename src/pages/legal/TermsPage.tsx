@@ -183,10 +183,18 @@ export function TermsPage() {
                 These Terms are governed by the laws of the United States of America.
               </p>
             </section>
+            <section className="mb-8">
+              <h2 className="text-2xl font-semibold text-gray-900 dark:text-gray-100 mb-4">
+                13. Eligibility
+              </h2>
+              <p className="text-gray-700 dark:text-gray-300 leading-relaxed mb-4">
+                You must be at least 16 years old to use MetaMindful. By accessing or using the Service, you represent and warrant that you meet this age requirement.
+              </p>
+            </section>
 
             <section className="mb-8">
               <h2 className="text-2xl font-semibold text-gray-900 dark:text-gray-100 mb-4">
-                13. Contact Information
+                14. Contact Information
               </h2>
               <p className="text-gray-700 dark:text-gray-300 leading-relaxed mb-4">
                 If you have any questions about these Terms and Conditions, please contact us at:

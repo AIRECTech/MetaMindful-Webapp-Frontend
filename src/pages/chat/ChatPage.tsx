@@ -1027,7 +1027,7 @@ export function ChatPage() {
                 <X className="h-4 w-4" />
               </button>
               <p className="text-xs text-gray-600 dark:text-gray-400 leading-relaxed pr-6 text-center w-full">
-                By messaging MetaMindful, an AI mental wellness chatbot, you agree to our{" "}
+                By messaging MetaMindful, you confirm you are 16+ and agree to our{" "}
                 <Link
                   to="/terms"
                   target="_blank"

@@ -118,6 +118,16 @@ export function PrivacyPolicyPage() {
               </p>
             </section>
 
+
+
+            <section className="mb-8">
+              <h2 className="text-2xl font-semibold text-gray-900 dark:text-gray-100 mb-4">
+                Children’s Use
+              </h2>
+              <p className="text-gray-700 dark:text-gray-300 leading-relaxed">
+                MetaMindful is not intended for users under the age of 16. We do not knowingly collect personal information from individuals under 16. If we become aware that such data has been provided, we will take steps to delete it.
+              </p>
+            </section>
             <section className="mb-8">
               <h2 className="text-2xl font-semibold text-gray-900 dark:text-gray-100 mb-4">
                 Contact
@@ -127,15 +137,6 @@ export function PrivacyPolicyPage() {
               </p>
               <p className="text-gray-700 dark:text-gray-300 leading-relaxed">
                 Email: <a href="mailto:info@metamindful.ai" className="text-blue-600 dark:text-blue-400 hover:underline">info@metamindful.ai</a>
-              </p>
-            </section>
-
-            <section className="mb-8">
-              <h2 className="text-2xl font-semibold text-gray-900 dark:text-gray-100 mb-4">
-                Children’s Use
-              </h2>
-              <p className="text-gray-700 dark:text-gray-300 leading-relaxed">
-                MetaMindful is not intended for users under the age of 16. We do not knowingly collect personal information from individuals under 16. If we become aware that such data has been provided, we will take steps to delete it.
               </p>
             </section>
           </div>

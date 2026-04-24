@@ -192,7 +192,7 @@ export function TermsPage() {
                 If you have any questions about these Terms and Conditions, please contact us at:
               </p>
               <p className="text-gray-700 dark:text-gray-300 leading-relaxed">
-                Email: legal@metamindful.ai<br />
+                Email: <a href="mailto:info@metamindful.ai" className="text-blue-600 dark:text-blue-400 hover:underline">info@metamindful.ai</a>
               </p>
             </section>
           </div>

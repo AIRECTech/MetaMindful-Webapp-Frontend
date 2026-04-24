@@ -193,7 +193,6 @@ export function TermsPage() {
               </p>
               <p className="text-gray-700 dark:text-gray-300 leading-relaxed">
                 Email: legal@metamindful.ai<br />
-                Address: [Your Company Address]
               </p>
             </section>
           </div>

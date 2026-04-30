@@ -525,7 +525,15 @@ export function ChatPage() {
     onError: (error: any, variables: string) => {
       setIsSending(false);
       isSendingRef.current = false;
-      const errorMessage = extractErrorMessage(error, "Failed to send message");
+      
+      const statusCode = error.response?.status || error.response?.data?.code;
+      const isRetryable = statusCode === 502;
+      const isInternalError = statusCode === 500;
+      
+      let errorMessage = extractErrorMessage(error, "Failed to send message");
+      if (isInternalError) {
+        errorMessage = "Service currently not working. Please check again after sometime.";
+      }
 
       // Store the failed message for retry (use the message that was sent)
       const failedMessage = variables || lastFailedMessage || message.trim();
@@ -535,6 +543,19 @@ export function ChatPage() {
         thread_id: id,
         error: errorMessage
       });
+
+      const errorPayload: any = {
+        id: `error-${Date.now()}`,
+        role: "assistant" as const,
+        content: errorMessage,
+        createdAt: new Date().toISOString(),
+        isError: true,
+      };
+      
+      // Only add originalUserMessage if it's retryable (502)
+      if (isRetryable) {
+        errorPayload.originalUserMessage = failedMessage;
+      }
 
       if (isGuest) {
         // For guest users, add error message instead of removing user message
@@ -550,16 +571,7 @@ export function ChatPage() {
           // Add error message
           return [
             ...filtered,
-            {
-              id: `error-${Date.now()}`,
-              role: "assistant" as const,
-              content: errorMessage.includes("ECONNRESET") || errorMessage.includes("502") || errorMessage.includes("Failed to communicate")
-                ? "Failed to communicate with external API: " + errorMessage
-                : errorMessage,
-              createdAt: new Date().toISOString(),
-              isError: true,
-              originalUserMessage: failedMessage,
-            },
+            errorPayload,
           ];
         });
       } else {
@@ -576,18 +588,7 @@ export function ChatPage() {
           });
 
           // Add error message
-          const errorMsg: Message = {
-            id: `error-${Date.now()}`,
-            role: "assistant",
-            content: errorMessage.includes("ECONNRESET") || errorMessage.includes("502") || errorMessage.includes("Failed to communicate")
-              ? "Failed to communicate with external API: " + errorMessage
-              : errorMessage,
-            createdAt: new Date().toISOString(),
-            isError: true,
-            originalUserMessage: failedMessage,
-          };
-
-          return { ...old, messages: [...filteredMessages, errorMsg] };
+          return { ...old, messages: [...filteredMessages, errorPayload] };
         });
       }
 

@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useCallback, type ReactNode } from 'react';
+import { createContext, useContext, useState, useCallback, useRef, type ReactNode } from 'react';
 
 interface ToastState {
   userMessageCount: number;
@@ -32,8 +32,23 @@ export function ChatToastProvider({ children }: { children: ReactNode }) {
     hasActionCompleted: false,
   });
 
-  const [onOpenThreadCard, setOnOpenThreadCard] = useState<(() => void) | null>(null);
-  const [onOpenSignupPopup, setOnOpenSignupPopup] = useState<(() => void) | null>(null);
+  // Use refs to store callbacks to avoid the React useState functional-updater pitfall
+  // (passing a function to useState setter calls it as an updater, not stores it)
+  const onOpenThreadCardRef = useRef<(() => void) | null>(null);
+  const onOpenSignupPopupRef = useRef<(() => void) | null>(null);
+
+  // Expose reactive versions so consumers can re-render when they change
+  const [, forceUpdate] = useState(0);
+
+  const setOnOpenThreadCard = useCallback((fn: (() => void) | null) => {
+    onOpenThreadCardRef.current = fn;
+    forceUpdate(n => n + 1);
+  }, []);
+
+  const setOnOpenSignupPopup = useCallback((fn: (() => void) | null) => {
+    onOpenSignupPopupRef.current = fn;
+    forceUpdate(n => n + 1);
+  }, []);
 
   const setToastData = useCallback((data: Partial<ToastState>) => {
     setState(prev => ({ ...prev, ...data }));
@@ -54,8 +69,8 @@ export function ChatToastProvider({ children }: { children: ReactNode }) {
     ...state,
     setToastData,
     resetToasts,
-    onOpenThreadCard,
-    onOpenSignupPopup,
+    onOpenThreadCard: onOpenThreadCardRef.current,
+    onOpenSignupPopup: onOpenSignupPopupRef.current,
     setOnOpenThreadCard,
     setOnOpenSignupPopup,
   };

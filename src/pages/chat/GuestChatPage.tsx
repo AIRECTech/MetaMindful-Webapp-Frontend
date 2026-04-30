@@ -106,6 +106,7 @@ export function GuestChatPage() {
 
   // Sync with ChatToastContext
   useEffect(() => {
+    if (id) return;
     setToastData({
       hasExercise,
       hasExerciseCompleted,
@@ -114,25 +115,26 @@ export function GuestChatPage() {
       hasThreadCard: threadCardDetails.length > 0,
       userMessageCount
     });
-  }, [hasExercise, hasExerciseCompleted, hasAction, hasActionCompleted, threadCardDetails, userMessageCount, setToastData]);
+  }, [id, hasExercise, hasExerciseCompleted, hasAction, hasActionCompleted, threadCardDetails, userMessageCount, setToastData]);
 
   // Set modal trigger callbacks
   useEffect(() => {
-    setOnOpenThreadCard(() => () => setShowThreadCard(true));
-    setOnOpenSignupPopup(() => () => setShowSignupPopup(true));
+    if (id) return;
+    setOnOpenThreadCard(() => setShowThreadCard(true));
+    setOnOpenSignupPopup(() => setShowSignupPopup(true));
 
     return () => {
       setOnOpenThreadCard(null);
       setOnOpenSignupPopup(null);
     };
-  }, [setOnOpenThreadCard, setOnOpenSignupPopup]);
+  }, [id, setOnOpenThreadCard, setOnOpenSignupPopup]);
 
   // Reset toasts on unmount
   useEffect(() => {
     return () => {
-      resetToasts();
+      if (!id) resetToasts();
     };
-  }, [resetToasts]);
+  }, [id, resetToasts]);
 
   // Generate guest token and create thread on page load
   const generateToken = useQuery({
@@ -240,8 +242,13 @@ export function GuestChatPage() {
       setIsLoading(false);
       setPendingMessage(null);
     },
-    onError: (error) => {
-      toast.error(extractErrorMessage(error, "Failed to create thread"));
+    onError: (error: any) => {
+      const statusCode = error.response?.status || error.response?.data?.code;
+      let errorMessage = extractErrorMessage(error, "Failed to create thread");
+      if (statusCode === 500) {
+        errorMessage = "Service currently not working. Please check again after sometime.";
+      }
+      toast.error(errorMessage);
       setIsLoading(false);
     },
   });
@@ -469,7 +476,7 @@ export function GuestChatPage() {
                       <X className="h-4 w-4" />
                     </button>
                     <p className="text-xs text-gray-600 dark:text-gray-400 leading-relaxed pr-6 text-center w-full">
-                      By messaging MetaMindful, an AI mental wellness chatbot, you agree to our{" "}
+                      By messaging MetaMindful, you confirm you are 16+ and agree to our{" "}
                       <Link
                         to="/terms"
                         target="_blank"

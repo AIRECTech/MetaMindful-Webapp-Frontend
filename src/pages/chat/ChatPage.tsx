@@ -44,6 +44,7 @@ export function ChatPage() {
   const location = useLocation();
   const [message, setMessage] = useState("");
   const [isSending, setIsSending] = useState(false);
+  const isSendingRef = useRef(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messageInputRef = useRef<HTMLTextAreaElement>(null);
   // Check if user is guest by auth status OR by route path (/guest/:id)
@@ -185,8 +186,8 @@ export function ChatPage() {
 
   // Set modal trigger callbacks
   useEffect(() => {
-    setOnOpenThreadCard(() => () => setShowThreadCard(true));
-    setOnOpenSignupPopup(() => () => setShowSignupPopup(true));
+    setOnOpenThreadCard(() => setShowThreadCard(true));
+    setOnOpenSignupPopup(() => setShowSignupPopup(true));
 
     return () => {
       setOnOpenThreadCard(null);
@@ -271,12 +272,15 @@ export function ChatPage() {
       const res = await api.post("/threads/chat", {
         threadId: id,
         message: text,
+      }, {
+        timeout: 300000 // 5 minute timeout for AI response
       });
 
       return res.data.data;
     },
     onSuccess: (data, variables) => {
       setIsSending(false);
+      isSendingRef.current = false;
 
       logAnalyticsEvent("chat_message_sent", {
         thread_id: id,
@@ -512,13 +516,24 @@ export function ChatPage() {
         messageInputRef.current?.focus();
       }, 0);
       setIsSending(false);
+      isSendingRef.current = false;
     },
     onSettled: () => {
       setIsSending(false);
+      isSendingRef.current = false;
     },
     onError: (error: any, variables: string) => {
       setIsSending(false);
-      const errorMessage = extractErrorMessage(error, "Failed to send message");
+      isSendingRef.current = false;
+      
+      const statusCode = error.response?.status || error.response?.data?.code;
+      const isRetryable = statusCode === 502;
+      const isInternalError = statusCode === 500;
+      
+      let errorMessage = extractErrorMessage(error, "Failed to send message");
+      if (isInternalError) {
+        errorMessage = "Service currently not working. Please check again after sometime.";
+      }
 
       // Store the failed message for retry (use the message that was sent)
       const failedMessage = variables || lastFailedMessage || message.trim();
@@ -528,6 +543,19 @@ export function ChatPage() {
         thread_id: id,
         error: errorMessage
       });
+
+      const errorPayload: any = {
+        id: `error-${Date.now()}`,
+        role: "assistant" as const,
+        content: errorMessage,
+        createdAt: new Date().toISOString(),
+        isError: true,
+      };
+      
+      // Only add originalUserMessage if it's retryable (502)
+      if (isRetryable) {
+        errorPayload.originalUserMessage = failedMessage;
+      }
 
       if (isGuest) {
         // For guest users, add error message instead of removing user message
@@ -543,16 +571,7 @@ export function ChatPage() {
           // Add error message
           return [
             ...filtered,
-            {
-              id: `error-${Date.now()}`,
-              role: "assistant" as const,
-              content: errorMessage.includes("ECONNRESET") || errorMessage.includes("502") || errorMessage.includes("Failed to communicate")
-                ? "Failed to communicate with external API: " + errorMessage
-                : errorMessage,
-              createdAt: new Date().toISOString(),
-              isError: true,
-              originalUserMessage: failedMessage,
-            },
+            errorPayload,
           ];
         });
       } else {
@@ -569,18 +588,7 @@ export function ChatPage() {
           });
 
           // Add error message
-          const errorMsg: Message = {
-            id: `error-${Date.now()}`,
-            role: "assistant",
-            content: errorMessage.includes("ECONNRESET") || errorMessage.includes("502") || errorMessage.includes("Failed to communicate")
-              ? "Failed to communicate with external API: " + errorMessage
-              : errorMessage,
-            createdAt: new Date().toISOString(),
-            isError: true,
-            originalUserMessage: failedMessage,
-          };
-
-          return { ...old, messages: [...filteredMessages, errorMsg] };
+          return { ...old, messages: [...filteredMessages, errorPayload] };
         });
       }
 
@@ -594,10 +602,18 @@ export function ChatPage() {
         // Redirect is handled by interceptor, just show message
         toast.error("Session expired. Please log in again.");
       } else {
-        // Error is already shown in chat, just show a brief toast
-        toast.error("Message failed to send");
+        // More descriptive error messaging
+        const isTimeout = error.code === 'ECONNABORTED' || errorMessage.toLowerCase().includes('timeout');
+        if (isTimeout) {
+          toast.error("Message is taking longer than expected. It might still be processing. Please wait or refresh the page.");
+        } else if (errorMessage.includes("502") || errorMessage.includes("504")) {
+          toast.error("The server is taking too long to respond. Your message might still be sent.");
+        } else {
+          toast.error(errorMessage || "Message failed to send");
+        }
       }
       setIsSending(false);
+      isSendingRef.current = false;
     },
   });
 
@@ -630,11 +646,12 @@ export function ChatPage() {
 
   const sendText = (text: string) => {
     const trimmedMessage = text.trim();
-    if (!trimmedMessage || isSending) {
+    if (!trimmedMessage || isSending || isSendingRef.current) {
       return;
     }
 
     setIsSending(true);
+    isSendingRef.current = true;
 
     // Store message for potential retry
     setLastFailedMessage(trimmedMessage);
@@ -1027,7 +1044,7 @@ export function ChatPage() {
                 <X className="h-4 w-4" />
               </button>
               <p className="text-xs text-gray-600 dark:text-gray-400 leading-relaxed pr-6 text-center w-full">
-                By messaging MetaMindful, an AI mental wellness chatbot, you agree to our{" "}
+                By messaging MetaMindful, you confirm you are 16+ and agree to our{" "}
                 <Link
                   to="/terms"
                   target="_blank"
@@ -1179,5 +1196,14 @@ export function ChatPage() {
   }
 
   // For authenticated users, return content directly (AppShell will wrap it)
-  return chatContent;
+  return (
+    <>
+      {chatContent}
+      <ThreadCardModal
+        isOpen={showThreadCard}
+        onClose={() => setShowThreadCard(false)}
+        details={threadCardDetails.length > 0 ? threadCardDetails : undefined}
+      />
+    </>
+  );
 }

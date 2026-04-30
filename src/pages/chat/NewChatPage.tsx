@@ -95,7 +95,14 @@ export function NewChatPage() {
       navigateToChatWithFirstUserMessage(initialMessage, thread.threadId, thread.title, thread.desc ?? undefined, thread.messages || []);
     } catch (error: any) {
       console.error("[NewChatPage] Error creating thread:", error);
-      const errorMessage = extractErrorMessage(error, "Failed to create thread");
+      const statusCode = error.response?.status || error.response?.data?.code;
+      const isInternalError = statusCode === 500;
+      
+      let errorMessage = extractErrorMessage(error, "Failed to create thread");
+      if (isInternalError) {
+        errorMessage = "Service currently not working. Please check again after sometime.";
+      }
+
       setMessages([
         {
           role: "assistant",
@@ -167,6 +174,19 @@ export function NewChatPage() {
               <div className="w-2 h-2 bg-gray-400 dark:bg-gray-500 rounded-full animate-bounce" style={{ animationDelay: "300ms" }}></div>
             </div>
             <p className="text-gray-500 dark:text-gray-400">Setting up your chat...</p>
+          </div>
+        ) : messages.some(m => m.isError) ? (
+          <div className="text-center max-w-4xl w-full">
+            <div className="bg-red-50 dark:bg-red-900/30 text-red-800 dark:text-red-300 p-6 rounded-2xl border border-red-200 dark:border-red-800 mb-6">
+              <p className="text-lg font-medium mb-2">Oops! Something went wrong.</p>
+              <p>{messages.find(m => m.isError)?.content}</p>
+            </div>
+            <button
+              onClick={() => window.location.reload()}
+              className="text-blue-600 dark:text-blue-400 hover:underline font-medium"
+            >
+              Refresh and try again
+            </button>
           </div>
         ) : (
           <div className="text-center max-w-4xl w-full">

@@ -242,8 +242,13 @@ export function GuestChatPage() {
       setIsLoading(false);
       setPendingMessage(null);
     },
-    onError: (error) => {
-      toast.error(extractErrorMessage(error, "Failed to create thread"));
+    onError: (error: any) => {
+      const statusCode = error.response?.status || error.response?.data?.code;
+      let errorMessage = extractErrorMessage(error, "Failed to create thread");
+      if (statusCode === 500) {
+        errorMessage = "Service currently not working. Please check again after sometime.";
+      }
+      toast.error(errorMessage);
       setIsLoading(false);
     },
   });

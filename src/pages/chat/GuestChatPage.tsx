@@ -29,6 +29,7 @@ interface Message {
   content: string;
   isError?: boolean;
   replies?: string[];
+  requiresSignup?: boolean;
 }
 
 interface ThreadResponseMessage {
@@ -231,9 +232,9 @@ export function GuestChatPage() {
           }
 
           if (firstAssistant) {
-            setMessages([{ role: "assistant", content: firstAssistant, isError: false, replies }]);
+            setMessages([{ role: "assistant", content: firstAssistant, isError: false, replies, requiresSignup: data.requires_signup }]);
           } else {
-            setMessages([{ role: "assistant", content: "Hi, I'm MetaMindful. I'm here to listen and support you. How are you feeling today?", isError: false, replies }]);
+            setMessages([{ role: "assistant", content: "Hi, I'm MetaMindful. I'm here to listen and support you. How are you feeling today?", isError: false, replies, requiresSignup: data.requires_signup }]);
           }
         }
       } else {
@@ -303,6 +304,7 @@ export function GuestChatPage() {
             id: `initial-${i}`,
             role: m.role,
             content: m.content,
+            requiresSignup: m.requiresSignup,
             createdAt: new Date().toISOString(),
           })),
         },
@@ -430,6 +432,9 @@ export function GuestChatPage() {
                       .find(m => m.role === "assistant" && m.replies && m.replies.length > 0);
 
                     if (lastAssistantMessageWithReplies?.replies) {
+                      const lastMessage = messages[messages.length - 1];
+                      const requiresSignup = lastMessage?.role === "assistant" && lastMessage?.requiresSignup;
+
                       // Show assistant replies in a horizontal scrollable container
                       return (
                         <div className="flex overflow-x-auto gap-3 pb-2 w-full no-scrollbar">
@@ -437,7 +442,7 @@ export function GuestChatPage() {
                             <button
                               key={idx}
                               onClick={() => handleSuggestionClick(reply)}
-                              disabled={isLoading}
+                              disabled={isLoading || requiresSignup}
                               className="px-5 py-3 w-[190px] bg-blue-100 dark:bg-blue-900/30 text-gray-700 dark:text-gray-300 rounded-xl border border-blue-200 dark:border-blue-800 hover:bg-blue-200 dark:hover:bg-blue-900/50 text-[12px] leading-normal font-normal transition disabled:opacity-50 disabled:cursor-not-allowed text-left [text-wrap-mode:wrap] flex-shrink-0"
                             >
                               {reply}

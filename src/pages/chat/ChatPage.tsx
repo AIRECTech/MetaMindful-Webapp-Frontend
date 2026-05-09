@@ -7,7 +7,7 @@ import { api } from "../../lib/api";
 import { extractErrorMessage } from "../../lib/errors";
 import { logAnalyticsEvent } from "../../lib/firebase";
 import { useTimeOnScreen } from "../../hooks/useTimeOnScreen";
-import { ensureToken, isGuestUser } from "../../lib/auth";
+import { ensureToken, isGuestUser, getDeviceId, getAccessToken, setTokens } from "../../lib/auth";
 import { GuestTopbar } from "../../components/layout/GuestTopbar";
 import { LoginPopup } from "../../components/LoginPopup";
 import { SignupPopup } from "../../components/SignupPopup";
@@ -25,6 +25,7 @@ interface Message {
   originalUserMessage?: string; // Store the original user message for retry
   replies?: string[];
   feedback?: any[]; // To track if feedback was given
+  requiresSignup?: boolean;
 }
 
 interface Thread {
@@ -293,6 +294,7 @@ export function ChatPage() {
           role: "assistant" as const,
           content: data.assistantMessage,
           replies: data.replies || [],
+          requiresSignup: data.requires_signup,
           createdAt: new Date().toISOString(),
         };
 
@@ -485,6 +487,7 @@ export function ChatPage() {
                     role: "assistant",
                     content: data.assistantMessage,
                     replies: data.replies || [],
+                    requiresSignup: data.requires_signup,
                     createdAt: new Date().toISOString(),
                   },
                 ];
@@ -616,6 +619,167 @@ export function ChatPage() {
       isSendingRef.current = false;
     },
   });
+
+  const socialSignup = useMutation({
+    mutationFn: async ({ provider, providerToken, name }: { provider: "google" | "apple"; providerToken: string; name?: string }) => {
+      const deviceId = getDeviceId();
+      await ensureToken();
+      const token = getAccessToken();
+      
+      const payload: any = {
+        provider,
+        providerToken,
+        name,
+        deviceId,
+      };
+      if (id) {
+        payload.currentThreadId = id;
+      }
+      const res = await api.post(
+        "/auth/social",
+        payload,
+        {
+          headers: token ? { Authorization: `Bearer ${token}` } : {},
+        }
+      );
+      return res.data;
+    },
+    onSuccess: (data) => {
+      const responseData = data.data || data;
+      if (!responseData.accessToken) {
+        toast.error("Signup failed: No access token received");
+        return;
+      }
+      setTokens(responseData.accessToken, responseData.refreshToken, false);
+      toast.success("Welcome!");
+      // Force reload to current thread as authenticated user
+      window.location.href = `/user/chat/${id}`;
+    },
+    onError: (error) => {
+      const message = extractErrorMessage(error, "Social signup failed");
+      toast.error(message);
+    },
+  });
+
+  const handleGoogleSignup = () => {
+    const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID || '';
+    if (!clientId) {
+      toast.error("Google Client ID not configured.");
+      return;
+    }
+    
+    const redirectUri = `${window.location.origin}/auth/google/callback`;
+    const scope = 'openid email profile';
+    const nonce = Math.random().toString(36).substring(2, 15);
+    const state = Math.random().toString(36).substring(2, 15);
+    
+    sessionStorage.setItem('google_oauth_state', state);
+    sessionStorage.setItem('google_oauth_nonce', nonce);
+    if (id) {
+      sessionStorage.setItem('google_oauth_threadId', id);
+    }
+    
+    const width = 500;
+    const height = 600;
+    const left = (window.screen.width - width) / 2;
+    const top = (window.screen.height - height) / 2;
+    
+    const googleAuthUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${encodeURIComponent(clientId)}&response_type=id_token&redirect_uri=${encodeURIComponent(redirectUri)}&scope=${encodeURIComponent(scope)}&nonce=${encodeURIComponent(nonce)}&state=${encodeURIComponent(state)}`;
+    
+    const popup = window.open(googleAuthUrl, 'Google Sign Up', `width=${width},height=${height},left=${left},top=${top}`);
+    
+    if (!popup) {
+      toast.error("Popup blocked. Please allow popups.");
+      return;
+    }
+    
+    const messageListener = (event: MessageEvent) => {
+      if (event.origin !== window.location.origin) return;
+      
+      if (event.data.type === 'GOOGLE_OAUTH_SUCCESS' && event.data.id_token) {
+        window.removeEventListener('message', messageListener);
+        popup?.close();
+        
+        const storedState = sessionStorage.getItem('google_oauth_state');
+        if (event.data.state !== storedState) {
+          toast.error("Security error: Invalid state");
+          return;
+        }
+        
+        socialSignup.mutate({
+          provider: "google",
+          providerToken: event.data.id_token,
+        });
+        
+        sessionStorage.removeItem('google_oauth_state');
+        sessionStorage.removeItem('google_oauth_nonce');
+        sessionStorage.removeItem('google_oauth_threadId');
+      } else if (event.data.type === 'GOOGLE_OAUTH_ERROR') {
+        window.removeEventListener('message', messageListener);
+        popup?.close();
+        toast.error("Google signup failed");
+      }
+    };
+    
+    window.addEventListener('message', messageListener);
+  };
+
+  const handleAppleSignup = () => {
+    const clientId = import.meta.env.VITE_APPLE_CLIENT_ID || '';
+    if (!clientId) {
+      toast.error("Apple Client ID not configured.");
+      return;
+    }
+
+    const scriptId = 'apple-signin-script';
+    const existingScript = document.getElementById(scriptId);
+    
+    if (!existingScript) {
+      const script = document.createElement('script');
+      script.id = scriptId;
+      script.src = 'https://appleid.cdn-apple.com/appleauth/static/jsapi/appleid/1/en_US/appleid.auth.js';
+      script.async = true;
+      script.onload = () => {
+        setTimeout(() => initAppleSignIn(), 100);
+      };
+      document.head.appendChild(script);
+    } else {
+      setTimeout(() => initAppleSignIn(), 100);
+    }
+
+    function initAppleSignIn() {
+      if (typeof window !== 'undefined' && (window as any).AppleID && (window as any).AppleID.auth) {
+        try {
+          (window as any).AppleID.auth.init({
+            clientId: clientId,
+            scope: 'name email',
+            redirectURI: `${window.location.origin}/auth/apple/callback`,
+            usePopup: true,
+          });
+
+          (window as any).AppleID.auth.signIn().then((response: any) => {
+            const idToken = response.id_token || response.authorization?.id_token;
+            if (idToken) {
+              let name: string | undefined;
+              const userObject = response.user || response.authorization?.user;
+              if (userObject?.name) {
+                const firstName = userObject.name.firstName || '';
+                const lastName = userObject.name.lastName || '';
+                name = `${firstName} ${lastName}`.trim() || undefined;
+              }
+              socialSignup.mutate({ provider: "apple", providerToken: idToken, name });
+            }
+          }).catch((error: any) => {
+            if (error?.error !== 'popup_closed_by_user' && error?.error !== 'user_cancelled_authorize') {
+              toast.error(error?.message || "Apple signup failed");
+            }
+          });
+        } catch (error) {
+          toast.error("Apple Sign In failed");
+        }
+      }
+    }
+  };
 
 
   // Auto-focus input when sending finishes
@@ -886,6 +1050,56 @@ export function ChatPage() {
                   >
                     <MessageFormatter content={msg.content} />
 
+                    {msg.role === "assistant" && isGuest && msg.requiresSignup && (() => {
+                      const isLastMessage = displayMessages[displayMessages.length - 1]?.id === msg.id;
+                      if (!isLastMessage) return null;
+
+                      return (
+                        <div className="mt-6 mb-6 flex flex-col items-start gap-4 w-full">
+                          <button
+                            onClick={handleGoogleSignup}
+                            disabled={socialSignup.isPending}
+                            className="w-[60%] flex items-center justify-center gap-3 py-3 px-6 rounded-full border border-yellow-200 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 transition shadow-sm disabled:opacity-50"
+                          >
+                            <svg className="h-5 w-5" viewBox="0 0 24 24">
+                              <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
+                              <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
+                              <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" />
+                              <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
+                            </svg>
+                            <span className="text-gray-700 dark:text-gray-200 text-sm font-medium">Continue with Google account</span>
+                          </button>
+
+                          <button
+                            onClick={handleAppleSignup}
+                            disabled={socialSignup.isPending}
+                            className="w-[60%] flex items-center justify-center gap-3 py-3 px-6 rounded-full border border-yellow-200 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 transition shadow-sm disabled:opacity-50"
+                          >
+                            <svg className="h-5 w-5 dark:fill-white" viewBox="0 0 24 24" fill="#000000">
+                              <path d="M17.05 20.28c-.98.95-2.05.88-3.08.4-1.09-.5-2.08-.48-3.24 0-1.44.62-2.2.44-3.06-.4C2.79 15.25 3.51 7.59 9.05 7.31c1.35.07 2.29.74 3.08.8 1.18-.24 2.31-.93 3.57-.84 1.51.12 2.65.72 3.4 1.8-3.12 1.87-2.38 5.98.48 7.13-.57 1.5-1.31 2.99-2.54 4.09l.01-.01zM12.03 7.25c-.15-2.23 1.66-4.07 3.74-4.25.29 2.58-2.34 4.5-3.74 4.25z" />
+                            </svg>
+                            <span className="text-gray-700 dark:text-gray-200 text-sm font-medium">Continue with Apple account</span>
+                          </button>
+
+                          <div className="w-[60%] flex justify-center">
+                            <button
+                              onClick={() => setShowSignupPopup(true)}
+                              className="text-gray-600 dark:text-gray-400 underline hover:text-gray-800 dark:hover:text-gray-200 transition text-sm text-center"
+                            >
+                              Continue with multi-step email verification
+                            </button>
+                          </div>
+
+                          <button
+                            onClick={() => sendText("No, I don't want a reminder")}
+                            className="mt-2 w-[60%] py-3 px-6 rounded-full bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 text-sm font-medium hover:bg-gray-200 dark:hover:bg-gray-600 transition border border-gray-200 dark:border-gray-600"
+                          >
+                            No, I don't want a reminder
+                          </button>
+                        </div>
+                      );
+                    })()}
+
                     {msg.role === "assistant" && !msg.isError && !msg.id.startsWith("temp-") && (
                       <div className="mt-2 flex items-center gap-2">
                         {(() => {
@@ -988,6 +1202,9 @@ export function ChatPage() {
             const isLastMessageAssistant = displayMessages.length > 0 && displayMessages[displayMessages.length - 1].role === "assistant";
 
             if (lastAssistantMessageWithReplies?.replies && lastAssistantMessageWithReplies.replies.length > 0 && !suggestionUsed && isLastMessageAssistant) {
+              const lastMessage = displayMessages[displayMessages.length - 1];
+              const requiresSignup = isGuest && lastMessage?.role === "assistant" && lastMessage?.requiresSignup;
+
               return (
                 <div className="flex flex-col items-center gap-3 mb-2 mt-[10px] w-full">
                   <div className="flex overflow-x-auto gap-3 pb-2 w-full no-scrollbar">
@@ -995,7 +1212,7 @@ export function ChatPage() {
                       <button
                         key={idx}
                         onClick={async () => {
-                          if (isSending) return;
+                          if (isSending || requiresSignup) return;
                           setSuggestionUsed(true);
 
                           logAnalyticsEvent("suggestion_selected", {
@@ -1020,7 +1237,7 @@ export function ChatPage() {
                             console.error("[ChatPage] Error logging suggestion click:", error);
                           }
                         }}
-                        disabled={isSending}
+                        disabled={isSending || !!requiresSignup}
                         className="px-5 py-3 w-[190px] bg-blue-100 dark:bg-blue-900/30 text-gray-700 dark:text-gray-300 rounded-xl border border-blue-200 dark:border-blue-800 hover:bg-blue-200 dark:hover:bg-blue-900/50 text-[12px] leading-normal font-normal transition disabled:opacity-50 disabled:cursor-not-allowed text-left [text-wrap-mode:wrap] flex-shrink-0"
                       >
                         {reply}
@@ -1064,30 +1281,37 @@ export function ChatPage() {
             </div>
           )}
 
-          <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm flex items-end gap-3 p-4">
-            <textarea
-              ref={messageInputRef}
-              className="flex-1 min-w-0 px-6 py-3 text-gray-800 dark:text-gray-200 placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none text-base border-0 bg-gray-100 dark:bg-gray-700 rounded-xl resize-none min-h-[48px] max-h-[200px] overflow-y-auto"
-              placeholder="Type here ....."
-              value={message}
-              onChange={(e) => setMessage(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" && !e.shiftKey) {
-                  e.preventDefault();
-                  handleSend();
-                }
-              }}
-              disabled={isSending}
-              rows={1}
-            />
-            <button
-              onClick={handleSend}
-              disabled={!message.trim() || isSending}
-              className="bg-yellow-300 hover:bg-yellow-400 p-3 rounded-full disabled:opacity-50 disabled:cursor-not-allowed transition flex-shrink-0 mb-1"
-            >
-              <ArrowUp className="h-5 w-5 text-gray-900" strokeWidth={2.5} fill="none" />
-            </button>
-          </div>
+          {(() => {
+            const lastMessage = displayMessages[displayMessages.length - 1];
+            const requiresSignup = isGuest && lastMessage?.role === "assistant" && lastMessage?.requiresSignup;
+            
+            return (
+              <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm flex items-end gap-3 p-4">
+                <textarea
+                  ref={messageInputRef}
+                  className="flex-1 min-w-0 px-6 py-3 text-gray-800 dark:text-gray-200 placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none text-base border-0 bg-gray-100 dark:bg-gray-700 rounded-xl resize-none min-h-[48px] max-h-[200px] overflow-y-auto"
+                  placeholder="Type here ....."
+                  value={message}
+                  onChange={(e) => setMessage(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && !e.shiftKey) {
+                      e.preventDefault();
+                      handleSend();
+                    }
+                  }}
+                  disabled={isSending || !!requiresSignup}
+                  rows={1}
+                />
+                <button
+                  onClick={handleSend}
+                  disabled={!message.trim() || isSending || !!requiresSignup}
+                  className="bg-yellow-300 hover:bg-yellow-400 p-3 rounded-full disabled:opacity-50 disabled:cursor-not-allowed transition flex-shrink-0 mb-1"
+                >
+                  <ArrowUp className="h-5 w-5 text-gray-900" strokeWidth={2.5} fill="none" />
+                </button>
+              </div>
+            );
+          })()}
 
           {/* Guest user login/signup prompt - text only */}
           {isGuest && (

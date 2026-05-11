@@ -17,7 +17,7 @@ export function ChatToasts() {
   } = useChatToast();
   
   const location = useLocation();
-  const isChatRoute = location.pathname.startsWith("/chat") || location.pathname.startsWith("/guest");
+  const isChatRoute = location.pathname.includes("/chat") || location.pathname.includes("/guest");
 
   // Only show on chat routes
   if (!isChatRoute) return null;

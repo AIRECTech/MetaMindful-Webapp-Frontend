@@ -1,6 +1,6 @@
 import { useNavigate, useParams } from "react-router-dom";
 import { cn } from "../../lib/utils";
-import { MessageSquare, Settings, Plus, Moon, Sun, LogOut, Edit2, Trash2, MoreVertical } from "lucide-react";
+import { MessageSquare, Settings, Plus, Moon, Sun, LogOut, Edit2, Trash2, MoreVertical, X } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "../../lib/api";
@@ -10,6 +10,7 @@ import { logAnalyticsEvent } from "../../lib/firebase";
 import { extractErrorMessage } from "../../lib/errors";
 import { toast } from "react-hot-toast";
 import { getDarkMode, toggleDarkMode as toggleDarkModeUtil } from "../../lib/darkMode";
+import { useLayout } from "../../contexts/LayoutContext";
 
 interface Thread {
   id: string;
@@ -26,6 +27,7 @@ export function Sidebar() {
   const location = useLocation();
   const { id: currentThreadId } = useParams<{ id?: string }>();
   const queryClient = useQueryClient();
+  const { isSidebarOpen, closeSidebar } = useLayout();
   const [darkMode, setDarkMode] = useState(() => {
     return getDarkMode();
   });
@@ -135,7 +137,12 @@ export function Sidebar() {
   useEffect(() => {
     setEditingThreadId(null);
     setEditingTitle("");
-  }, [location.pathname]);
+    
+    // Auto-close sidebar on mobile when navigating
+    if (window.innerWidth < 1024) {
+      closeSidebar();
+    }
+  }, [location.pathname, closeSidebar]);
 
   // Handle delete with confirmation
   const handleDelete = (threadId: string) => {
@@ -197,26 +204,48 @@ export function Sidebar() {
   const isGuest = isGuestUser();
 
   return (
-    <aside className="hidden lg:flex w-64 flex-col border-r border-gray-200 dark:border-gray-700">
-      {/* Logo at top */}
-      <div className="p-4 border-b border-gray-200 dark:border-gray-700">
-        <div
-          className="flex items-center gap-3 cursor-pointer"
-          onClick={() => navigate("/")}
-        >
-          <img
-            src="/logo.png"
-            alt="MetaMindful"
-            className="h-8 w-auto"
-          />
-          <div className="flex flex-col">
-            <span className="text-lg font-bold text-gray-800 dark:text-gray-200">MetaMindful</span>
-            {isGuest && (
-              <span className="text-xs text-gray-500 dark:text-gray-400">Guest mode</span>
-            )}
+    <>
+      {/* Mobile overlay */}
+      {isSidebarOpen && (
+        <div 
+          className="fixed inset-0 bg-black/50 z-[60] lg:hidden backdrop-blur-sm"
+          onClick={closeSidebar}
+        />
+      )}
+
+      <aside className={cn(
+        "fixed inset-y-0 left-0 z-[70] w-64 bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-700 flex flex-col transition-transform duration-300 lg:static lg:translate-x-0",
+        isSidebarOpen ? "translate-x-0" : "-translate-x-full"
+      )}>
+        {/* Logo and close button at top */}
+        <div className="p-4 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
+          <div
+            className="flex items-center gap-3 cursor-pointer"
+            onClick={() => {
+              navigate("/");
+              if (window.innerWidth < 1024) closeSidebar();
+            }}
+          >
+            <img
+              src="/logo.png"
+              alt="MetaMindful"
+              className="h-8 w-auto"
+            />
+            <div className="flex flex-col">
+              <span className="text-lg font-bold text-gray-800 dark:text-gray-200">MetaMindful</span>
+              {isGuest && (
+                <span className="text-xs text-gray-500 dark:text-gray-400">Guest mode</span>
+              )}
+            </div>
           </div>
+
+          <button
+            onClick={closeSidebar}
+            className="lg:hidden p-2 text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition"
+          >
+            <X className="h-5 w-5" />
+          </button>
         </div>
-      </div>
 
       {/* Threads section */}
       <div className="flex-1 overflow-y-auto">
@@ -408,5 +437,6 @@ export function Sidebar() {
         )}
       </div>
     </aside>
+    </>
   );
 }

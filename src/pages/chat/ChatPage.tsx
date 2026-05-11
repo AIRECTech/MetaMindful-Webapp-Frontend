@@ -478,26 +478,29 @@ export function ChatPage() {
                 updated.title = data.title_name;
               }
 
+              // Add confirmed user message and assistant message
+              const newMessages = [
+                ...old.messages.filter(m => !m.id?.startsWith("temp-")),
+                userMsg,
+              ];
+
               // Add assistant message if available
               if (data.assistantMessage) {
-                updated.messages = [
-                  ...old.messages,
-                  {
-                    id: data.message_id || `local-assistant-${Date.now()}`,
-                    role: "assistant",
-                    content: data.assistantMessage,
-                    replies: data.replies || [],
-                    requiresSignup: data.requires_signup,
-                    createdAt: new Date().toISOString(),
-                  },
-                ];
+                newMessages.push({
+                  id: data.message_id || `local-assistant-${Date.now()}`,
+                  role: "assistant",
+                  content: data.assistantMessage,
+                  replies: data.replies || [],
+                  requiresSignup: data.requires_signup,
+                  createdAt: new Date().toISOString(),
+                });
                 logAnalyticsEvent("chat_message_received", {
                   thread_id: id,
                   response_length: data.assistantMessage.length
                 });
-                return updated;
               }
 
+              updated.messages = newMessages;
               return updated;
             });
 
@@ -842,6 +845,9 @@ export function ChatPage() {
         return newMessages;
       });
     } else {
+      // Cancel any outgoing refetches (so they don't overwrite our optimistic update)
+      queryClient.cancelQueries({ queryKey: ["thread", id] });
+
       // Remove any previous error messages
       queryClient.setQueryData(["thread", id], (old: Thread | undefined) => {
         if (!old) return old;

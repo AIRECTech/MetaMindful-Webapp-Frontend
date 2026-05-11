@@ -1,8 +1,9 @@
-import { LogOut } from "lucide-react";
+import { LogOut, Menu } from "lucide-react";
 import { NotificationBell } from "../NotificationBell";
 import { useNavigate } from "react-router-dom";
 import { api } from "../../lib/api";
 import { clearTokens, isAuthenticated } from "../../lib/auth";
+import { useLayout } from "../../contexts/LayoutContext";
 import { toast } from "react-hot-toast";
 
 import { ChatToasts } from "../chat/ChatToasts";
@@ -10,6 +11,7 @@ import { ChatToasts } from "../chat/ChatToasts";
 export function Topbar() {
   const navigate = useNavigate();
   const authenticated = isAuthenticated();
+  const { toggleSidebar } = useLayout();
   
   const logout = async () => {
     try {
@@ -26,7 +28,14 @@ export function Topbar() {
   return (
     <header className="flex items-center justify-between px-4 py-3 min-h-[64px]">
     
-        <div className="flex flex-col items-start flex-1">
+        <div className="flex items-center gap-3 flex-1">
+          <button
+            onClick={toggleSidebar}
+            className="lg:hidden p-2 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition"
+            aria-label="Toggle sidebar"
+          >
+            <Menu className="h-6 w-6" />
+          </button>
         </div>
 
         {/* Center content - Toasts */}

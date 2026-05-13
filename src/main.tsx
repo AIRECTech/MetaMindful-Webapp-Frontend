@@ -75,6 +75,19 @@ const router = createBrowserRouter([
       { path: "settings", element: <SettingsPage /> },
     ],
   },
+  // Apple App Site Association
+  {
+    path: "/.well-known/apple-app-site-association",
+    element: (
+      <pre style={{ padding: '20px', whiteSpace: 'pre-wrap', wordBreak: 'break-all' }}>
+        {JSON.stringify({
+          "appclips": {
+            "apps": [ "BB45CSH5W3.com.AIREC.MetaMindful.Clip" ]
+          }
+        }, null, 2)}
+      </pre>
+    )
+  },
   // Catch-all route for 404 - redirect to root
   { path: "*", element: <Navigate to="/" replace /> },
 ]);

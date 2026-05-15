@@ -3,7 +3,7 @@ import { requestNotificationPermission, setupForegroundMessageHandler, registerS
 
 export interface Notification {
   id: string;
-  type: "thread_created" | "message_received" | "system";
+  type: "thread_created" | "message_received" | "system" | "reminder";
   title: string;
   body: string;
   data?: Record<string, any>;

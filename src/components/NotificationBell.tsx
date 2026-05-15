@@ -5,10 +5,12 @@ import { getUnreadCount, markNotificationRead, markAllNotificationsRead, getNoti
 import { isGuestUser } from "../lib/auth";
 import { logAnalyticsEvent } from "../lib/firebase";
 import { toast } from "react-hot-toast";
+import { useNavigate } from "react-router-dom";
 
 export function NotificationBell() {
   const [isOpen, setIsOpen] = useState(false);
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
 
   // Fetch unread count
   const { data: unreadCount = 0, error: unreadCountError } = useQuery<number>({
@@ -48,9 +50,13 @@ export function NotificationBell() {
     },
   });
 
-  const handleNotificationClick = (notification: Notification) => {
+  const handleNotificationClick = async (notification: Notification) => {
     if (!notification.isRead) {
-      markReadMutation.mutate(notification.id);
+      try {
+        await markReadMutation.mutateAsync(notification.id);
+      } catch (error) {
+        console.error("Failed to mark notification as read:", error);
+      }
     }
     logAnalyticsEvent("notification_tapped", { notificationId: notification.id, type: notification.type });
 
@@ -59,7 +65,7 @@ export function NotificationBell() {
       // Check if user is guest to determine correct route
       const isGuest = isGuestUser();
       const route = isGuest ? `/guest/${notification.data.threadId}` : `/user/chat/${notification.data.threadId}`;
-      window.location.href = route;
+      navigate(route);
     }
     setIsOpen(false);
   };

@@ -9,12 +9,9 @@ interface ThreadCardModalProps {
 }
 
 const DEFAULT_DETAILS = [
-  { label: "Pattern", value: "" },
-  { label: "Goal", value: "" },
-  { label: "Insight", value: "" },
-  { label: "Move that help", value: "" },
-  { label: "Current trigger", value: "" },
-  { label: "Progress", value: "" },
+  { label: "Thread name", value: "" },
+  { label: "What’s the sign?", value: "" },
+  { label: "What to do differently?", value: "" },
 ];
 
 export function ThreadCardModal({ isOpen, onClose, details = DEFAULT_DETAILS }: ThreadCardModalProps) {

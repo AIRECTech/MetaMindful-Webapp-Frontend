@@ -204,12 +204,9 @@ export function GuestChatPage() {
         const threadCard = data.thread_card;
         if (threadCard) {
           const details = [
-            { label: "Pattern", value: threadCard.pattern || "" },
-            { label: "Goal", value: threadCard.goal || "" },
-            { label: "Insight", value: threadCard.insight || "" },
-            { label: "Move that help", value: threadCard.move_that_helped || "" },
-            { label: "Current trigger", value: threadCard.trigger || "" },
-            { label: "Progress", value: threadCard.progress || "" },
+            { label: "Thread name", value: data.title_name || threadTitle || "" },
+            { label: "What’s the sign?", value: threadCard.trigger || "" },
+            { label: "What to do differently?", value: threadCard.move_that_helped || "" },
           ].filter(item => item.value !== "");
 
           if (details.length > 0) {

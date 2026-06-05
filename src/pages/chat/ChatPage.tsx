@@ -516,7 +516,9 @@ export function ChatPage() {
       }
       // Refocus input after sending
       setTimeout(() => {
-        messageInputRef.current?.focus();
+        if (window.innerWidth > 768) {
+          messageInputRef.current?.focus();
+        }
       }, 0);
       setIsSending(false);
       isSendingRef.current = false;
@@ -597,7 +599,9 @@ export function ChatPage() {
 
       // Refocus input after error
       setTimeout(() => {
-        messageInputRef.current?.focus();
+        if (window.innerWidth > 768) {
+          messageInputRef.current?.focus();
+        }
       }, 0);
 
       // Check if it's a 401 error (handled by interceptor, but show message)
@@ -787,7 +791,7 @@ export function ChatPage() {
     if (!isSending) {
       setTimeout(() => {
         const input = messageInputRef.current;
-        if (input && document.activeElement !== input) {
+        if (input && document.activeElement !== input && window.innerWidth > 768) {
           input.focus();
         }
       }, 100);
@@ -1204,7 +1208,11 @@ export function ChatPage() {
             // Only show suggestions if the last message is from the assistant and hasn't been used yet
             const isLastMessageAssistant = displayMessages.length > 0 && displayMessages[displayMessages.length - 1].role === "assistant";
 
-            if (lastAssistantMessageWithReplies?.replies && lastAssistantMessageWithReplies.replies.length > 0 && !suggestionUsed && isLastMessageAssistant) {
+            const messageLimit = parseInt(import.meta.env.VITE_MESSAGE_LIMIT || "0", 10);
+            const userMessageCount = displayMessages.filter(msg => msg.role === 'user').length;
+            const isLimitReached = messageLimit > 0 && userMessageCount >= messageLimit;
+
+            if (lastAssistantMessageWithReplies?.replies && lastAssistantMessageWithReplies.replies.length > 0 && !suggestionUsed && isLastMessageAssistant && !isLimitReached) {
               const lastMessage = displayMessages[displayMessages.length - 1];
               const requiresSignup = isGuest && lastMessage?.role === "assistant" && lastMessage?.requiresSignup;
 
@@ -1228,7 +1236,9 @@ export function ChatPage() {
 
                           // Focus input
                           setTimeout(() => {
-                            messageInputRef.current?.focus();
+                            if (window.innerWidth > 768) {
+                              messageInputRef.current?.focus();
+                            }
                           }, 0);
 
                           try {
@@ -1287,6 +1297,21 @@ export function ChatPage() {
           {(() => {
             const lastMessage = displayMessages[displayMessages.length - 1];
             const requiresSignup = isGuest && lastMessage?.role === "assistant" && lastMessage?.requiresSignup;
+            const messageLimit = parseInt(import.meta.env.VITE_MESSAGE_LIMIT || "0", 10);
+            const userMessageCount = displayMessages.filter(msg => msg.role === 'user').length;
+            const isLimitReached = messageLimit > 0 && userMessageCount >= messageLimit;
+
+            if (isLimitReached && !isSending) {
+              return (
+                <div className="bg-yellow-50 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-200 rounded-2xl border border-yellow-200 dark:border-yellow-800 shadow-sm p-6 text-center">
+                  <p className="font-medium text-lg mb-2">Message Limit Reached</p>
+                  <p className="mb-4">You have reached the maximum number of messages for this thread.</p>
+                  <Link to={isGuest ? "/guest" : "/user"} className="inline-block bg-yellow-400 hover:bg-yellow-500 text-gray-900 px-6 py-2 rounded-full font-medium transition">
+                    Create a new thread to continue
+                  </Link>
+                </div>
+              );
+            }
             
             return (
               <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm flex items-end gap-3 p-4">

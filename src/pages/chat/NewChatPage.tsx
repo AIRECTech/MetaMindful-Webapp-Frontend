@@ -21,24 +21,7 @@ interface Message {
   originalUserMessage?: string; // Store the original user message for retry
 }
 
-interface ThreadResponseMessage {
-  id: string;
-  role: "user" | "assistant";
-  content: string;
-  createdAt: string;
-}
 
-interface ThreadResponse {
-  id: string;
-  threadId: string; // externalThreadId (UUID)
-  userId: string;
-  title: string;
-  desc?: string | null;
-  createdAt: string;
-  updatedAt: string;
-  messageCount?: number;
-  messages: ThreadResponseMessage[];
-}
 
 export function NewChatPage() {
   const navigate = useNavigate();
@@ -80,19 +63,44 @@ export function NewChatPage() {
       setIsLoading(true);
       await ensureToken();
 
-      const res = await api.post("/threads", { title: "New Chat" });
-      const thread = res.data.data as ThreadResponse;
+      const res = await api.post("/threads/chat", { message: initialMessage }, {
+        timeout: 300000 // 5 minute timeout for AI response
+      });
+      const chatResponse = res.data.data;
 
-      if (!thread?.threadId) {
+      if (!chatResponse?.threadId) {
         throw new Error("Thread created but threadId (UUID) missing from response");
       }
 
       logAnalyticsEvent("thread_created", {
-        thread_id: thread.threadId,
-        title: thread.title
+        thread_id: chatResponse.threadId,
+        title: chatResponse.thread_card?.title_name || "New Chat"
       });
 
-      navigateToChatWithFirstUserMessage(initialMessage, thread.threadId, thread.title, thread.desc ?? undefined, thread.messages || []);
+      // Construct bootstrapped messages including user message and assistant reply
+      const bootstrappedMessages = [
+        {
+          id: `local-user-${Date.now()}`,
+          role: "user" as const,
+          content: initialMessage,
+          createdAt: new Date().toISOString(),
+        },
+        {
+          id: chatResponse.message?.id || `local-assistant-${Date.now()}`,
+          role: "assistant" as const,
+          content: chatResponse.message?.assistantMessage || "",
+          replies: chatResponse.message?.suggested_replies || [],
+          requiresSignup: chatResponse.message?.auth_gate?.should_show || false,
+          createdAt: new Date().toISOString(),
+        }
+      ];
+
+      navigateToChatWithFirstUserMessage(
+        chatResponse.threadId,
+        chatResponse.thread_card?.title_name || "New Chat",
+        chatResponse.thread_card?.stuck_situation || undefined,
+        bootstrappedMessages
+      );
     } catch (error: any) {
       console.error("[NewChatPage] Error creating thread:", error);
       const statusCode = error.response?.status || error.response?.data?.code;
@@ -116,7 +124,7 @@ export function NewChatPage() {
     }
   };
 
-  const navigateToChatWithFirstUserMessage = (userMessage: string, tid: string, title?: string, desc?: string, initialMessages: any[] = []) => {
+  const navigateToChatWithFirstUserMessage = (tid: string, title?: string, desc?: string, initialMessages: any[] = []) => {
     navigate(`/user/chat/${tid}`, {
       state: {
         bootstrapThread: {
@@ -126,7 +134,6 @@ export function NewChatPage() {
           desc: desc || undefined,
           messages: initialMessages,
         },
-        autoSendText: userMessage,
       },
       replace: true,
     });

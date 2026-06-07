@@ -32,13 +32,6 @@ interface Message {
   requiresSignup?: boolean;
 }
 
-interface ThreadResponseMessage {
-  id: string;
-  role: "user" | "assistant";
-  content: string;
-  createdAt: string;
-}
-
 /**
  * GuestChatPage - Handles guest user chat flow
  * - On /guest: Generates token on load, creates thread, shows greeting page
@@ -50,13 +43,13 @@ export function GuestChatPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const queryMessage = searchParams.get("q"); // Get message from query parameter
   const [message, setMessage] = useState("");
-  const [messages, setMessages] = useState<Message[]>([]);
+  const [messages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
   useTimeOnScreen("guest-chat", "GuestChatPage");
-  const [threadId, setThreadId] = useState<string | null>(null);
-  const [threadTitle, setThreadTitle] = useState<string>("New Chat");
-  const [threadDesc, setThreadDesc] = useState<string | null>(null);
+  const [threadId] = useState<string | null>(null);
+  const [threadTitle] = useState<string>("New Chat");
+  const [threadDesc] = useState<string | null>(null);
   const [showLoginPopup, setShowLoginPopup] = useState(false);
   const [showSignupPopup, setShowSignupPopup] = useState(false);
   const [showThreadCard, setShowThreadCard] = useState(false);
@@ -94,7 +87,7 @@ export function GuestChatPage() {
   const [suggestionUsed, setSuggestionUsed] = useState(false);
 
   // Default suggestions provided as constant
-  const [currentSuggestions, setCurrentSuggestions] = useState<string[]>(suggestions);
+  const [currentSuggestions] = useState<string[]>(suggestions);
 
   const {
     setToastData,
@@ -156,55 +149,59 @@ export function GuestChatPage() {
   // Create thread after token is generated
   const createThread = useMutation({
     mutationFn: async () => {
-      const res = await api.post("/threads", { title: "New Chat" });
+      const res = await api.post("/threads/chat", { message: pendingMessage }, {
+        timeout: 300000 // 5 minute timeout for AI response
+      });
       return res.data.data;
     },
     onSuccess: (data) => {
       if (data?.threadId) {
-        // Handle Conditional Toasts (Detect created vs completed)
-        if (data.action_workable_describtion) {
+        // Handle Conditional Toasts (Detect created vs completed) using explicit show_reminder_card flag
+        if (data.ui_element?.show_reminder_card) {
           setHasAction(true);
           setHasActionCompleted(false);
           localStorage.setItem(`toast_has_action_${data.threadId}`, 'true');
           localStorage.removeItem(`toast_action_completed_${data.threadId}`);
-        } else if (data.action_workable_describtion === "") {
+        } else {
           setHasAction(false);
           localStorage.removeItem(`toast_has_action_${data.threadId}`);
         }
-        if (data.action_completed === true) {
+        const isActionCompleted = !!data.ui_element?.action?.completed_at;
+        if (data.ui_element?.action && isActionCompleted) {
           setHasAction(false);
           setHasActionCompleted(true);
           localStorage.removeItem(`toast_has_action_${data.threadId}`);
           localStorage.setItem(`toast_action_completed_${data.threadId}`, 'true');
-        } else if (data.action_completed === false) {
+        } else {
           setHasActionCompleted(false);
           localStorage.removeItem(`toast_action_completed_${data.threadId}`);
         }
 
-        if (data.exercise_ID) {
+        // Handle Conditional Toasts using explicit show_exercise_card flag
+        if (data.ui_element?.show_exercise_card) {
           setHasExercise(true);
           setHasExerciseCompleted(false);
           localStorage.setItem(`toast_has_exercise_${data.threadId}`, 'true');
           localStorage.removeItem(`toast_exercise_completed_${data.threadId}`);
-        } else if (data.exercise_ID === "") {
+        } else {
           setHasExercise(false);
           localStorage.removeItem(`toast_has_exercise_${data.threadId}`);
         }
-        if (data.exercise_completed === true) {
+        if (data.ui_element?.exercise_completed === true) {
           setHasExercise(false);
           setHasExerciseCompleted(true);
           localStorage.removeItem(`toast_has_exercise_${data.threadId}`);
           localStorage.setItem(`toast_exercise_completed_${data.threadId}`, 'true');
-        } else if (data.exercise_completed === false) {
+        } else if (data.ui_element?.exercise_completed === false) {
           setHasExerciseCompleted(false);
           localStorage.removeItem(`toast_exercise_completed_${data.threadId}`);
         }
 
-        // Handle Thread Card Data
-        const threadCard = data.thread_card;
-        if (threadCard) {
+        // Handle Thread Card Data using explicit show_thread_card flag
+        const threadCard = data.thread_card?.thread_card;
+        if (threadCard && data.ui_element?.show_thread_card) {
           const details = [
-            { label: "Thread name", value: data.title_name || threadTitle || "" },
+            { label: "Thread name", value: data.thread_card.title_name || threadTitle || "" },
             { label: "What’s the sign?", value: threadCard.trigger || "" },
             { label: "What to do differently?", value: threadCard.move_that_helped || "" },
           ].filter(item => item.value !== "");
@@ -215,25 +212,25 @@ export function GuestChatPage() {
           }
         }
 
-        if (pendingMessage) {
-          navigateToChatWithFirstUserMessage(pendingMessage, data.threadId, data.title, data.desc, data.messages || []);
-        } else {
-          setThreadId(data.threadId);
-          setThreadTitle(data.title || "New Chat");
-          setThreadDesc(data.desc ?? null);
-          const firstAssistant = data.messages?.find((m: ThreadResponseMessage) => m.role === "assistant")?.content;
-          const replies = data.replies || [];
-
-          if (replies.length > 0) {
-            setCurrentSuggestions(replies);
+        // Construct bootstrapped messages including user message and assistant reply
+        const bootstrappedMessages = [
+          {
+            id: `local-user-${Date.now()}`,
+            role: "user" as const,
+            content: pendingMessage || "",
+            createdAt: new Date().toISOString(),
+          },
+          {
+            id: data.message?.id || `local-assistant-${Date.now()}`,
+            role: "assistant" as const,
+            content: data.message?.assistantMessage || "",
+            replies: data.message?.suggested_replies || [],
+            requiresSignup: data.message?.auth_gate?.should_show || false,
+            createdAt: new Date().toISOString(),
           }
+        ];
 
-          if (firstAssistant) {
-            setMessages([{ role: "assistant", content: firstAssistant, isError: false, replies, requiresSignup: data.requires_signup }]);
-          } else {
-            setMessages([{ role: "assistant", content: "Hi, I'm MetaMindful. I'm here to listen and support you. How are you feeling today?", isError: false, replies, requiresSignup: data.requires_signup }]);
-          }
-        }
+        navigateToChatWithFirstUserMessage(null, data.threadId, data.thread_card?.title_name, data.thread_card?.stuck_situation || undefined, bootstrappedMessages);
       } else {
         toast.error("Failed to create thread");
       }
@@ -286,27 +283,32 @@ export function GuestChatPage() {
     }
   }, [queryMessage, threadId, isLoading, generateToken.isSuccess, id, searchParams, setSearchParams]);
 
-  const navigateToChatWithFirstUserMessage = (userMessage: string, tid?: string, title?: string, desc?: string, initialMessages: any[] = []) => {
+  const navigateToChatWithFirstUserMessage = (userMessage: string | null, tid?: string, title?: string, desc?: string, initialMessages: any[] = []) => {
     const finalThreadId = tid || threadId;
     if (!finalThreadId) return;
 
+    const statePayload: any = {
+      bootstrapThread: {
+        id: "0",
+        threadId: finalThreadId,
+        title: title || threadTitle,
+        desc: desc || threadDesc || undefined,
+        messages: initialMessages.length > 0 ? initialMessages : messages.map((m, i) => ({
+          id: `initial-${i}`,
+          role: m.role,
+          content: m.content,
+          requiresSignup: m.requiresSignup,
+          createdAt: new Date().toISOString(),
+        })),
+      }
+    };
+
+    if (userMessage) {
+      statePayload.autoSendText = userMessage;
+    }
+
     navigate(`/guest/${finalThreadId}`, {
-      state: {
-        bootstrapThread: {
-          id: "0",
-          threadId: finalThreadId,
-          title: title || threadTitle,
-          desc: desc || threadDesc || undefined,
-          messages: initialMessages.length > 0 ? initialMessages : messages.map((m, i) => ({
-            id: `initial-${i}`,
-            role: m.role,
-            content: m.content,
-            requiresSignup: m.requiresSignup,
-            createdAt: new Date().toISOString(),
-          })),
-        },
-        autoSendText: userMessage,
-      },
+      state: statePayload,
       replace: true,
     });
   };

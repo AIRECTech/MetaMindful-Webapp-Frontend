@@ -288,13 +288,14 @@ export function ChatPage() {
         message_length: variables.length
       });
       // Update thread data from chat API response instead of refetching
+      // Update thread data from chat API response instead of refetching
       if (data) {
         const assistantMsg: Message = {
-          id: data.message_id || `local-assistant-${Date.now()}`,
+          id: data.message?.id || `local-assistant-${Date.now()}`,
           role: "assistant" as const,
-          content: data.assistantMessage,
-          replies: data.replies || [],
-          requiresSignup: data.requires_signup,
+          content: data.message?.assistantMessage,
+          replies: data.message?.suggested_replies || [],
+          requiresSignup: data.message?.auth_gate?.should_show || false,
           createdAt: new Date().toISOString(),
         };
 
@@ -315,14 +316,14 @@ export function ChatPage() {
               userMsg,
               assistantMsg,
             ];
-            if (data.title_name) updated.title = data.title_name;
+            if (data.thread_card?.title_name) updated.title = data.thread_card.title_name;
             if (data.chatCount !== undefined) updated.chatCount = data.chatCount;
             if (data.chatLimit !== undefined) updated.chatLimit = data.chatLimit;
             return updated;
           });
 
           // For guest users, update local state
-          if (data.assistantMessage) {
+          if (data.message?.assistantMessage) {
             setGuestMessages((prev) => {
               console.log("BEFORE:", prev);
               const newMessages: Message[] = [
@@ -333,20 +334,20 @@ export function ChatPage() {
               console.log("AFTER:", newMessages);
               logAnalyticsEvent("chat_message_received", {
                 thread_id: id,
-                response_length: data.assistantMessage.length
+                response_length: data.message.assistantMessage.length
               });
               return newMessages;
             });
           }
 
           // Update title if changed
-          if (data.title_name && data.title_name !== guestThreadTitle) {
-            setGuestThreadTitle(data.title_name);
+          if (data.thread_card?.title_name && data.thread_card.title_name !== guestThreadTitle) {
+            setGuestThreadTitle(data.thread_card.title_name);
           }
 
           if (isGuest) {
             let isExerciseCompleted = localStorage.getItem(`exercise_completed_for_${id}`) === 'true';
-            if (data.user_wants_to_skip_exercise || data.exercise_completed) {
+            if (data.ui_element?.user_wants_to_skip_exercise || data.ui_element?.exercise_completed) {
               isExerciseCompleted = true;
               localStorage.setItem(`exercise_completed_for_${id}`, 'true');
             }
@@ -392,54 +393,55 @@ export function ChatPage() {
         }
 
         // Handle Conditional Toasts (Detect created vs completed)
-        if (data.action_workable_describtion) {
+        if (data.ui_element?.show_reminder_card) {
           setHasAction(true);
           setHasActionCompleted(false);
           if (id) {
             localStorage.setItem(`toast_has_action_${id}`, 'true');
             localStorage.removeItem(`toast_action_completed_${id}`);
           }
-        } else if (data.action_workable_describtion === "") {
+        } else {
           setHasAction(false);
           if (id) {
             localStorage.removeItem(`toast_has_action_${id}`);
           }
         }
-        if (data.action_completed === true) {
+        const isActionCompleted = !!data.ui_element?.action?.completed_at;
+        if (data.ui_element?.action && isActionCompleted) {
           setHasAction(false);
           setHasActionCompleted(true);
           if (id) {
             localStorage.removeItem(`toast_has_action_${id}`);
             localStorage.setItem(`toast_action_completed_${id}`, 'true');
           }
-        } else if (data.action_completed === false) {
+        } else {
           setHasActionCompleted(false);
           if (id) {
             localStorage.removeItem(`toast_action_completed_${id}`);
           }
         }
 
-        if (data.exercise_ID) {
+        if (data.ui_element?.show_exercise_card) {
           setHasExercise(true);
           setHasExerciseCompleted(false);
           if (id) {
             localStorage.setItem(`toast_has_exercise_${id}`, 'true');
             localStorage.removeItem(`toast_exercise_completed_${id}`);
           }
-        } else if (data.exercise_ID === "") {
+        } else {
           setHasExercise(false);
           if (id) {
             localStorage.removeItem(`toast_has_exercise_${id}`);
           }
         }
-        if (data.exercise_completed === true) {
+        if (data.ui_element?.exercise_completed === true) {
           setHasExercise(false);
           setHasExerciseCompleted(true);
           if (id) {
             localStorage.removeItem(`toast_has_exercise_${id}`);
             localStorage.setItem(`toast_exercise_completed_${id}`, 'true');
           }
-        } else if (data.exercise_completed === false) {
+        } else if (data.ui_element?.exercise_completed === false) {
           setHasExerciseCompleted(false);
           if (id) {
             localStorage.removeItem(`toast_exercise_completed_${id}`);
@@ -447,10 +449,10 @@ export function ChatPage() {
         }
 
          // Handle Thread Card Data
-         const threadCard = data.thread_card;
-         if (threadCard) {
+         const threadCard = data.thread_card?.thread_card;
+         if (threadCard && data.ui_element?.show_thread_card) {
           const details = [
-            { label: "Thread name", value: data.title_name || thread?.title || "" },
+            { label: "Thread name", value: data.thread_card.title_name || thread?.title || "" },
             { label: "What’s the sign?", value: threadCard.trigger || "" },
             { label: "What to do differently?", value: threadCard.move_that_helped || "" },
           ].filter(item => item.value !== "");
@@ -471,8 +473,8 @@ export function ChatPage() {
               const updated = { ...old };
 
               // Update title if changed
-              if (data.title_name && data.title_name !== thread.title) {
-                updated.title = data.title_name;
+              if (data.thread_card?.title_name && data.thread_card.title_name !== thread.title) {
+                updated.title = data.thread_card.title_name;
               }
 
               // Add confirmed user message and assistant message
@@ -482,18 +484,18 @@ export function ChatPage() {
               ];
 
               // Add assistant message if available
-              if (data.assistantMessage) {
+              if (data.message?.assistantMessage) {
                 newMessages.push({
-                  id: data.message_id || `local-assistant-${Date.now()}`,
+                  id: data.message.id || `local-assistant-${Date.now()}`,
                   role: "assistant",
-                  content: data.assistantMessage,
-                  replies: data.replies || [],
-                  requiresSignup: data.requires_signup,
+                  content: data.message.assistantMessage,
+                  replies: data.message.suggested_replies || [],
+                  requiresSignup: data.message.auth_gate?.should_show || false,
                   createdAt: new Date().toISOString(),
                 });
                 logAnalyticsEvent("chat_message_received", {
                   thread_id: id,
-                  response_length: data.assistantMessage.length
+                  response_length: data.message.assistantMessage.length
                 });
               }
 
@@ -502,7 +504,7 @@ export function ChatPage() {
             });
 
             // If title changed, invalidate threads list to ensure sidebar updates
-            if (data.title_name && data.title_name !== thread.title) {
+            if (data.thread_card?.title_name && data.thread_card.title_name !== thread.title) {
               queryClient.invalidateQueries({ queryKey: ["threads"] });
             }
           }

@@ -22,6 +22,19 @@ export function ChatToasts() {
   // Only show on chat routes
   if (!isChatRoute) return null;
 
+  if (hasThreadCard) {
+    return (
+      <div className="flex justify-center items-center w-full">
+        <button
+          onClick={() => onOpenThreadCard?.()}
+          className="badge-style-yellow animate-border-gradient flex items-center gap-2 hover:opacity-90 transition-all duration-500"
+        >
+          Your Thread Card is ready to view <ChevronDown className="h-4 w-4" />
+        </button>
+      </div>
+    );
+  }
+
   if (hasActionCompleted) {
     return (
       <div className="flex justify-center items-center w-full">
@@ -68,19 +81,6 @@ export function ChatToasts() {
         >
           New exercise added! Try it anytime from exercise library
         </a>
-      </div>
-    );
-  }
-
-  if (hasThreadCard) {
-    return (
-      <div className="flex justify-center items-center w-full">
-        <button
-          onClick={() => onOpenThreadCard?.()}
-          className="badge-style-yellow animate-border-gradient flex items-center gap-2 hover:opacity-90 transition-all duration-500"
-        >
-          Your Thread Card is ready to view <ChevronDown className="h-4 w-4" />
-        </button>
       </div>
     );
   }

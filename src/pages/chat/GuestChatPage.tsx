@@ -202,8 +202,8 @@ export function GuestChatPage() {
         if (threadCard && data.ui_element?.show_thread_card) {
           const details = [
             { label: "Thread name", value: data.thread_card.title_name || threadTitle || "" },
-            { label: "What’s the sign?", value: threadCard.trigger || "" },
-            { label: "What to do differently?", value: threadCard.move_that_helped || "" },
+            { label: "What’s the sign?", value: threadCard.trigger || threadCard.primary_trigger || "" },
+            { label: "What to do differently?", value: threadCard.move_that_helped || threadCard.primary_move || "" },
           ].filter(item => item.value !== "");
 
           if (details.length > 0) {

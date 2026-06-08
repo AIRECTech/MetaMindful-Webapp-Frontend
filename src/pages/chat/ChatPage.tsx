@@ -265,6 +265,27 @@ export function ChatPage() {
     }
   }, [id, isGuest, thread, guestMessages.length]);
 
+  // Sync threadCardDetails when thread data is loaded/updated
+  useEffect(() => {
+    if (!thread) return;
+    const threadCardData = (thread as any).thread_card;
+    const threadCard = threadCardData?.thread_card;
+    if (threadCard && threadCardData?.show_thread_card) {
+      const details = [
+        { label: "Thread name", value: threadCardData.title_name || thread.title || "" },
+        { label: "What’s the sign?", value: threadCard.trigger || threadCard.primary_trigger || "" },
+        { label: "What to do differently?", value: threadCard.move_that_helped || threadCard.primary_move || "" },
+      ].filter(item => item.value !== "");
+
+      if (details.length > 0) {
+        setThreadCardDetails(details);
+        if (id) {
+          localStorage.setItem(`toast_thread_card_${id}`, JSON.stringify(details));
+        }
+      }
+    }
+  }, [thread, id]);
+
   const sendMessage = useMutation({
     mutationFn: async (text: string) => {
       // Ensure user has a token (generate guest token if needed)
@@ -451,13 +472,10 @@ export function ChatPage() {
         // Handle Thread Card Data
         const threadCard = data.thread_card?.thread_card;
         if (threadCard && data.ui_element?.show_thread_card) {
-
-          console.log(threadCard);
-
           const details = [
             { label: "Thread name", value: data.thread_card.title_name || thread?.title || "" },
-            { label: "What’s the sign?", value: threadCard.primary_trigger || "" },
-            { label: "What to do differently?", value: threadCard.primary_move || "" },
+            { label: "What’s the sign?", value: threadCard.trigger || threadCard.primary_trigger || "" },
+            { label: "What to do differently?", value: threadCard.move_that_helped || threadCard.primary_move || "" },
           ].filter(item => item.value !== "");
 
           if (details.length > 0) {

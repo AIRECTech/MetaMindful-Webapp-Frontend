@@ -448,13 +448,16 @@ export function ChatPage() {
           }
         }
 
-         // Handle Thread Card Data
-         const threadCard = data.thread_card?.thread_card;
-         if (threadCard && data.ui_element?.show_thread_card) {
+        // Handle Thread Card Data
+        const threadCard = data.thread_card?.thread_card;
+        if (threadCard && data.ui_element?.show_thread_card) {
+
+          console.log(threadCard);
+
           const details = [
             { label: "Thread name", value: data.thread_card.title_name || thread?.title || "" },
-            { label: "What’s the sign?", value: threadCard.trigger || threadCard.primary_trigger || "" },
-            { label: "What to do differently?", value: threadCard.move_that_helped || threadCard.primary_move || "" },
+            { label: "What’s the sign?", value: threadCard.primary_trigger || "" },
+            { label: "What to do differently?", value: threadCard.primary_move || "" },
           ].filter(item => item.value !== "");
 
           if (details.length > 0) {
@@ -532,11 +535,11 @@ export function ChatPage() {
     onError: (error: any, variables: string) => {
       setIsSending(false);
       isSendingRef.current = false;
-      
+
       const statusCode = error.response?.status || error.response?.data?.code;
       const isRetryable = statusCode === 502;
       const isInternalError = statusCode === 500;
-      
+
       let errorMessage = extractErrorMessage(error, "Failed to send message");
       if (isInternalError) {
         errorMessage = "Service currently not working. Please check again after sometime.";
@@ -558,7 +561,7 @@ export function ChatPage() {
         createdAt: new Date().toISOString(),
         isError: true,
       };
-      
+
       // Only add originalUserMessage if it's retryable (502)
       if (isRetryable) {
         errorPayload.originalUserMessage = failedMessage;
@@ -631,7 +634,7 @@ export function ChatPage() {
       const deviceId = getDeviceId();
       await ensureToken();
       const token = getAccessToken();
-      
+
       const payload: any = {
         provider,
         providerToken,
@@ -673,50 +676,50 @@ export function ChatPage() {
       toast.error("Google Client ID not configured.");
       return;
     }
-    
+
     const redirectUri = `${window.location.origin}/auth/google/callback`;
     const scope = 'openid email profile';
     const nonce = Math.random().toString(36).substring(2, 15);
     const state = Math.random().toString(36).substring(2, 15);
-    
+
     sessionStorage.setItem('google_oauth_state', state);
     sessionStorage.setItem('google_oauth_nonce', nonce);
     if (id) {
       sessionStorage.setItem('google_oauth_threadId', id);
     }
-    
+
     const width = 500;
     const height = 600;
     const left = (window.screen.width - width) / 2;
     const top = (window.screen.height - height) / 2;
-    
+
     const googleAuthUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${encodeURIComponent(clientId)}&response_type=id_token&redirect_uri=${encodeURIComponent(redirectUri)}&scope=${encodeURIComponent(scope)}&nonce=${encodeURIComponent(nonce)}&state=${encodeURIComponent(state)}`;
-    
+
     const popup = window.open(googleAuthUrl, 'Google Sign Up', `width=${width},height=${height},left=${left},top=${top}`);
-    
+
     if (!popup) {
       toast.error("Popup blocked. Please allow popups.");
       return;
     }
-    
+
     const messageListener = (event: MessageEvent) => {
       if (event.origin !== window.location.origin) return;
-      
+
       if (event.data.type === 'GOOGLE_OAUTH_SUCCESS' && event.data.id_token) {
         window.removeEventListener('message', messageListener);
         popup?.close();
-        
+
         const storedState = sessionStorage.getItem('google_oauth_state');
         if (event.data.state !== storedState) {
           toast.error("Security error: Invalid state");
           return;
         }
-        
+
         socialSignup.mutate({
           provider: "google",
           providerToken: event.data.id_token,
         });
-        
+
         sessionStorage.removeItem('google_oauth_state');
         sessionStorage.removeItem('google_oauth_nonce');
         sessionStorage.removeItem('google_oauth_threadId');
@@ -726,7 +729,7 @@ export function ChatPage() {
         toast.error("Google signup failed");
       }
     };
-    
+
     window.addEventListener('message', messageListener);
   };
 
@@ -739,7 +742,7 @@ export function ChatPage() {
 
     const scriptId = 'apple-signin-script';
     const existingScript = document.getElementById(scriptId);
-    
+
     if (!existingScript) {
       const script = document.createElement('script');
       script.id = scriptId;
@@ -1314,7 +1317,7 @@ export function ChatPage() {
                 </div>
               );
             }
-            
+
             return (
               <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm flex items-end gap-3 p-4">
                 <textarea

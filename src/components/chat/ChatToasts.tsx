@@ -22,6 +22,9 @@ export function ChatToasts() {
   // Only show on chat routes
   if (!isChatRoute) return null;
 
+  // Hiding toasts for now as requested
+  return null;
+
   if (hasThreadCard) {
     return (
       <div className="flex justify-center items-center w-full">

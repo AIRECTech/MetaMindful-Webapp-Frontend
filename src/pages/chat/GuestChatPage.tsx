@@ -13,7 +13,7 @@ import { ChatPage } from "./ChatPage";
 import { LoginPopup } from "../../components/LoginPopup";
 import { SignupPopup } from "../../components/SignupPopup";
 import { GuestTopbar } from "../../components/layout/GuestTopbar";
-import { ThreadCardModal } from "../../components/ThreadCardModal";
+import { InlineThreadCard } from "../../components/chat/InlineThreadCard";
 import { useChatToast } from "../../contexts/ChatToastContext";
 import { Toaster } from "react-hot-toast";
 
@@ -500,29 +500,38 @@ export function GuestChatPage() {
                   </div>
                 )}
 
-                <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm flex items-end gap-3 p-4">
-                  <textarea
-                    ref={textareaRef}
-                    className="flex-1 min-w-0 px-6 py-3 text-gray-800 dark:text-gray-200 placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none text-base border-0 bg-gray-100 dark:bg-gray-700 rounded-xl resize-none min-h-[48px] max-h-[200px] overflow-y-auto"
-                    placeholder="Type here ....."
-                    value={message}
-                    onChange={(e) => setMessage(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter" && !e.shiftKey) {
-                        e.preventDefault();
-                        handleSend();
-                      }
-                    }}
-                    disabled={isLoading}
-                    rows={1}
+                <div className="relative">
+                  {/* Inline Thread Card */}
+                  <InlineThreadCard 
+                    details={threadCardDetails}
+                    isOpen={showThreadCard}
+                    onToggle={() => setShowThreadCard(!showThreadCard)}
                   />
-                  <button
-                    onClick={handleSend}
-                    disabled={!message.trim() || isLoading}
-                    className="bg-yellow-300 hover:bg-yellow-400 p-3 rounded-full disabled:opacity-50 disabled:cursor-not-allowed transition flex-shrink-0 mb-1"
-                  >
-                    <ArrowUp className="h-5 w-5 text-gray-900" strokeWidth={2.5} fill="none" />
-                  </button>
+                  
+                  <div className="relative z-10 bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm flex items-end gap-3 p-4">
+                    <textarea
+                      ref={textareaRef}
+                      className="flex-1 min-w-0 px-6 py-3 text-gray-800 dark:text-gray-200 placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none text-base border-0 bg-gray-100 dark:bg-gray-700 rounded-xl resize-none min-h-[48px] max-h-[200px] overflow-y-auto"
+                      placeholder="Type here ....."
+                      value={message}
+                      onChange={(e) => setMessage(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" && !e.shiftKey) {
+                          e.preventDefault();
+                          handleSend();
+                        }
+                      }}
+                      disabled={isLoading}
+                      rows={1}
+                    />
+                    <button
+                      onClick={handleSend}
+                      disabled={!message.trim() || isLoading}
+                      className="bg-yellow-300 hover:bg-yellow-400 p-3 rounded-full disabled:opacity-50 disabled:cursor-not-allowed transition flex-shrink-0 mb-1"
+                    >
+                      <ArrowUp className="h-5 w-5 text-gray-900" strokeWidth={2.5} fill="none" />
+                    </button>
+                  </div>
                 </div>
 
                 {/* Guest user message */}
@@ -560,23 +569,19 @@ export function GuestChatPage() {
           setShowSignupPopup(true);
         }}
       />
-      <SignupPopup
-        isOpen={showSignupPopup}
-        onClose={() => {
-          setShowLoginPopup(false);
-          setShowSignupPopup(false);
-        }}
-        currentThreadId={id || threadId || undefined}
-        onSwitchToLogin={() => {
-          setShowSignupPopup(false);
-          setShowLoginPopup(true);
-        }}
-      />
-      <ThreadCardModal
-        isOpen={showThreadCard}
-        onClose={() => setShowThreadCard(false)}
-        details={threadCardDetails.length > 0 ? threadCardDetails : undefined}
-      />
-    </>
-  );
-}
+        <SignupPopup
+          isOpen={showSignupPopup}
+          onClose={() => {
+            setShowLoginPopup(false);
+            setShowSignupPopup(false);
+          }}
+          currentThreadId={id || threadId || undefined}
+          onSwitchToLogin={() => {
+            setShowSignupPopup(false);
+            setShowLoginPopup(true);
+          }}
+        />
+      </>
+    );
+  }
+

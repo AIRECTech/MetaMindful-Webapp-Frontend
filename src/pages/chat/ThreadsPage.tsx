@@ -7,6 +7,7 @@ import { api } from "../../lib/api";
 import { extractErrorMessage } from "../../lib/errors";
 import { logAnalyticsEvent } from "../../lib/firebase";
 import { useTimeOnScreen } from "../../hooks/useTimeOnScreen";
+import { cn } from "../../lib/utils";
 
 interface Thread {
   id: string;
@@ -187,19 +188,25 @@ export function ThreadsPage() {
         <div className="flex gap-2">
           <input
             type="text"
-            className="flex-1 bg-yellow-50 border border-yellow-200 rounded-xl px-4 py-3 text-gray-800 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-yellow-400"
-            placeholder="Start a new thread here..."
+            className={cn(
+              "flex-1 border rounded-xl px-4 py-3 placeholder-gray-500 focus:outline-none focus:ring-2",
+              data && data.length > 3
+                ? "bg-gray-100 dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-400 cursor-not-allowed"
+                : "bg-yellow-50 border border-yellow-200 text-gray-800 focus:ring-yellow-400"
+            )}
+            placeholder={data && data.length > 3 ? "Thread limit reached" : "Start a new thread here..."}
             value={newThreadTitle}
             onChange={(e) => setNewThreadTitle(e.target.value)}
             onKeyDown={(e) => {
-              if (e.key === "Enter") {
+              if (e.key === "Enter" && !(data && data.length > 3)) {
                 handleCreateThread();
               }
             }}
+            disabled={data && data.length > 3}
           />
           <button
             onClick={handleCreateThread}
-            disabled={(!newThreadTitle.trim() && selectedTags.length === 0) || createThread.isPending}
+            disabled={(!newThreadTitle.trim() && selectedTags.length === 0) || createThread.isPending || (data !== undefined && data.length > 3)}
             className="bg-yellow-400 hover:bg-yellow-500 text-gray-800 p-3 rounded-full disabled:opacity-50 disabled:cursor-not-allowed transition shadow-sm"
           >
             <Send className="h-5 w-5" />

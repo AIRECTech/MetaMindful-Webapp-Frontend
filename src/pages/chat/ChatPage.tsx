@@ -1301,6 +1301,14 @@ export function ChatPage() {
             const userMessageCount = displayMessages.filter(msg => msg.role === 'user').length;
             const isLimitReached = messageLimit > 0 && userMessageCount >= messageLimit;
 
+            console.log("[ChatPage] Message limit check:", {
+              importMetaLimit: import.meta.env.VITE_MESSAGE_LIMIT,
+              messageLimit,
+              userMessageCount,
+              isLimitReached,
+              isSending
+            });
+
             if (isLimitReached && !isSending) {
               return (
                 <div className="bg-yellow-50 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-200 rounded-2xl border border-yellow-200 dark:border-yellow-800 shadow-sm p-6 text-center">

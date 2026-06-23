@@ -253,7 +253,13 @@ export function Sidebar() {
           {/* New Thread button */}
           <button
             onClick={() => navigate("/user/chat/new")}
-            className="w-full flex items-center gap-3 px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 transition text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
+            disabled={threads !== undefined && threads.length > 3}
+            className={cn(
+              "w-full flex items-center gap-3 px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-700 transition text-sm font-medium mb-2",
+              threads && threads.length > 3
+                ? "opacity-50 cursor-not-allowed bg-gray-100 dark:bg-gray-800 text-gray-400 border-gray-100 dark:border-gray-800"
+                : "hover:bg-gray-50 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-300"
+            )}
           >
             <Plus className="h-4 w-4" />
             New Thread

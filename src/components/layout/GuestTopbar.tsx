@@ -20,6 +20,15 @@ export function GuestTopbar() {
 
   const [showLoginPopup, setShowLoginPopup] = useState(false);
   const [showSignupPopup, setShowSignupPopup] = useState(false);
+  const [isIosOrSafari, setIsIosOrSafari] = useState(false);
+
+  useEffect(() => {
+    const ua = window.navigator.userAgent.toLowerCase();
+    const isIos = /iphone|ipad|ipod/.test(ua);
+    const isSafari = /safari/.test(ua) && !/chrome|crios|crmodo|firefox|fxios|opera|opios|ucbrowser/.test(ua);
+    const isMobile = /mobile|android|iphone|ipad|ipod/.test(ua) || window.innerWidth < 768;
+    setIsIosOrSafari(isMobile && (isIos || isSafari));
+  }, []);
 
   return (
     <header className="flex flex-wrap items-center justify-between px-4 py-3 min-h-[64px] bg-transparent">
@@ -40,13 +49,24 @@ export function GuestTopbar() {
       </div>
 
       <div className="flex justify-end items-center gap-3 w-auto md:w-[200px] order-2 md:order-3 ml-auto md:ml-0">
-        {/* Guest users: Show signup button only */}
-        <button
-          onClick={() => setShowSignupPopup(true)}
-          className="px-4 py-2 bg-yellow-400 hover:bg-yellow-500 text-gray-800 font-medium rounded-lg text-sm transition"
-        >
-          Sign up
-        </button>
+        {/* Guest users: Show Use app button on iOS/Safari mobile view, otherwise Sign up */}
+        {isIosOrSafari ? (
+          <a
+            href="https://apps.apple.com/us/app/metamindful/id6569248759"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="px-5 py-2 bg-yellow-400 hover:bg-yellow-500 text-gray-800 font-medium rounded-full text-sm transition"
+          >
+            Use app
+          </a>
+        ) : (
+          <button
+            onClick={() => setShowSignupPopup(true)}
+            className="px-4 py-2 bg-yellow-400 hover:bg-yellow-500 text-gray-800 font-medium rounded-lg text-sm transition"
+          >
+            Sign up
+          </button>
+        )}
       </div>
 
       {/* Popups */}

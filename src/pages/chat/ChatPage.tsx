@@ -1121,10 +1121,10 @@ export function ChatPage() {
                           </div>
 
                           <button
-                            onClick={() => sendText("No, I don't want a reminder")}
+                            onClick={() => sendText("No, I don't want to signup")}
                             className="mt-2 w-[60%] py-3 px-6 rounded-full bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 text-sm font-medium hover:bg-gray-200 dark:hover:bg-gray-600 transition border border-gray-200 dark:border-gray-600"
                           >
-                            No, I don't want a reminder
+                            No, I don't want to signup
                           </button>
                         </div>
                       );

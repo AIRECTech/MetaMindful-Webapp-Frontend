@@ -7,6 +7,8 @@ import { api } from "../../lib/api";
 import { useLocation } from "react-router-dom";
 import { clearTokens, isRealUser, isAuthenticated, isGuestUser } from "../../lib/auth";
 import { logAnalyticsEvent } from "../../lib/firebase";
+import { LoginPopup } from "../LoginPopup";
+import { SignupPopup } from "../SignupPopup";
 import { extractErrorMessage } from "../../lib/errors";
 import { toast } from "react-hot-toast";
 import { getDarkMode, toggleDarkMode as toggleDarkModeUtil } from "../../lib/darkMode";
@@ -26,11 +28,15 @@ export function Sidebar() {
   const navigate = useNavigate();
   const location = useLocation();
   const { id: currentThreadId } = useParams<{ id?: string }>();
+  const isGuest = isGuestUser();
   const queryClient = useQueryClient();
   const { isSidebarOpen, closeSidebar } = useLayout();
   const [darkMode, setDarkMode] = useState(() => {
     return getDarkMode();
   });
+  
+  const [showLoginPopup, setShowLoginPopup] = useState(false);
+  const [showSignupPopup, setShowSignupPopup] = useState(false);
 
   // Sync dark mode state with DOM changes
   useEffect(() => {
@@ -68,6 +74,27 @@ export function Sidebar() {
     enabled: isAuthenticatedUser, // Only fetch if user is authenticated
   });
 
+  const { data: currentThread } = useQuery({
+    queryKey: ["thread", currentThreadId || (isGuest ? localStorage.getItem("last_guest_thread_id") : null)],
+    queryFn: async () => {
+      const targetId = currentThreadId || localStorage.getItem("last_guest_thread_id");
+      const res = await api.get(`/threads/${targetId}`);
+      return res.data.data as Thread;
+    },
+    enabled: isGuest && (!!currentThreadId || !!localStorage.getItem("last_guest_thread_id")),
+  });
+
+  // Track the last guest thread ID
+  useEffect(() => {
+    if (isGuest && currentThreadId) {
+      localStorage.setItem("last_guest_thread_id", currentThreadId);
+    }
+  }, [isGuest, currentThreadId]);
+
+  const threadsToDisplay = isGuest
+    ? (currentThread ? [currentThread] : [])
+    : (threads || []);
+
   // Update thread mutation
   const updateThread = useMutation({
     mutationFn: async ({ threadId, title }: { threadId: string; title: string }) => {
@@ -76,6 +103,9 @@ export function Sidebar() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["threads"] });
+      if (currentThreadId) {
+        queryClient.invalidateQueries({ queryKey: ["thread", currentThreadId] });
+      }
       setEditingThreadId(null);
       setEditingTitle("");
       logAnalyticsEvent("thread_renamed", { threadId: editingThreadId });
@@ -98,7 +128,7 @@ export function Sidebar() {
       toast.success("Thread deleted successfully");
       // If we deleted the current thread, navigate to new chat
       if (currentThreadId === showMenuThreadId) {
-        navigate("/user/chat/new");
+        navigate(isGuest ? "/guest" : "/user/chat/new");
       }
     },
     onError: (error: Error) => {
@@ -201,7 +231,6 @@ export function Sidebar() {
     navigate("/");
   };
 
-  const isGuest = isGuestUser();
 
   return (
     <>
@@ -252,7 +281,13 @@ export function Sidebar() {
         <div className="p-2">
           {/* New Thread button */}
           <button
-            onClick={() => navigate("/user/chat/new")}
+            onClick={() => {
+              if (isGuest) {
+                setShowSignupPopup(true);
+              } else {
+                navigate("/user/chat/new");
+              }
+            }}
             className="w-full flex items-center gap-3 px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 transition text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
           >
             <Plus className="h-4 w-4" />
@@ -261,8 +296,8 @@ export function Sidebar() {
 
           {/* Threads list */}
           <div className="space-y-1 mt-2">
-            {threads && threads.length > 0 ? (
-              threads.map((thread) => (
+            {threadsToDisplay && threadsToDisplay.length > 0 ? (
+              threadsToDisplay.map((thread) => (
                 <div
                   key={thread.id}
                   className={cn(
@@ -311,7 +346,7 @@ export function Sidebar() {
                     // Normal mode
                     <>
                       <button
-                        onClick={() => navigate(`/user/chat/${thread.threadId || thread.id}`)}
+                        onClick={() => navigate(isGuest ? `/guest/${thread.threadId || thread.id}` : `/user/chat/${thread.threadId || thread.id}`)}
                         className={cn(
                           "flex-1 flex flex-col gap-1 px-3 py-2 text-sm transition text-left min-w-0",
                           currentThreadId === (thread.threadId || thread.id)
@@ -357,22 +392,27 @@ export function Sidebar() {
                                   e.stopPropagation();
                                   handleStartEdit(thread);
                                 }}
-                                className="w-full flex items-center gap-2 px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-t-lg"
+                                className={cn(
+                                  "w-full flex items-center gap-2 px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700",
+                                  isGuest ? "rounded-lg" : "rounded-t-lg"
+                                )}
                               >
                                 <Edit2 className="h-3 w-3" />
                                 Rename
                               </button>
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleDelete(thread.threadId || thread.id);
-                                }}
-                                className="w-full flex items-center gap-2 px-3 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-b-lg"
-                                disabled={deleteThread.isPending}
-                              >
-                                <Trash2 className="h-3 w-3" />
-                                Delete
-                              </button>
+                              {!isGuest && (
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleDelete(thread.threadId || thread.id);
+                                  }}
+                                  className="w-full flex items-center gap-2 px-3 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-b-lg"
+                                  disabled={deleteThread.isPending}
+                                >
+                                  <Trash2 className="h-3 w-3" />
+                                  Delete
+                                </button>
+                              )}
                             </div>
                           )}
                         </div>
@@ -437,6 +477,31 @@ export function Sidebar() {
         )}
       </div>
     </aside>
+
+    <LoginPopup
+      isOpen={showLoginPopup}
+      onClose={() => {
+        setShowLoginPopup(false);
+        setShowSignupPopup(false);
+      }}
+      currentThreadId={currentThreadId || undefined}
+      onSwitchToSignup={() => {
+        setShowLoginPopup(false);
+        setShowSignupPopup(true);
+      }}
+    />
+    <SignupPopup
+      isOpen={showSignupPopup}
+      onClose={() => {
+        setShowLoginPopup(false);
+        setShowSignupPopup(false);
+      }}
+      currentThreadId={currentThreadId || undefined}
+      onSwitchToLogin={() => {
+        setShowSignupPopup(false);
+        setShowLoginPopup(true);
+      }}
+    />
     </>
   );
 }

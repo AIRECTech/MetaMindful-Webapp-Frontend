@@ -8,10 +8,8 @@ import { extractErrorMessage } from "../../lib/errors";
 import { logAnalyticsEvent } from "../../lib/firebase";
 import { useTimeOnScreen } from "../../hooks/useTimeOnScreen";
 import { ensureToken, isGuestUser, getDeviceId, getAccessToken, setTokens } from "../../lib/auth";
-import { GuestTopbar } from "../../components/layout/GuestTopbar";
 import { LoginPopup } from "../../components/LoginPopup";
 import { SignupPopup } from "../../components/SignupPopup";
-import { Toaster } from "react-hot-toast";
 import { useChatToast } from "../../contexts/ChatToastContext";
 import { MessageFormatter } from "../../components/chat/MessageFormatter";
 import { InlineThreadCard } from "../../components/chat/InlineThreadCard";
@@ -1324,14 +1322,23 @@ export function ChatPage() {
             const userMessageCount = displayMessages.filter(msg => msg.role === 'user').length;
             const isLimitReached = messageLimit > 0 && userMessageCount >= messageLimit;
 
-            if (isLimitReached && !isSending) {
+             if (isLimitReached && !isSending) {
               return (
                 <div className="bg-yellow-50 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-200 rounded-2xl border border-yellow-200 dark:border-yellow-800 shadow-sm p-6 text-center">
                   <p className="font-medium text-lg mb-2">Message Limit Reached</p>
                   <p className="mb-4">You have reached the maximum number of messages for this thread.</p>
-                  <Link to={isGuest ? "/guest" : "/user"} className="inline-block bg-yellow-400 hover:bg-yellow-500 text-gray-900 px-6 py-2 rounded-full font-medium transition">
-                    Create a new thread to continue
-                  </Link>
+                  {isGuest ? (
+                    <button
+                      onClick={() => setShowSignupPopup(true)}
+                      className="inline-block bg-yellow-400 hover:bg-yellow-500 text-gray-900 px-6 py-2 rounded-full font-medium transition"
+                    >
+                      Sign up to continue
+                    </button>
+                  ) : (
+                    <Link to="/user" className="inline-block bg-yellow-400 hover:bg-yellow-500 text-gray-900 px-6 py-2 rounded-full font-medium transition">
+                      Create a new thread to continue
+                    </Link>
+                  )}
                 </div>
               );
             }
@@ -1431,51 +1438,33 @@ export function ChatPage() {
     </div>
   );
 
-  // For guest users, wrap with GuestTopbar and Toaster
-  if (isGuest) {
-    return (
-      <>
-        <div className="h-screen bg-background text-foreground overflow-hidden">
-          <Toaster position="top-right" toastOptions={{ duration: 4000 }} />
-          <div className="flex h-full flex-col">
-            <GuestTopbar />
-            <main className="flex-1 overflow-hidden">{chatContent}</main>
-          </div>
-        </div>
-        <LoginPopup
-          isOpen={showLoginPopup}
-          unclosable={false}
-          onClose={() => {
-            setShowLoginPopup(false);
-            setShowSignupPopup(false);
-          }}
-          currentThreadId={id}
-          onSwitchToSignup={() => {
-            setShowLoginPopup(false);
-            setShowSignupPopup(true);
-          }}
-        />
-        <SignupPopup
-          isOpen={showSignupPopup}
-          unclosable={false}
-          onClose={() => {
-            setShowLoginPopup(false);
-            setShowSignupPopup(false);
-          }}
-          currentThreadId={id}
-          onSwitchToLogin={() => {
-            setShowSignupPopup(false);
-            setShowLoginPopup(true);
-          }}
-        />
-      </>
-    );
-  }
-
-  // For authenticated users, return content directly (AppShell will wrap it)
   return (
     <>
       {chatContent}
+      <LoginPopup
+        isOpen={showLoginPopup}
+        onClose={() => {
+          setShowLoginPopup(false);
+          setShowSignupPopup(false);
+        }}
+        currentThreadId={id}
+        onSwitchToSignup={() => {
+          setShowLoginPopup(false);
+          setShowSignupPopup(true);
+        }}
+      />
+      <SignupPopup
+        isOpen={showSignupPopup}
+        onClose={() => {
+          setShowLoginPopup(false);
+          setShowSignupPopup(false);
+        }}
+        currentThreadId={id}
+        onSwitchToLogin={() => {
+          setShowSignupPopup(false);
+          setShowLoginPopup(true);
+        }}
+      />
     </>
   );
 }

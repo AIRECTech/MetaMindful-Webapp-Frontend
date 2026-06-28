@@ -1,22 +1,15 @@
-import { useNavigate, useParams } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { LoginPopup } from "../LoginPopup";
 import { SignupPopup } from "../SignupPopup";
 import { ChatToasts } from "../chat/ChatToasts";
+import { Menu } from "lucide-react";
+import { useLayout } from "../../contexts/LayoutContext";
 
 export function GuestTopbar() {
-  const navigate = useNavigate();
   const params = useParams();
   const threadId = params.id;
-
-  // Force light mode for guest users
-  useEffect(() => {
-    document.documentElement.classList.remove("dark");
-  }, []);
-
-  const handleLogoClick = () => {
-    navigate("/");
-  };
+  const { toggleSidebar } = useLayout();
 
   const [showLoginPopup, setShowLoginPopup] = useState(false);
   const [showSignupPopup, setShowSignupPopup] = useState(false);
@@ -31,17 +24,16 @@ export function GuestTopbar() {
   }, []);
 
   return (
-    <header className="flex flex-wrap items-center justify-between px-4 py-3 min-h-[64px] bg-transparent">
-      <button
-        onClick={handleLogoClick}
-        className="flex items-center gap-3 hover:opacity-80 transition-opacity cursor-pointer w-auto md:w-[200px] order-1"
-      >
-        <img
-          src="/guest_logo.png"
-          alt="Guest Mode"
-          className="h-[3rem] md:h-[5rem] w-auto"
-        />
-      </button>
+    <header className="flex flex-wrap items-center justify-between px-4 py-3 min-h-[64px] bg-transparent border-b border-gray-100 dark:border-gray-800">
+      <div className="flex items-center gap-3 w-auto md:w-[200px] order-1">
+        <button
+          onClick={toggleSidebar}
+          className="lg:hidden p-2 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition"
+          aria-label="Toggle sidebar"
+        >
+          <Menu className="h-6 w-6" />
+        </button>
+      </div>
 
       {/* Center content - Toasts */}
       <div className="w-full md:w-auto md:flex-1 flex justify-center items-center px-4 order-3 md:order-2 mt-4 md:mt-0 min-h-[44px]">
@@ -49,7 +41,6 @@ export function GuestTopbar() {
       </div>
 
       <div className="flex justify-end items-center gap-3 w-auto md:w-[200px] order-2 md:order-3 ml-auto md:ml-0">
-        {/* Guest users: Show Use app button on iOS/Safari mobile view, otherwise Sign up */}
         {isIosOrSafari ? (
           <a
             href="https://apps.apple.com/us/app/metamindful/id6569248759"

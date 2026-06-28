@@ -6,12 +6,13 @@ import { Star, Calendar } from "lucide-react";
 import { Card } from "../../components/ui/Card";
 import { api } from "../../lib/api";
 import { extractErrorMessage } from "../../lib/errors";
-import { clearTokens } from "../../lib/auth";
+import { clearTokens, isGuestUser } from "../../lib/auth";
 import { logAnalyticsEvent } from "../../lib/firebase";
 
 export function SettingsPage() {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
+  const isGuest = isGuestUser();
   const [activeTab, setActiveTab] = useState<"feedback" | "contact" | "danger">("feedback");
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deleteConfirmText, setDeleteConfirmText] = useState("");
@@ -30,13 +31,16 @@ export function SettingsPage() {
     message: "",
   });
 
-  const { data: user, isLoading: isLoadingUser } = useQuery({
+  const { data: user, isLoading: isLoadingUserQuery } = useQuery({
     queryKey: ["user", "me"],
     queryFn: async () => {
       const res = await api.get("/users/me");
       return res.data.data;
     },
+    enabled: !isGuest,
   });
+
+  const isLoadingUser = !isGuest && isLoadingUserQuery;
 
   // Fetch user's feedbacks
   const { data: feedbacksData, isLoading: isLoadingFeedbacks } = useQuery({
@@ -166,15 +170,17 @@ export function SettingsPage() {
                 >
                   Contact Us
                 </button>
-                <button
-                  onClick={() => setActiveTab("danger")}
-                  className={`pb-2 px-4 font-medium ${activeTab === "danger"
-                      ? "border-b-2 border-red-500 text-red-500"
-                      : "text-muted-foreground hover:text-foreground"
-                    }`}
-                >
-                  Delete Account
-                </button>
+                {!isGuest && (
+                  <button
+                    onClick={() => setActiveTab("danger")}
+                    className={`pb-2 px-4 font-medium ${activeTab === "danger"
+                        ? "border-b-2 border-red-500 text-red-500"
+                        : "text-muted-foreground hover:text-foreground"
+                      }`}
+                  >
+                    Delete Account
+                  </button>
+                )}
               </div>
 
               {activeTab === "feedback" && (
@@ -366,7 +372,7 @@ export function SettingsPage() {
                 </Card>
               )}
 
-              {activeTab === "danger" && (
+              {activeTab === "danger" && !isGuest && (
                 <Card title="Danger Zone">
                   <div className="space-y-4">
                     <div className="p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">

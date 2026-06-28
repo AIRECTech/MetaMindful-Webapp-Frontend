@@ -56,8 +56,14 @@ const router = createBrowserRouter([
   { path: "/privacy-policy", element: <PrivacyPolicyPage /> },
   { path: "/terms", element: <TermsPage /> },
   // Guest routes
-  { path: "/guest", element: <GuestChatPage /> },
-  { path: "/guest/:id", element: <GuestChatPage /> },
+  {
+    path: "/guest",
+    element: <App />,
+    children: [
+      { index: true, element: <GuestChatPage /> },
+      { path: ":id", element: <GuestChatPage /> },
+    ]
+  },
   // Authenticated user routes
   {
     path: "/user",

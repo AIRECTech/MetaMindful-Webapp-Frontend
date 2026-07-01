@@ -1389,6 +1389,10 @@ export function ChatPage() {
               );
             }
 
+            if (requiresSignup) {
+              return null;
+            }
+
             return (
               <div className="relative">
                 <InlineThreadCard

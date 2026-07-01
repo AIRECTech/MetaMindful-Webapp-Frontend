@@ -35,7 +35,7 @@ export function InlineThreadCard({ details, isOpen, onToggle }: InlineThreadCard
       className="absolute bottom-full left-0 right-0 flex justify-center px-4 md:px-0 z-20 pointer-events-none"
     >
       {/* Container to handle positioning and overflow */}
-      <div className="relative flex flex-col items-center w-full max-w-4xl pointer-events-none">
+      <div className="relative w-full max-w-4xl pointer-events-none flex justify-center">
         {/* The Card - slides up/down */}
         <div 
           className={`
@@ -44,6 +44,7 @@ export function InlineThreadCard({ details, isOpen, onToggle }: InlineThreadCard
             rounded-t-2xl shadow-sm
             overflow-hidden transition-all duration-300 ease-in-out transform origin-bottom
             w-full md:w-auto md:min-w-[400px]
+            absolute bottom-0
             ${isOpen ? 'translate-y-0 opacity-100 pointer-events-auto' : 'translate-y-full opacity-0 pointer-events-none'}
           `}
         >
@@ -86,6 +87,7 @@ export function InlineThreadCard({ details, isOpen, onToggle }: InlineThreadCard
               px-6 py-1 md:py-1 md:px-6
               translate-y-[2px] md:translate-y-1
               pointer-events-auto
+              absolute bottom-0
             `}
           >
             <ChevronUp className="h-5 w-5 text-gray-500" />

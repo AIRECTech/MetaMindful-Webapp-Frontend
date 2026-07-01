@@ -95,6 +95,8 @@ export function GuestChatPage() {
   } = useChatToast();
 
   const userMessageCount = pendingMessage ? 1 : messages.filter((m) => m.role === "user").length;
+  const lastMessage = messages[messages.length - 1];
+  const requiresSignup = lastMessage?.role === "assistant" && lastMessage?.requiresSignup;
 
   // Sync with ChatToastContext
   useEffect(() => {
@@ -386,7 +388,7 @@ export function GuestChatPage() {
 
   return (
     <>
-      <div className="flex-1 flex flex-col relative bg-gray-50 dark:bg-gray-900 overflow-hidden h-full">
+      <div className="flex-1 flex flex-col relative bg-gray-50 dark:bg-gray-900 overflow-hidden min-h-0">
         {/* Initial greeting view / Loading view */}
         <div className="flex-1 flex items-center justify-center px-4">
           {(generateToken.isLoading || (isLoading && !messages[0])) ? (
@@ -417,7 +419,7 @@ export function GuestChatPage() {
           <div className="max-w-4xl mx-auto space-y-3">
             {/* Suggested prompts */}
             {/* Suggested prompts - Dynamic mapping */}
-            <div className="flex flex-col items-center gap-3 mt-[10px] w-full">
+            <div className="flex flex-col items-center gap-3 mb-8 mt-2 w-full">
               {!suggestionUsed && (() => {
                 // Try to find the last assistant message with replies first
                 const lastAssistantMessageWithReplies = [...messages]
@@ -427,6 +429,8 @@ export function GuestChatPage() {
                 if (lastAssistantMessageWithReplies?.replies) {
                   const lastMessage = messages[messages.length - 1];
                   const requiresSignup = lastMessage?.role === "assistant" && lastMessage?.requiresSignup;
+
+                  if (requiresSignup) return null;
 
                   // Show assistant replies in a horizontal scrollable container
                   return (
@@ -497,7 +501,7 @@ export function GuestChatPage() {
             <div className="relative">
               {/* Inline Thread Card */}
               <InlineThreadCard 
-                details={threadCardDetails}
+                details={requiresSignup ? [] : threadCardDetails}
                 isOpen={showThreadCard}
                 onToggle={() => setShowThreadCard(!showThreadCard)}
               />

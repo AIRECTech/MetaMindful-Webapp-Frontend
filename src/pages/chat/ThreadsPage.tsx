@@ -100,7 +100,7 @@ export function ThreadsPage() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="flex-1 overflow-y-auto p-6 space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold">Threads</h1>
       </div>

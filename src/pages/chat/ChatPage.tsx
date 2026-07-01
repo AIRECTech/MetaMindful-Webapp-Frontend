@@ -1044,7 +1044,7 @@ export function ChatPage() {
   const chatContent = (
     <div className="flex flex-col h-full relative bg-gray-50 dark:bg-gray-900">
       <div className="flex-1 overflow-y-auto">
-        <div className="max-w-4xl mx-auto px-4 pt-6 pb-12 space-y-6">
+        <div className="max-w-4xl mx-auto px-4 pt-6 pb-3 space-y-6">
           {(displayMessages.length === 0 && (isLoading || isSending || (state.autoSendText && !hasAutoSentRef.current))) ? (
             <div className="text-center py-12">
               {/* Show different spinner for different states */}
@@ -1212,13 +1212,12 @@ export function ChatPage() {
               )}
             </>
           )}
-          <div ref={messagesEndRef} className="h-16" />
+          <div ref={messagesEndRef} className="h-0" />
         </div>
       </div>
 
-      {/* Input area */}
-      <div className="pb-4 px-4">
-        <div className="max-w-4xl mx-auto space-y-3">
+      <div className="pb-4 px-4 flex-shrink-0">
+        <div className="max-w-4xl mx-auto w-full">
           {/* Suggested replies from the last assistant message */}
           {(() => {
             // Find the last assistant message that has replies
@@ -1237,8 +1236,10 @@ export function ChatPage() {
               const lastMessage = displayMessages[displayMessages.length - 1];
               const requiresSignup = isGuest && lastMessage?.role === "assistant" && lastMessage?.requiresSignup;
 
+              if (requiresSignup) return null;
+
               return (
-                <div className="flex flex-col items-center gap-3 mb-2 mt-[10px] w-full">
+                <div className="flex flex-col items-center gap-3 mb-8 mt-2 w-full">
                   <div className="flex overflow-x-auto gap-3 pb-2 w-full no-scrollbar">
                     {lastAssistantMessageWithReplies.replies.map((reply, idx) => (
                       <button
@@ -1322,7 +1323,7 @@ export function ChatPage() {
             const userMessageCount = displayMessages.filter(msg => msg.role === 'user').length;
             const isLimitReached = messageLimit > 0 && userMessageCount >= messageLimit;
 
-             if (isLimitReached && !isSending) {
+            if (isLimitReached && !isSending) {
               return (
                 <div className="bg-yellow-50 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-200 rounded-2xl border border-yellow-200 dark:border-yellow-800 shadow-sm p-6 text-center">
                   <p className="font-medium text-lg mb-2">Message Limit Reached</p>
@@ -1346,7 +1347,7 @@ export function ChatPage() {
             return (
               <div className="relative">
                 <InlineThreadCard
-                  details={threadCardDetails}
+                  details={requiresSignup ? [] : threadCardDetails}
                   isOpen={showThreadCard}
                   onToggle={() => setShowThreadCard(!showThreadCard)}
                 />

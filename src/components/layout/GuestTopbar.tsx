@@ -24,7 +24,7 @@ export function GuestTopbar() {
   }, []);
 
   return (
-    <header className="flex flex-wrap items-center justify-between px-4 py-3 min-h-[64px] bg-transparent border-b border-gray-100 dark:border-gray-800">
+    <header className="flex items-center justify-between px-4 py-3 h-[64px] flex-shrink-0 z-30 relative bg-white dark:bg-gray-900 border-b border-gray-100 dark:border-gray-800">
       <div className="flex items-center gap-3 w-auto md:w-[200px] order-1">
         <button
           onClick={toggleSidebar}

@@ -243,7 +243,7 @@ export function Sidebar() {
       )}
 
       <aside className={cn(
-        "fixed inset-y-0 left-0 z-[70] w-64 bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-700 flex flex-col transition-transform duration-300 lg:static lg:translate-x-0",
+        "fixed inset-y-0 left-0 z-[70] w-64 bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-700 flex flex-col transition-transform duration-300 lg:static lg:translate-x-0 lg:h-full",
         isSidebarOpen ? "translate-x-0" : "-translate-x-full"
       )}>
         {/* Logo and close button at top */}

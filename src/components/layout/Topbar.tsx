@@ -26,7 +26,7 @@ export function Topbar() {
   };
 
   return (
-    <header className="flex items-center justify-between px-4 py-3 min-h-[64px]">
+    <header className="flex items-center justify-between px-4 py-3 h-[64px] flex-shrink-0 z-30 relative bg-white dark:bg-gray-900 border-b border-gray-100 dark:border-gray-800">
     
         <div className="flex items-center gap-3 flex-1">
           <button

@@ -33,8 +33,8 @@ export function ProfilePage() {
   }
 
   return (
-    <div className="flex items-center justify-center min-h-full p-6">
-      <div className="w-full max-w-2xl space-y-6">
+    <div className="flex-1 overflow-y-auto p-6 flex justify-center items-center">
+      <div className="w-full max-w-2xl space-y-6 my-auto">
         <div>
           <h1 className="text-3xl font-bold">Profile</h1>
           <p className="text-muted-foreground mt-1">View your profile information</p>

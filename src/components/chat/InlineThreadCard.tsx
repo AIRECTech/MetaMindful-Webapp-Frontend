@@ -32,10 +32,10 @@ export function InlineThreadCard({ details, isOpen, onToggle }: InlineThreadCard
   return (
     <div 
       ref={containerRef}
-      className="absolute bottom-full left-0 right-0 flex justify-center px-4 md:px-0 z-0"
+      className="absolute bottom-full left-0 right-0 flex justify-center px-4 md:px-0 z-20 pointer-events-none"
     >
       {/* Container to handle positioning and overflow */}
-      <div className="relative flex flex-col items-center w-full max-w-4xl">
+      <div className="relative flex flex-col items-center w-full max-w-4xl pointer-events-none">
         {/* The Card - slides up/down */}
         <div 
           className={`
@@ -53,12 +53,12 @@ export function InlineThreadCard({ details, isOpen, onToggle }: InlineThreadCard
                 <MessagesSquare className="h-5 w-5 text-gray-500 fill-current" />
                 <h2 className="text-lg font-medium text-gray-800 dark:text-gray-200">Thread Card</h2>
               </div>
-              <button onClick={onToggle} className="text-gray-400 hover:text-gray-600 transition">
+              <button onClick={onToggle} className="text-gray-400 hover:text-gray-600 transition pointer-events-auto">
                 <ChevronDown className="h-5 w-5" />
               </button>
             </div>
             <p className="text-[13px] text-gray-400 italic mb-4">This card shows your current progress</p>
-            <div className="bg-[#eff4f9] dark:bg-gray-700/50 rounded-[10px] px-5 py-4 space-y-4 max-h-[300px] overflow-y-auto">
+            <div className="bg-[#eff4f9] dark:bg-gray-700/50 rounded-[10px] px-5 py-4 space-y-4 max-h-[300px] overflow-y-auto pointer-events-auto">
               {details.map((item, idx) => (
                 <div key={idx} className="flex flex-col gap-0.5">
                   <span className="text-[14px] font-medium text-gray-800 dark:text-gray-200">
@@ -72,7 +72,7 @@ export function InlineThreadCard({ details, isOpen, onToggle }: InlineThreadCard
             </div>
           </div>
         </div>
-
+ 
         {/* The Trigger Tab */}
         {!isOpen && (
           <button
@@ -85,6 +85,7 @@ export function InlineThreadCard({ details, isOpen, onToggle }: InlineThreadCard
               hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors
               px-6 py-1 md:py-1 md:px-6
               translate-y-[2px] md:translate-y-1
+              pointer-events-auto
             `}
           >
             <ChevronUp className="h-5 w-5 text-gray-500" />

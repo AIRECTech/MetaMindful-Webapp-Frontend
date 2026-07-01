@@ -82,7 +82,9 @@ export function GuestChatPage() {
   const hasAutoSentQueryMessageRef = useRef(false); // Track if we've auto-sent the query message
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const [pendingMessage, setPendingMessage] = useState<string | null>(null);
-  const [suggestionUsed, setSuggestionUsed] = useState(false);
+  const [suggestionUsed, setSuggestionUsed] = useState(() => {
+    return localStorage.getItem("suggestion_used_guest_new") === "true";
+  });
 
   // Default suggestions provided as constant
   const [currentSuggestions] = useState<string[]>(suggestions);
@@ -212,6 +214,14 @@ export function GuestChatPage() {
           }
         }
 
+        const assistantMsgId = data.message?.id || `local-assistant-${Date.now()}`;
+        if (data.message?.suggested_replies && data.message.suggested_replies.length > 0) {
+          localStorage.setItem(
+            `suggested_replies_${data.threadId}_${assistantMsgId}`,
+            JSON.stringify(data.message.suggested_replies)
+          );
+        }
+
         // Construct bootstrapped messages including user message and assistant reply
         const bootstrappedMessages = [
           {
@@ -221,7 +231,7 @@ export function GuestChatPage() {
             createdAt: new Date().toISOString(),
           },
           {
-            id: data.message?.id || `local-assistant-${Date.now()}`,
+            id: assistantMsgId,
             role: "assistant" as const,
             content: data.message?.assistantMessage || "",
             replies: data.message?.suggested_replies || [],
@@ -231,13 +241,16 @@ export function GuestChatPage() {
         ];
 
         navigateToChatWithFirstUserMessage(null, data.threadId, data.thread_card?.title_name, data.thread_card?.stuck_situation || undefined, bootstrappedMessages);
+        localStorage.removeItem("suggestion_used_guest_new");
       } else {
         toast.error("Failed to create thread");
+        localStorage.removeItem("suggestion_used_guest_new");
       }
       setIsLoading(false);
       setPendingMessage(null);
     },
     onError: (error: any) => {
+      localStorage.removeItem("suggestion_used_guest_new");
       const statusCode = error.response?.status || error.response?.data?.code;
       let errorMessage = extractErrorMessage(error, "Failed to create thread");
       if (statusCode === 500) {
@@ -320,6 +333,7 @@ export function GuestChatPage() {
     const userMessage = trimmedMessage;
     setMessage("");
     setSuggestionUsed(true);
+    localStorage.setItem("suggestion_used_guest_new", "true");
 
     if (!threadId) {
       setPendingMessage(userMessage);
@@ -334,6 +348,7 @@ export function GuestChatPage() {
     if (isLoading) return;
     setMessage(suggestion);
     setSuggestionUsed(true);
+    localStorage.setItem("suggestion_used_guest_new", "true");
 
     // Focus textarea
     if (textareaRef.current) {
@@ -388,7 +403,7 @@ export function GuestChatPage() {
 
   return (
     <>
-      <div className="flex-1 flex flex-col relative bg-gray-50 dark:bg-gray-900 overflow-hidden min-h-0">
+      <div className="h-full flex flex-col relative bg-gray-50 dark:bg-gray-900 overflow-hidden">
         {/* Initial greeting view / Loading view */}
         <div className="flex-1 flex items-center justify-center px-4">
           {(generateToken.isLoading || (isLoading && !messages[0])) ? (

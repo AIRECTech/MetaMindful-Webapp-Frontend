@@ -30,7 +30,9 @@ export function NewChatPage() {
   const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messageInputRef = useRef<HTMLTextAreaElement>(null);
-  const [suggestionUsed, setSuggestionUsed] = useState(false);
+  const [suggestionUsed, setSuggestionUsed] = useState(() => {
+    return localStorage.getItem("suggestion_used_user_new") === "true";
+  });
 
   useTimeOnScreen("new-chat", "NewChatPage");
 
@@ -77,6 +79,14 @@ export function NewChatPage() {
         title: chatResponse.thread_card?.title_name || "New Chat"
       });
 
+      const assistantMsgId = chatResponse.message?.id || `local-assistant-${Date.now()}`;
+      if (chatResponse.message?.suggested_replies && chatResponse.message.suggested_replies.length > 0) {
+        localStorage.setItem(
+          `suggested_replies_${chatResponse.threadId}_${assistantMsgId}`,
+          JSON.stringify(chatResponse.message.suggested_replies)
+        );
+      }
+
       // Construct bootstrapped messages including user message and assistant reply
       const bootstrappedMessages = [
         {
@@ -86,7 +96,7 @@ export function NewChatPage() {
           createdAt: new Date().toISOString(),
         },
         {
-          id: chatResponse.message?.id || `local-assistant-${Date.now()}`,
+          id: assistantMsgId,
           role: "assistant" as const,
           content: chatResponse.message?.assistantMessage || "",
           replies: chatResponse.message?.suggested_replies || [],
@@ -101,7 +111,9 @@ export function NewChatPage() {
         chatResponse.thread_card?.stuck_situation || undefined,
         bootstrappedMessages
       );
+      localStorage.removeItem("suggestion_used_user_new");
     } catch (error: any) {
+      localStorage.removeItem("suggestion_used_user_new");
       console.error("[NewChatPage] Error creating thread:", error);
       const statusCode = error.response?.status || error.response?.data?.code;
       const isInternalError = statusCode === 500;
@@ -146,6 +158,7 @@ export function NewChatPage() {
     const userMessage = trimmedMessage;
     setMessage("");
     setSuggestionUsed(true);
+    localStorage.setItem("suggestion_used_user_new", "true");
 
     if (messageInputRef.current) {
       messageInputRef.current.style.height = "auto";
@@ -159,6 +172,7 @@ export function NewChatPage() {
 
     setMessage(suggestion);
     setSuggestionUsed(true);
+    localStorage.setItem("suggestion_used_user_new", "true");
 
     if (messageInputRef.current) {
       messageInputRef.current.focus();

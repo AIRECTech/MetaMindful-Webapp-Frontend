@@ -309,8 +309,16 @@ export function ChatPage() {
       // Update thread data from chat API response instead of refetching
       // Update thread data from chat API response instead of refetching
       if (data) {
+        const assistantMsgId = data.message?.id || `local-assistant-${Date.now()}`;
+        if (data.message?.suggested_replies && data.message.suggested_replies.length > 0) {
+          localStorage.setItem(
+            `suggested_replies_${id}_${assistantMsgId}`,
+            JSON.stringify(data.message.suggested_replies)
+          );
+        }
+
         const assistantMsg: Message = {
-          id: data.message?.id || `local-assistant-${Date.now()}`,
+          id: assistantMsgId,
           role: "assistant" as const,
           content: data.message?.assistantMessage,
           replies: data.message?.suggested_replies || [],
@@ -839,6 +847,15 @@ export function ChatPage() {
       return;
     }
 
+    // Mark suggestions as used for the last assistant message
+    const lastAssistant = [...displayMessages]
+      .reverse()
+      .find(m => m.role === "assistant" && !m.isError);
+    if (lastAssistant && id) {
+      localStorage.setItem(`suggestion_used_${id}_${lastAssistant.id}`, "true");
+    }
+    setSuggestionUsed(true);
+
     setIsSending(true);
     isSendingRef.current = true;
 
@@ -995,16 +1012,20 @@ export function ChatPage() {
     }
   }, [displayMessages, showDisclaimer]);
 
-  // Reset suggestionUsed when a new assistant message arrives
+  // Reset/Load suggestionUsed when a new assistant message arrives or displays
   useEffect(() => {
     const lastAssistantMessage = [...displayMessages]
       .reverse()
       .find(m => m.role === "assistant" && !m.isError);
 
-    if (lastAssistantMessage) {
+    if (lastAssistantMessage && id) {
+      const key = `suggestion_used_${id}_${lastAssistantMessage.id}`;
+      const isUsed = localStorage.getItem(key) === "true";
+      setSuggestionUsed(isUsed);
+    } else {
       setSuggestionUsed(false);
     }
-  }, [displayMessages.filter(m => m.role === "assistant").length]);
+  }, [id, displayMessages.filter(m => m.role === "assistant").length]);
 
   // Show loading indicator while fetching thread data
   if (isLoading && !hasBootstrapData && displayMessages.length === 0) {
@@ -1220,10 +1241,26 @@ export function ChatPage() {
         <div className="max-w-4xl mx-auto w-full">
           {/* Suggested replies from the last assistant message */}
           {(() => {
-            // Find the last assistant message that has replies
-            const lastAssistantMessageWithReplies = [...displayMessages]
+            // Find the last assistant message
+            const lastAssistantMessage = [...displayMessages]
               .reverse()
-              .find(m => m.role === "assistant" && m.replies && m.replies.length > 0);
+              .find(m => m.role === "assistant" && !m.isError);
+
+            let replies: string[] = [];
+            if (lastAssistantMessage) {
+              if (lastAssistantMessage.replies && lastAssistantMessage.replies.length > 0) {
+                replies = lastAssistantMessage.replies;
+              } else if (id) {
+                const stored = localStorage.getItem(`suggested_replies_${id}_${lastAssistantMessage.id}`);
+                if (stored) {
+                  try {
+                    replies = JSON.parse(stored);
+                  } catch (e) {
+                    console.error("Failed to parse suggested replies from localStorage", e);
+                  }
+                }
+              }
+            }
 
             // Only show suggestions if the last message is from the assistant and hasn't been used yet
             const isLastMessageAssistant = displayMessages.length > 0 && displayMessages[displayMessages.length - 1].role === "assistant";
@@ -1232,7 +1269,7 @@ export function ChatPage() {
             const userMessageCount = displayMessages.filter(msg => msg.role === 'user').length;
             const isLimitReached = messageLimit > 0 && userMessageCount >= messageLimit;
 
-            if (lastAssistantMessageWithReplies?.replies && lastAssistantMessageWithReplies.replies.length > 0 && !suggestionUsed && isLastMessageAssistant && !isLimitReached) {
+            if (replies.length > 0 && !suggestionUsed && isLastMessageAssistant && !isLimitReached) {
               const lastMessage = displayMessages[displayMessages.length - 1];
               const requiresSignup = isGuest && lastMessage?.role === "assistant" && lastMessage?.requiresSignup;
 
@@ -1241,11 +1278,19 @@ export function ChatPage() {
               return (
                 <div className="flex flex-col items-center gap-3 mb-8 mt-2 w-full">
                   <div className="flex overflow-x-auto gap-3 pb-2 w-full no-scrollbar">
-                    {lastAssistantMessageWithReplies.replies.map((reply, idx) => (
+                    {replies.map((reply, idx) => (
                       <button
                         key={idx}
                         onClick={async () => {
                           if (isSending || requiresSignup) return;
+                          
+                          // Mark as used in localStorage
+                          const lastAssistant = [...displayMessages]
+                            .reverse()
+                            .find(m => m.role === "assistant" && !m.isError);
+                          if (lastAssistant && id) {
+                            localStorage.setItem(`suggestion_used_${id}_${lastAssistant.id}`, "true");
+                          }
                           setSuggestionUsed(true);
 
                           logAnalyticsEvent("suggestion_selected", {

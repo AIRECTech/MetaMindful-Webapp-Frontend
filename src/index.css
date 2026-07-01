@@ -47,8 +47,14 @@
   --ring: 224 76% 48%;
 }
 
+html,
 body {
-  @apply bg-background text-foreground min-h-screen font-sans;
+  height: 100%;
+  overflow: hidden;
+}
+
+body {
+  @apply bg-background text-foreground font-sans;
 }
 
 @layer utilities {

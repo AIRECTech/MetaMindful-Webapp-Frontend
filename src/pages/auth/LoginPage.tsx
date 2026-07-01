@@ -68,6 +68,13 @@ export function LoginPage() {
         is_guest: responseData.user?.isGuest
       });
       toast.success("Welcome back!");
+
+      // If user signed up via email first and is now logging in
+      if (sessionStorage.getItem("just_signed_up") === "true") {
+        sessionStorage.setItem("pending_auto_send_message", "I signed up");
+        sessionStorage.removeItem("just_signed_up");
+      }
+
       // If currentThreadId is provided, redirect to that thread, otherwise use redirectTo
       if (currentThreadId) {
         window.location.href = `/user/chat/${currentThreadId}`;
@@ -110,6 +117,13 @@ export function LoginPage() {
         user_id: responseData.user?.id
       });
       toast.success("Welcome back!");
+
+      // If user signed up via social first and is now logging in
+      if (sessionStorage.getItem("just_signed_up") === "true") {
+        sessionStorage.setItem("pending_auto_send_message", "I signed up");
+        sessionStorage.removeItem("just_signed_up");
+      }
+
       // If currentThreadId is provided, redirect to that thread, otherwise use redirectTo
       if (currentThreadId) {
         window.location.href = `/user/chat/${currentThreadId}`;

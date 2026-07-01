@@ -1,4 +1,4 @@
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState, useEffect, useRef } from "react";
 import { useNavigate, useSearchParams, Link } from "react-router-dom";
 import { ArrowUp } from "lucide-react";
@@ -15,6 +15,7 @@ interface Message {
 
 export function StartChatPage() {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [searchParams] = useSearchParams();
   const [message, setMessage] = useState("");
   
@@ -35,9 +36,19 @@ export function StartChatPage() {
   const [threadId, setThreadId] = useState<string | null>(null);
   const [hasAutoSent, setHasAutoSent] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    const handleScroll = () => {
+      if (scrollContainerRef.current) {
+        scrollContainerRef.current.scrollTo({
+          top: scrollContainerRef.current.scrollHeight,
+          behavior: "smooth"
+        });
+      }
+    };
+    handleScroll();
+    setTimeout(handleScroll, 100);
   };
 
   useEffect(() => {
@@ -91,6 +102,9 @@ export function StartChatPage() {
     onSuccess: (data) => {
       setIsLoading(false);
       if (data && data.threadId) {
+        // Invalidate threads query so the sidebar updates immediately
+        queryClient.invalidateQueries({ queryKey: ["threads"] });
+
         // Store threadId for guest users (so we can continue the conversation)
         if (!threadId) {
           setThreadId(data.threadId);
@@ -258,8 +272,8 @@ export function StartChatPage() {
         // Chat conversation view
         <>
           {/* Messages area */}
-          <div className="flex-1 overflow-y-auto">
-            <div className="max-w-4xl mx-auto px-4 py-6 space-y-6">
+          <div ref={scrollContainerRef} className="flex-1 overflow-y-auto">
+            <div className="max-w-4xl mx-auto px-4 pt-6 pb-24 space-y-6">
               {/* Centered header */}
               <div className="text-center mb-8">
                 <h1 className="text-2xl font-bold text-gray-800 dark:text-gray-200 mb-1">New Chat</h1>

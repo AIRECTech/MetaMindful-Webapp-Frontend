@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { useNavigate, Link } from "react-router-dom";
 import { ArrowUp } from "lucide-react";
 import { api } from "../../lib/api";
@@ -25,6 +26,7 @@ interface Message {
 
 export function NewChatPage() {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [message, setMessage] = useState("");
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -73,6 +75,9 @@ export function NewChatPage() {
       if (!chatResponse?.threadId) {
         throw new Error("Thread created but threadId (UUID) missing from response");
       }
+
+      // Invalidate threads query so the sidebar updates immediately
+      queryClient.invalidateQueries({ queryKey: ["threads"] });
 
       logAnalyticsEvent("thread_created", {
         thread_id: chatResponse.threadId,

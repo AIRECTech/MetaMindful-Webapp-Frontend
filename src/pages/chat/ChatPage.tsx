@@ -46,6 +46,7 @@ export function ChatPage() {
   const isSendingRef = useRef(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messageInputRef = useRef<HTMLTextAreaElement>(null);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
   // Check if user is guest by auth status OR by route path (/guest/:id)
   const isGuestRoute = location.pathname.startsWith("/guest");
   const isGuest = isGuestUser() || isGuestRoute;
@@ -55,6 +56,14 @@ export function ChatPage() {
 
   useEffect(() => {
     logAnalyticsEvent("chat_screen_view", { thread_id: id });
+    setShowThreadCard(false);
+    
+    if (id) {
+      const saved = localStorage.getItem(`toast_thread_card_${id}`);
+      setThreadCardDetails(saved ? JSON.parse(saved) : []);
+    } else {
+      setThreadCardDetails([]);
+    }
   }, [id]);
 
   const {
@@ -685,6 +694,8 @@ export function ChatPage() {
       }
       setTokens(responseData.accessToken, responseData.refreshToken, false);
       toast.success("Welcome!");
+      // Store pending auto-send message to send after reload
+      sessionStorage.setItem("pending_auto_send_message", "I signed up");
       // Force reload to current thread as authenticated user
       window.location.href = `/user/chat/${id}`;
     },
@@ -838,7 +849,18 @@ export function ChatPage() {
 
   // Auto-scroll to bottom of chat
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    const scrollToBottom = () => {
+      if (scrollContainerRef.current) {
+        scrollContainerRef.current.scrollTo({
+          top: scrollContainerRef.current.scrollHeight,
+          behavior: "smooth"
+        });
+      }
+    };
+
+    scrollToBottom();
+    const timer = setTimeout(scrollToBottom, 100);
+    return () => clearTimeout(timer);
   }, [displayMessages, isSending]);
 
   const sendText = (text: string) => {
@@ -972,10 +994,14 @@ export function ChatPage() {
     const sessionKey = `has_sent_auto_message_${id}`;
     const alreadySentInSession = !!id && sessionStorage.getItem(sessionKey) === 'true';
 
+    // Check if there is a pending auto-send message from signup/login
+    const pendingAutoSendText = sessionStorage.getItem("pending_auto_send_message");
+    const autoSendTextToUse = state.autoSendText || pendingAutoSendText;
+
     // DIAGNOSTIC LOGS - useful for debugging auto-send issues
     console.log("[ChatPage] Auto-send check:", {
       id,
-      autoSendText: state.autoSendText,
+      autoSendText: autoSendTextToUse,
       hasAutoSent: hasAutoSentRef.current,
       alreadySentInSession,
       isGuest,
@@ -985,10 +1011,13 @@ export function ChatPage() {
 
     if (alreadySentInSession) {
       hasAutoSentRef.current = true;
+      if (pendingAutoSendText) {
+        sessionStorage.removeItem("pending_auto_send_message");
+      }
       return;
     }
 
-    if (!state.autoSendText || hasAutoSentRef.current) return;
+    if (!autoSendTextToUse || hasAutoSentRef.current) return;
 
     // As long as we have an ID and we're not currently sending, we should trigger the auto-send
     // This is more resilient than waiting for bootstrap data or cache synchronization
@@ -996,7 +1025,10 @@ export function ChatPage() {
       console.log("[ChatPage] Conditions met, triggering auto-send");
       hasAutoSentRef.current = true;
       sessionStorage.setItem(sessionKey, 'true');
-      sendText(state.autoSendText!);
+      if (pendingAutoSendText) {
+        sessionStorage.removeItem("pending_auto_send_message");
+      }
+      sendText(autoSendTextToUse);
     }
   }, [id, state.autoSendText, hasBootstrapData, isGuest, queryClient, isSending]);
 
@@ -1064,8 +1096,8 @@ export function ChatPage() {
 
   const chatContent = (
     <div className="flex flex-col h-full relative bg-gray-50 dark:bg-gray-900">
-      <div className="flex-1 overflow-y-auto">
-        <div className="max-w-4xl mx-auto px-4 pt-6 pb-3 space-y-6">
+      <div ref={scrollContainerRef} className="flex-1 overflow-y-auto">
+        <div className="max-w-4xl mx-auto px-4 pt-6 pb-24 space-y-6">
           {(displayMessages.length === 0 && (isLoading || isSending || (state.autoSendText && !hasAutoSentRef.current))) ? (
             <div className="text-center py-12">
               {/* Show different spinner for different states */}

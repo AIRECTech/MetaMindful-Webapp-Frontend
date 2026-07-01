@@ -56,6 +56,7 @@ export function SignupPopup({ isOpen, onClose, currentThreadId, onSuccess, onSwi
     },
     onSuccess: () => {
       toast.success("Registration successful! Please verify your email.");
+      sessionStorage.setItem("just_signed_up", "true");
       onClose();
       const verifyUrl = currentThreadId
         ? `/verify-email?email=${encodeURIComponent(formData.email)}&threadId=${encodeURIComponent(currentThreadId)}`
@@ -105,6 +106,7 @@ export function SignupPopup({ isOpen, onClose, currentThreadId, onSuccess, onSwi
       } else {
         // Navigate to current thread if provided, otherwise to new chat
         if (currentThreadId) {
+          sessionStorage.setItem("pending_auto_send_message", "I signed up");
           // Use window.location to force full page reload to clear any guest state
           window.location.href = `/user/chat/${currentThreadId}`;
         } else {

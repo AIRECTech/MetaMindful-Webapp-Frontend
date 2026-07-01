@@ -53,6 +53,13 @@ export function LoginPopup({ isOpen, onClose, currentThreadId, onSuccess, onSwit
       setTokens(responseData.accessToken, responseData.refreshToken, false);
       toast.success("Welcome back!");
       onClose();
+      
+      // If user signed up via email first and is now logging in
+      if (sessionStorage.getItem("just_signed_up") === "true") {
+        sessionStorage.setItem("pending_auto_send_message", "I signed up");
+        sessionStorage.removeItem("just_signed_up");
+      }
+
       if (onSuccess) {
         onSuccess();
       } else {
@@ -96,6 +103,13 @@ export function LoginPopup({ isOpen, onClose, currentThreadId, onSuccess, onSwit
       setTokens(responseData.accessToken, responseData.refreshToken, false);
       toast.success("Welcome back!");
       onClose();
+
+      // If user signed up via social first and is now logging in
+      if (sessionStorage.getItem("just_signed_up") === "true") {
+        sessionStorage.setItem("pending_auto_send_message", "I signed up");
+        sessionStorage.removeItem("just_signed_up");
+      }
+
       if (onSuccess) {
         onSuccess();
       } else {

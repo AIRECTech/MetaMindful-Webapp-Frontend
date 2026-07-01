@@ -215,8 +215,8 @@ export function StartChatPage() {
           </div>
 
           {/* Input area */}
-          <div className="pb-4 px-4">
-            <div className="max-w-4xl mx-auto space-y-3">
+          <div className="pb-4">
+            <div className="max-w-4xl mx-auto px-4 space-y-3">
               <div className="bg-white dark:bg-gray-800 rounded-full border border-gray-200 dark:border-gray-700 shadow-sm flex items-center gap-3 p-4">
                 <input
                   type="text"
@@ -324,8 +324,8 @@ export function StartChatPage() {
           </div>
 
           {/* Input area */}
-          <div className="pb-4 px-4">
-            <div className="max-w-4xl mx-auto space-y-3">
+          <div className="pb-4">
+            <div className="max-w-4xl mx-auto px-4 space-y-3">
               <div className="bg-white dark:bg-gray-800 rounded-full border border-gray-200 dark:border-gray-700 shadow-sm flex items-center gap-3 p-4">
                 <input
                   type="text"

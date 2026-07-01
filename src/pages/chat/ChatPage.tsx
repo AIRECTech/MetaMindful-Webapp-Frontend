@@ -1269,8 +1269,8 @@ export function ChatPage() {
         </div>
       </div>
 
-      <div className="pb-4 px-4 flex-shrink-0">
-        <div className="max-w-4xl mx-auto w-full">
+      <div className="pb-4 flex-shrink-0">
+        <div className="max-w-4xl mx-auto px-4 w-full">
           {/* Suggested replies from the last assistant message */}
           {(() => {
             // Find the last assistant message

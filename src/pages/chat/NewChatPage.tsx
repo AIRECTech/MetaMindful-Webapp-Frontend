@@ -229,8 +229,8 @@ export function NewChatPage() {
       </div>
 
       {/* Input area with suggestions */}
-      <div className="pb-4 px-4 flex-shrink-0">
-        <div className="max-w-4xl mx-auto space-y-3">
+      <div className="pb-4 flex-shrink-0">
+        <div className="max-w-4xl mx-auto px-4 space-y-3">
           {/* Suggested prompts */}
           {!suggestionUsed && (
             <div className="flex flex-col items-center gap-3 w-full">

@@ -10,6 +10,32 @@ import { initDarkMode } from "./lib/darkMode";
 // Initialize dark mode before rendering
 initDarkMode();
 
+// Handle ChunkLoadError and dynamic import failures by forcing a reload to fetch new assets
+window.addEventListener("error", (e) => {
+  const isChunkError = e.message && (
+    e.message.includes("ChunkLoadError") || 
+    e.message.includes("Loading chunk") || 
+    e.message.includes("Failed to fetch dynamically imported module")
+  );
+  if (isChunkError) {
+    console.warn("Chunk load error detected. Reloading page to fetch latest assets...");
+    window.location.reload();
+  }
+}, true);
+
+window.addEventListener("unhandledrejection", (e) => {
+  const reason = e.reason;
+  const isChunkError = reason && reason.message && (
+    reason.message.includes("ChunkLoadError") ||
+    reason.message.includes("Loading chunk") ||
+    reason.message.includes("Failed to fetch dynamically imported module")
+  );
+  if (isChunkError) {
+    console.warn("Unhandled chunk load rejection detected. Reloading page...");
+    window.location.reload();
+  }
+});
+
 // Get Google Client ID from environment variable
 const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID || "";
 import App from "./App";

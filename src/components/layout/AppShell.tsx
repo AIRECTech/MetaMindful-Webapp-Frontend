@@ -1,7 +1,8 @@
 import type { PropsWithChildren } from "react";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Toaster } from "react-hot-toast";
 import { useQueryClient } from "@tanstack/react-query";
+import { useLocation } from "react-router-dom";
 import { Sidebar } from "./Sidebar";
 import { Topbar } from "./Topbar";
 import { GuestTopbar } from "./GuestTopbar";
@@ -12,10 +13,20 @@ import { toast } from "react-hot-toast";
 
 
 export function AppShell({ children }: PropsWithChildren) {
-  const showSidebar = isAuthenticated();
-  const isGuest = isGuestUser();
-  const authenticated = isAuthenticated();
+  const location = useLocation();
   const queryClient = useQueryClient();
+
+  // Re-evaluate auth state on every route change so navigating from login→guest
+  // picks up the freshly-set guest token without requiring a full page reload.
+  const [showSidebar, setShowSidebar] = useState(() => isAuthenticated());
+  const [isGuest, setIsGuest] = useState(() => isGuestUser());
+  const [authenticated, setAuthenticated] = useState(() => isAuthenticated());
+
+  useEffect(() => {
+    setShowSidebar(isAuthenticated());
+    setIsGuest(isGuestUser());
+    setAuthenticated(isAuthenticated());
+  }, [location.pathname]);
 
   // Initialize push notifications when user is authenticated (only for real users)
   useEffect(() => {

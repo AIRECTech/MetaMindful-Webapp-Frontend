@@ -37,6 +37,7 @@ export function Sidebar() {
   
   const [showLoginPopup, setShowLoginPopup] = useState(false);
   const [showSignupPopup, setShowSignupPopup] = useState(false);
+  const [signupPopupText, setSignupPopupText] = useState<string | undefined>(undefined);
 
   // Sync dark mode state with DOM changes
   useEffect(() => {
@@ -283,6 +284,7 @@ export function Sidebar() {
           <button
             onClick={() => {
               if (isGuest) {
+                setSignupPopupText("Create your free account to start more threads");
                 setShowSignupPopup(true);
               } else {
                 navigate("/user/chat/new");
@@ -483,10 +485,12 @@ export function Sidebar() {
       onClose={() => {
         setShowLoginPopup(false);
         setShowSignupPopup(false);
+        setSignupPopupText(undefined);
       }}
       currentThreadId={currentThreadId || undefined}
       onSwitchToSignup={() => {
         setShowLoginPopup(false);
+        setSignupPopupText(undefined);
         setShowSignupPopup(true);
       }}
     />
@@ -495,11 +499,14 @@ export function Sidebar() {
       onClose={() => {
         setShowLoginPopup(false);
         setShowSignupPopup(false);
+        setSignupPopupText(undefined);
       }}
       currentThreadId={currentThreadId || undefined}
+      buttonText={signupPopupText}
       onSwitchToLogin={() => {
         setShowSignupPopup(false);
         setShowLoginPopup(true);
+        setSignupPopupText(undefined);
       }}
     />
     </>

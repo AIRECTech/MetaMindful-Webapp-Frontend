@@ -15,9 +15,10 @@ interface SignupPopupProps {
   onSuccess?: () => void;
   onSwitchToLogin?: () => void;
   unclosable?: boolean;
+  buttonText?: string;
 }
 
-export function SignupPopup({ isOpen, onClose, currentThreadId, onSuccess, onSwitchToLogin, unclosable = false }: SignupPopupProps) {
+export function SignupPopup({ isOpen, onClose, currentThreadId, onSuccess, onSwitchToLogin, unclosable = false, buttonText = "Sign up" }: SignupPopupProps) {
   const navigate = useNavigate();
   const [formData, setFormData] = useState({ email: "", password: "", confirmPassword: "" });
   const [showPassword, setShowPassword] = useState(false);
@@ -475,7 +476,7 @@ export function SignupPopup({ isOpen, onClose, currentThreadId, onSuccess, onSwi
             className="w-full rounded-xl bg-yellow-400 px-5 py-3 text-sm font-semibold text-gray-800 transition hover:bg-yellow-500 disabled:opacity-50"
             disabled={register.isPending}
           >
-            {register.isPending ? "Creating account..." : "Sign up"}
+            {register.isPending ? "Creating account..." : buttonText}
           </button>
         </form>
 

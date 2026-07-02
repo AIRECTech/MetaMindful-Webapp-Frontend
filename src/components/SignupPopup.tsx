@@ -16,9 +16,10 @@ interface SignupPopupProps {
   onSwitchToLogin?: () => void;
   unclosable?: boolean;
   buttonText?: string;
+  autoSend?: boolean;
 }
 
-export function SignupPopup({ isOpen, onClose, currentThreadId, onSuccess, onSwitchToLogin, unclosable = false, buttonText = "Sign up" }: SignupPopupProps) {
+export function SignupPopup({ isOpen, onClose, currentThreadId, onSuccess, onSwitchToLogin, unclosable = false, buttonText = "Sign up", autoSend = false }: SignupPopupProps) {
   const navigate = useNavigate();
   const [formData, setFormData] = useState({ email: "", password: "", confirmPassword: "" });
   const [showPassword, setShowPassword] = useState(false);
@@ -107,7 +108,9 @@ export function SignupPopup({ isOpen, onClose, currentThreadId, onSuccess, onSwi
       } else {
         // Navigate to current thread if provided, otherwise to new chat
         if (currentThreadId) {
-          sessionStorage.setItem("pending_auto_send_message", "I signed up");
+          if (autoSend) {
+            sessionStorage.setItem("pending_auto_send_message", "I signed up");
+          }
           // Use window.location to force full page reload to clear any guest state
           window.location.href = `/user/chat/${currentThreadId}`;
         } else {

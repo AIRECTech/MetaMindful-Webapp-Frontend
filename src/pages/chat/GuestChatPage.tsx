@@ -50,6 +50,7 @@ export function GuestChatPage() {
   const [threadDesc] = useState<string | null>(null);
   const [showLoginPopup, setShowLoginPopup] = useState(false);
   const [showSignupPopup, setShowSignupPopup] = useState(false);
+  const [isAuthGate, setIsAuthGate] = useState(false);
   const [showThreadCard, setShowThreadCard] = useState(false);
   const [hasExercise, setHasExercise] = useState(() => {
     const tid = id || threadId;
@@ -551,12 +552,12 @@ export function GuestChatPage() {
             <div className="text-center mt-4">
               <p className="text-sm text-gray-600 dark:text-gray-400">
                 Don't lose your chat history. <button
-                  onClick={() => setShowLoginPopup(true)}
+                  onClick={() => { setIsAuthGate(true); setShowLoginPopup(true); }}
                   className="text-blue-600 dark:text-blue-400 hover:underline font-medium"
                 >
                   Log in
                 </button> or <button
-                  onClick={() => setShowSignupPopup(true)}
+                  onClick={() => { setIsAuthGate(true); setShowSignupPopup(true); }}
                   className="text-blue-600 dark:text-blue-400 hover:underline font-medium"
                 >
                   Sign up
@@ -573,8 +574,10 @@ export function GuestChatPage() {
         onClose={() => {
           setShowLoginPopup(false);
           setShowSignupPopup(false);
+          setIsAuthGate(false);
         }}
         currentThreadId={id || threadId || undefined}
+        autoSend={isAuthGate}
         onSwitchToSignup={() => {
           setShowLoginPopup(false);
           setShowSignupPopup(true);
@@ -585,8 +588,10 @@ export function GuestChatPage() {
         onClose={() => {
           setShowLoginPopup(false);
           setShowSignupPopup(false);
+          setIsAuthGate(false);
         }}
         currentThreadId={id || threadId || undefined}
+        autoSend={isAuthGate}
         onSwitchToLogin={() => {
           setShowSignupPopup(false);
           setShowLoginPopup(true);

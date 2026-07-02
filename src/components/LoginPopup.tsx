@@ -15,9 +15,10 @@ interface LoginPopupProps {
   onSuccess?: () => void;
   onSwitchToSignup?: () => void;
   unclosable?: boolean;
+  autoSend?: boolean;
 }
 
-export function LoginPopup({ isOpen, onClose, currentThreadId, onSuccess, onSwitchToSignup, unclosable = false }: LoginPopupProps) {
+export function LoginPopup({ isOpen, onClose, currentThreadId, onSuccess, onSwitchToSignup, unclosable = false, autoSend = false }: LoginPopupProps) {
   const navigate = useNavigate();
   const [credentials, setCredentials] = useState({ email: "", password: "" });
   const [showPassword, setShowPassword] = useState(false);
@@ -56,7 +57,9 @@ export function LoginPopup({ isOpen, onClose, currentThreadId, onSuccess, onSwit
       
       // If user signed up via email first and is now logging in
       if (sessionStorage.getItem("just_signed_up") === "true") {
-        sessionStorage.setItem("pending_auto_send_message", "I signed up");
+        if (autoSend) {
+          sessionStorage.setItem("pending_auto_send_message", "I signed up");
+        }
         sessionStorage.removeItem("just_signed_up");
       }
 
@@ -106,7 +109,9 @@ export function LoginPopup({ isOpen, onClose, currentThreadId, onSuccess, onSwit
 
       // If user signed up via social first and is now logging in
       if (sessionStorage.getItem("just_signed_up") === "true") {
-        sessionStorage.setItem("pending_auto_send_message", "I signed up");
+        if (autoSend) {
+          sessionStorage.setItem("pending_auto_send_message", "I signed up");
+        }
         sessionStorage.removeItem("just_signed_up");
       }
 

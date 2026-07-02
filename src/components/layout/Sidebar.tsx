@@ -34,7 +34,7 @@ export function Sidebar() {
   const [darkMode, setDarkMode] = useState(() => {
     return getDarkMode();
   });
-  
+
   const [showLoginPopup, setShowLoginPopup] = useState(false);
   const [showSignupPopup, setShowSignupPopup] = useState(false);
   const [signupPopupText, setSignupPopupText] = useState<string | undefined>(undefined);
@@ -94,7 +94,7 @@ export function Sidebar() {
 
   const threadsToDisplay = isGuest
     ? (currentThread ? [currentThread] : [])
-    : (threads || []);
+    : [...(threads || [])].sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
 
   // Update thread mutation
   const updateThread = useMutation({
@@ -168,7 +168,7 @@ export function Sidebar() {
   useEffect(() => {
     setEditingThreadId(null);
     setEditingTitle("");
-    
+
     // Auto-close sidebar on mobile when navigating
     if (window.innerWidth < 1024) {
       closeSidebar();
@@ -237,7 +237,7 @@ export function Sidebar() {
     <>
       {/* Mobile overlay */}
       {isSidebarOpen && (
-        <div 
+        <div
           className="fixed inset-0 bg-black/50 z-[60] lg:hidden backdrop-blur-sm"
           onClick={closeSidebar}
         />
@@ -277,238 +277,242 @@ export function Sidebar() {
           </button>
         </div>
 
-      {/* Threads section */}
-      <div className="flex-1 overflow-y-auto">
-        <div className="p-2">
-          {/* New Thread button */}
-          <button
-            onClick={() => {
-              if (isGuest) {
-                setSignupPopupText("Create your free account to start more threads");
-                setShowSignupPopup(true);
-              } else {
-                navigate("/user/chat/new");
-              }
-            }}
-            className="w-full flex items-center gap-3 px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 transition text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
-          >
-            <Plus className="h-4 w-4" />
-            New Thread
-          </button>
+        {/* Threads section */}
+        <div className="flex-1 overflow-y-auto">
+          <div className="p-2">
+            {/* New Thread button */}
+            <button
+              onClick={() => {
+                if (isGuest) {
+                  setSignupPopupText("Create your free account to start more threads");
+                  setShowSignupPopup(true);
+                } else {
+                  navigate("/user/chat/new");
+                }
+              }}
+              disabled={!isGuest && threads !== undefined && threads.length > 3}
+              className={cn(
+                "w-full flex items-center gap-3 px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-700 transition text-sm font-medium mb-2",
+                !isGuest && threads && threads.length > 3
+                  ? "opacity-50 cursor-not-allowed bg-gray-100 dark:bg-gray-800 text-gray-400 border-gray-100 dark:border-gray-800"
+                  : "hover:bg-gray-50 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-300"
+              )}
+            >
+              <Plus className="h-4 w-4" />
+              New Thread
+            </button>
 
-          {/* Threads list */}
-          <div className="space-y-1 mt-2">
-            {threadsToDisplay && threadsToDisplay.length > 0 ? (
-              threadsToDisplay.map((thread) => (
-                <div
-                  key={thread.id}
-                  className={cn(
-                    "group relative flex items-center gap-2 rounded-lg transition",
-                    currentThreadId === (thread.threadId || thread.id)
-                      ? "bg-gray-100 dark:bg-gray-800"
-                      : "hover:bg-gray-50 dark:hover:bg-gray-800"
-                  )}
-                  onMouseEnter={() => setHoveredThreadId(thread.threadId || thread.id)}
-                  onMouseLeave={() => {
-                    if (!showMenuThreadId) {
-                      setHoveredThreadId(null);
-                    }
-                  }}
-                >
-                  {editingThreadId === (thread.threadId || thread.id) ? (
-                    // Edit mode
-                    <div className="flex-1 px-3 py-2 min-w-0">
-                      <input
-                        ref={editInputRef}
-                        type="text"
-                        value={editingTitle}
-                        onChange={(e) => setEditingTitle(e.target.value)}
-                        onKeyDown={(e) => {
-                          if (e.key === "Enter") {
-                            e.preventDefault();
-                            handleSaveEdit();
-                          } else if (e.key === "Escape") {
-                            e.preventDefault();
-                            handleCancelEdit();
-                          }
-                        }}
-                        onBlur={() => {
-                          // Auto-save on blur if there's a change
-                          if (editingThreadId && editingTitle.trim() && editingTitle.trim() !== thread.title) {
-                            handleSaveEdit();
-                          } else {
-                            handleCancelEdit();
-                          }
-                        }}
-                        className="w-full px-2 py-1 text-sm text-gray-900 dark:text-gray-200 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 overflow-hidden"
-                        disabled={updateThread.isPending}
-                      />
-                    </div>
-                  ) : (
-                    // Normal mode
-                    <>
-                      <button
-                        onClick={() => navigate(isGuest ? `/guest/${thread.threadId || thread.id}` : `/user/chat/${thread.threadId || thread.id}`)}
-                        className={cn(
-                          "flex-1 flex flex-col gap-1 px-3 py-2 text-sm transition text-left min-w-0",
-                          currentThreadId === (thread.threadId || thread.id)
-                            ? "text-gray-900 dark:text-gray-100 font-medium"
-                            : "text-gray-600 dark:text-gray-400"
-                        )}
-                        title={thread.title}
-                      >
-                        <div className="flex items-center gap-2 min-w-0">
-                          <MessageSquare className="h-4 w-4 flex-shrink-0" />
-                          <span className="truncate flex-1">{thread.title}</span>
-                        </div>
-                        <div className="flex items-center gap-3 text-xs text-gray-500 dark:text-gray-400 ml-6">
-                          <span>{formatDate(thread.updatedAt || thread.createdAt)}</span>
-                          {(thread.actionsCount !== undefined && thread.actionsCount > 0) && (
-                            <span>• {thread.actionsCount} action{thread.actionsCount !== 1 ? 's' : ''}</span>
+            {/* Threads list */}
+            <div className="space-y-1 mt-2">
+              {threadsToDisplay && threadsToDisplay.length > 0 ? (
+                threadsToDisplay.map((thread) => (
+                  <div
+                    key={thread.id}
+                    className={cn(
+                      "group relative flex items-center gap-2 rounded-lg transition",
+                      currentThreadId === (thread.threadId || thread.id)
+                        ? "bg-gray-100 dark:bg-gray-800"
+                        : "hover:bg-gray-50 dark:hover:bg-gray-800"
+                    )}
+                    onMouseEnter={() => setHoveredThreadId(thread.threadId || thread.id)}
+                    onMouseLeave={() => {
+                      if (!showMenuThreadId) {
+                        setHoveredThreadId(null);
+                      }
+                    }}
+                  >
+                    {editingThreadId === (thread.threadId || thread.id) ? (
+                      // Edit mode
+                      <div className="flex-1 px-3 py-2 min-w-0">
+                        <input
+                          ref={editInputRef}
+                          type="text"
+                          value={editingTitle}
+                          onChange={(e) => setEditingTitle(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter") {
+                              e.preventDefault();
+                              handleSaveEdit();
+                            } else if (e.key === "Escape") {
+                              e.preventDefault();
+                              handleCancelEdit();
+                            }
+                          }}
+                          onBlur={() => {
+                            // Auto-save on blur if there's a change
+                            if (editingThreadId && editingTitle.trim() && editingTitle.trim() !== thread.title) {
+                              handleSaveEdit();
+                            } else {
+                              handleCancelEdit();
+                            }
+                          }}
+                          className="w-full px-2 py-1 text-sm text-gray-900 dark:text-gray-200 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 overflow-hidden"
+                          disabled={updateThread.isPending}
+                        />
+                      </div>
+                    ) : (
+                      // Normal mode
+                      <>
+                        <button
+                          onClick={() => navigate(isGuest ? `/guest/${thread.threadId || thread.id}` : `/user/chat/${thread.threadId || thread.id}`)}
+                          className={cn(
+                            "flex-1 flex flex-col gap-1 px-3 py-2 text-sm transition text-left min-w-0",
+                            currentThreadId === (thread.threadId || thread.id)
+                              ? "text-gray-900 dark:text-gray-100 font-medium"
+                              : "text-gray-600 dark:text-gray-400"
                           )}
-                          {(thread.exercisesCount !== undefined && thread.exercisesCount > 0) && (
-                            <span>• {thread.exercisesCount} exercise{thread.exercisesCount !== 1 ? 's' : ''}</span>
-                          )}
-                        </div>
-                      </button>
+                          title={thread.title}
+                        >
+                          <div className="flex items-center gap-2 min-w-0">
+                            <MessageSquare className="h-4 w-4 flex-shrink-0" />
+                            <span className="truncate flex-1">{thread.title}</span>
+                          </div>
+                          <div className="flex items-center gap-3 text-xs text-gray-500 dark:text-gray-400 ml-6">
+                            <span>{formatDate(thread.updatedAt || thread.createdAt)}</span>
+                            {(thread.actionsCount !== undefined && thread.actionsCount > 0) && (
+                              <span>• {thread.actionsCount} action{thread.actionsCount !== 1 ? 's' : ''}</span>
+                            )}
+                            {(thread.exercisesCount !== undefined && thread.exercisesCount > 0) && (
+                              <span>• {thread.exercisesCount} exercise{thread.exercisesCount !== 1 ? 's' : ''}</span>
+                            )}
+                          </div>
+                        </button>
 
-                      {/* Menu button - show on hover */}
-                      {hoveredThreadId === (thread.threadId || thread.id) && (
-                        <div className="relative" data-thread-menu={thread.threadId || thread.id}>
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              const threadIdentifier = thread.threadId || thread.id;
-                              setShowMenuThreadId(showMenuThreadId === threadIdentifier ? null : threadIdentifier);
-                            }}
-                            className="p-1 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 rounded mr-2"
-                          >
-                            <MoreVertical className="h-4 w-4" />
-                          </button>
+                        {/* Menu button - show on hover */}
+                        {hoveredThreadId === (thread.threadId || thread.id) && (
+                          <div className="relative" data-thread-menu={thread.threadId || thread.id}>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                const threadIdentifier = thread.threadId || thread.id;
+                                setShowMenuThreadId(showMenuThreadId === threadIdentifier ? null : threadIdentifier);
+                              }}
+                              className="p-1 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 rounded mr-2"
+                            >
+                              <MoreVertical className="h-4 w-4" />
+                            </button>
 
-                          {/* Dropdown menu */}
-                          {showMenuThreadId === (thread.threadId || thread.id) && (
-                            <div className="absolute right-0 top-full mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg z-50 min-w-[120px]">
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleStartEdit(thread);
-                                }}
-                                className={cn(
-                                  "w-full flex items-center gap-2 px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700",
-                                  isGuest ? "rounded-lg" : "rounded-t-lg"
-                                )}
-                              >
-                                <Edit2 className="h-3 w-3" />
-                                Rename
-                              </button>
-                              {!isGuest && (
+                            {/* Dropdown menu */}
+                            {showMenuThreadId === (thread.threadId || thread.id) && (
+                              <div className="absolute right-0 top-full mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg z-50 min-w-[120px]">
                                 <button
                                   onClick={(e) => {
                                     e.stopPropagation();
-                                    handleDelete(thread.threadId || thread.id);
+                                    handleStartEdit(thread);
                                   }}
-                                  className="w-full flex items-center gap-2 px-3 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-b-lg"
-                                  disabled={deleteThread.isPending}
+                                  className={cn(
+                                    "w-full flex items-center gap-2 px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700",
+                                    isGuest ? "rounded-lg" : "rounded-t-lg"
+                                  )}
                                 >
-                                  <Trash2 className="h-3 w-3" />
-                                  Delete
+                                  <Edit2 className="h-3 w-3" />
+                                  Rename
                                 </button>
-                              )}
-                            </div>
-                          )}
-                        </div>
-                      )}
-                    </>
-                  )}
+                                {!isGuest && (
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleDelete(thread.threadId || thread.id);
+                                    }}
+                                    className="w-full flex items-center gap-2 px-3 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-b-lg"
+                                    disabled={deleteThread.isPending}
+                                  >
+                                    <Trash2 className="h-3 w-3" />
+                                    Delete
+                                  </button>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </>
+                    )}
+                  </div>
+                ))
+              ) : (
+                <div className="text-xs text-gray-400 dark:text-gray-500 px-3 py-2 text-center">
+                  No threads yet
                 </div>
-              ))
-            ) : (
-              <div className="text-xs text-gray-400 dark:text-gray-500 px-3 py-2 text-center">
-                No threads yet
-              </div>
-            )}
+              )}
+            </div>
           </div>
         </div>
-      </div>
 
-      {/* Divider */}
-      <div className="border-t border-gray-200 dark:border-gray-700"></div>
+        {/* Divider */}
+        <div className="border-t border-gray-200 dark:border-gray-700"></div>
 
-      {/* Bottom section: Theme, Settings, Logout */}
-      <div className="p-2 space-y-1">
-        <button
-          onClick={toggleDarkMode}
-          className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 transition"
-        >
-          {darkMode ? (
-            <>
-              <Sun className="h-4 w-4" />
-              Light Mode
-            </>
-          ) : (
-            <>
-              <Moon className="h-4 w-4" />
-              Dark Mode
-            </>
-          )}
-        </button>
-
-        <button
-          onClick={() => navigate("/user/settings")}
-          className={cn(
-            "w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition",
-            location.pathname === "/user/settings"
-              ? "bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-gray-100 font-medium"
-              : "text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800"
-          )}
-        >
-          <Settings className="h-4 w-4" />
-          Settings
-        </button>
-
-        {/* Logout button - only show if user is logged in */}
-        {isRealUser() && (
+        {/* Bottom section: Theme, Settings, Logout */}
+        <div className="p-2 space-y-1">
           <button
-            onClick={handleLogout}
-            className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition"
+            onClick={toggleDarkMode}
+            className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 transition"
           >
-            <LogOut className="h-4 w-4" />
-            Logout
+            {darkMode ? (
+              <>
+                <Sun className="h-4 w-4" />
+                Light Mode
+              </>
+            ) : (
+              <>
+                <Moon className="h-4 w-4" />
+                Dark Mode
+              </>
+            )}
           </button>
-        )}
-      </div>
-    </aside>
 
-    <LoginPopup
-      isOpen={showLoginPopup}
-      onClose={() => {
-        setShowLoginPopup(false);
-        setShowSignupPopup(false);
-        setSignupPopupText(undefined);
-      }}
-      currentThreadId={currentThreadId || undefined}
-      onSwitchToSignup={() => {
-        setShowLoginPopup(false);
-        setSignupPopupText(undefined);
-        setShowSignupPopup(true);
-      }}
-    />
-    <SignupPopup
-      isOpen={showSignupPopup}
-      onClose={() => {
-        setShowLoginPopup(false);
-        setShowSignupPopup(false);
-        setSignupPopupText(undefined);
-      }}
-      currentThreadId={currentThreadId || undefined}
-      buttonText={signupPopupText}
-      onSwitchToLogin={() => {
-        setShowSignupPopup(false);
-        setShowLoginPopup(true);
-        setSignupPopupText(undefined);
-      }}
-    />
+          <button
+            onClick={() => navigate("/user/settings")}
+            className={cn(
+              "w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition",
+              location.pathname === "/user/settings"
+                ? "bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-gray-100 font-medium"
+                : "text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800"
+            )}
+          >
+            <Settings className="h-4 w-4" />
+            Settings
+          </button>
+
+          {/* Logout button - only show if user is logged in */}
+          {isRealUser() && (
+            <button
+              onClick={handleLogout}
+              className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition"
+            >
+              <LogOut className="h-4 w-4" />
+              Logout
+            </button>
+          )}
+        </div>
+      </aside>
+
+      <LoginPopup
+        isOpen={showLoginPopup}
+        onClose={() => {
+          setShowLoginPopup(false);
+          setShowSignupPopup(false);
+          setSignupPopupText(undefined);
+        }}
+        currentThreadId={signupPopupText ? undefined : (currentThreadId || undefined)}
+        onSwitchToSignup={() => {
+          setShowLoginPopup(false);
+          setShowSignupPopup(true);
+        }}
+      />
+      <SignupPopup
+        isOpen={showSignupPopup}
+        onClose={() => {
+          setShowLoginPopup(false);
+          setShowSignupPopup(false);
+          setSignupPopupText(undefined);
+        }}
+        currentThreadId={signupPopupText ? undefined : (currentThreadId || undefined)}
+        buttonText={signupPopupText}
+        onSwitchToLogin={() => {
+          setShowSignupPopup(false);
+          setShowLoginPopup(true);
+        }}
+      />
     </>
   );
 }

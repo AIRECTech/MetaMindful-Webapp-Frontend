@@ -82,6 +82,7 @@ export function ChatPage() {
   const [showGuestAuthPrompt, setShowGuestAuthPrompt] = useState(false);
   const [showLoginPopup, setShowLoginPopup] = useState(false);
   const [showSignupPopup, setShowSignupPopup] = useState(false);
+  const [isAuthGate, setIsAuthGate] = useState(false);
   const [showThreadCard, setShowThreadCard] = useState(false);
   const [hasExercise, setHasExercise] = useState(() => {
     if (!id) return false;
@@ -1164,7 +1165,10 @@ export function ChatPage() {
 
                           <div className="w-[60%] flex justify-center">
                             <button
-                              onClick={() => setShowSignupPopup(true)}
+                              onClick={() => {
+                                setIsAuthGate(true);
+                                setShowSignupPopup(true);
+                              }}
                               className="text-gray-600 dark:text-gray-400 underline hover:text-gray-800 dark:hover:text-gray-200 transition text-sm text-center"
                             >
                               Continue with multi-step email verification
@@ -1400,6 +1404,14 @@ export function ChatPage() {
             const userMessageCount = displayMessages.filter(msg => msg.role === 'user').length;
             const isLimitReached = messageLimit > 0 && userMessageCount >= messageLimit;
 
+            console.log("[ChatPage] Message limit check:", {
+              importMetaLimit: import.meta.env.VITE_MESSAGE_LIMIT,
+              messageLimit,
+              userMessageCount,
+              isLimitReached,
+              isSending
+            });
+
             if (isLimitReached && !isSending) {
               return (
                 <div className="bg-yellow-50 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-200 rounded-2xl border border-yellow-200 dark:border-yellow-800 shadow-sm p-6 text-center">
@@ -1407,7 +1419,10 @@ export function ChatPage() {
                   <p className="mb-4">You have reached the maximum number of messages for this thread.</p>
                   {isGuest ? (
                     <button
-                      onClick={() => setShowSignupPopup(true)}
+                      onClick={() => {
+                        setIsAuthGate(true);
+                        setShowSignupPopup(true);
+                      }}
                       className="inline-block bg-yellow-400 hover:bg-yellow-500 text-gray-900 px-6 py-2 rounded-full font-medium transition"
                     >
                       Sign up to continue
@@ -1508,6 +1523,7 @@ export function ChatPage() {
             <button
               onClick={() => {
                 setShowGuestAuthPrompt(false);
+                setIsAuthGate(true);
                 setShowSignupPopup(true);
               }}
               className="w-full rounded-full bg-[#facc15] px-5 py-3 text-[15px] font-medium text-gray-900 transition hover:bg-[#eab308]"
@@ -1528,8 +1544,10 @@ export function ChatPage() {
         onClose={() => {
           setShowLoginPopup(false);
           setShowSignupPopup(false);
+          setIsAuthGate(false);
         }}
         currentThreadId={id}
+        autoSend={isAuthGate}
         onSwitchToSignup={() => {
           setShowLoginPopup(false);
           setShowSignupPopup(true);
@@ -1540,8 +1558,10 @@ export function ChatPage() {
         onClose={() => {
           setShowLoginPopup(false);
           setShowSignupPopup(false);
+          setIsAuthGate(false);
         }}
         currentThreadId={id}
+        autoSend={isAuthGate}
         onSwitchToLogin={() => {
           setShowSignupPopup(false);
           setShowLoginPopup(true);

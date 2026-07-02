@@ -52,10 +52,9 @@ export function AppShell({ children }: PropsWithChildren) {
           position="top-right"
           toastOptions={{
             duration: 4000,
-            className: "animate-border-gradient",
+            className: "!bg-white dark:!bg-[#2f364a] !text-[#8f8f8f] dark:!text-white !rounded-xl !shadow-lg border border-gray-100 dark:border-none",
             style: {
-              background: "transparent",
-              padding: "0", // Let the class handle padding/inset
+              padding: '12px 24px',
             },
           }}
         />

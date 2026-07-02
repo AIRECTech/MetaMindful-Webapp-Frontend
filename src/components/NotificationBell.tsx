@@ -44,7 +44,9 @@ export function NotificationBell() {
     mutationFn: markAllNotificationsRead,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["notifications"] });
-      toast.success("All notifications marked as read");
+      toast("All notifications marked as read", {
+        icon: <Bell className="h-5 w-5 text-gray-400 dark:text-[#a0a5b1]" fill="currentColor" />,
+      });
       logAnalyticsEvent("notification_read", { all: true });
       setIsOpen(false);
     },

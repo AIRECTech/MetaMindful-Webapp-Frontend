@@ -77,7 +77,9 @@ export function LoginPage() {
 
       // If currentThreadId is provided, redirect to that thread, otherwise use redirectTo
       if (currentThreadId) {
-        window.location.href = `/user/chat/${currentThreadId}`;
+        setTimeout(() => {
+          window.location.href = `/user/chat/${currentThreadId}`;
+        }, 800);
       } else {
         navigate(redirectTo, { replace: true });
       }
@@ -126,7 +128,9 @@ export function LoginPage() {
 
       // If currentThreadId is provided, redirect to that thread, otherwise use redirectTo
       if (currentThreadId) {
-        window.location.href = `/user/chat/${currentThreadId}`;
+        setTimeout(() => {
+          window.location.href = `/user/chat/${currentThreadId}`;
+        }, 800);
       } else {
         navigate(redirectTo, { replace: true });
       }

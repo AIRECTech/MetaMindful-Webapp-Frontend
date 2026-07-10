@@ -111,8 +111,11 @@ export function SignupPopup({ isOpen, onClose, currentThreadId, onSuccess, onSwi
           if (autoSend) {
             sessionStorage.setItem("pending_auto_send_message", "I signed up");
           }
-          // Use window.location to force full page reload to clear any guest state
-          window.location.href = `/user/chat/${currentThreadId}`;
+          // Use window.location to force full page reload to clear any guest state with a small delay
+          // to ensure database migrations fully commit and the toast is visible
+          setTimeout(() => {
+            window.location.href = `/user/chat/${currentThreadId}`;
+          }, 800);
         } else {
           navigate("/user/chat/new", { replace: true });
         }

@@ -131,13 +131,10 @@ export function ChatPage() {
   // Check if we have bootstrap data from navigation state
   // Only trust bootstrap data if it's NOT a reload
   const hasBootstrapData = !!(state.bootstrapThread && (state.bootstrapThread.threadId === id || state.bootstrapThread.id === id));
-  const cachedThread = id ? queryClient.getQueryData(["thread", id]) as Thread | undefined : undefined;
-
   // After window.location.href (full page reload), router state is lost and React Query cache is cleared
   // So hasBootstrapData is always false and cache is empty, which means we always fetch
   // Only skip fetching if we have bootstrap data (from router state, not cache)
   // After signup/login with window.location.href, there's no bootstrap data, so we always fetch
-  const shouldFetch = !!id && !hasBootstrapData;
 
   const {
     data: thread,
@@ -233,9 +230,17 @@ export function ChatPage() {
 
 
 
-  // Debug logging
-  useEffect(() => {
-  }, [id, hasBootstrapData, cachedThread, shouldFetch, isLoading, thread]);
+  // Diagnostic logs
+  console.log("[ChatPage Render Log]", {
+    id,
+    isGuest,
+    hasThread: !!thread,
+    isLoading,
+    isFetching,
+    hasBootstrapData,
+    displayMessagesLength: displayMessages.length,
+    locationState: location.state,
+  });
 
   // When thread data is loaded (from API or cache), update guest state if needed
   useEffect(() => {
@@ -698,8 +703,11 @@ export function ChatPage() {
       toast.success("Welcome!");
       // Store pending auto-send message to send after reload
       sessionStorage.setItem("pending_auto_send_message", "I signed up");
-      // Force reload to current thread as authenticated user
-      window.location.href = `/user/chat/${id}`;
+      // Force reload to current thread as authenticated user with a small delay
+      // to ensure database migrations fully commit and the toast is visible
+      setTimeout(() => {
+        window.location.href = `/user/chat/${id}`;
+      }, 800);
     },
     onError: (error) => {
       const message = extractErrorMessage(error, "Social signup failed");
@@ -909,7 +917,10 @@ export function ChatPage() {
       });
     } else {
       // Cancel any outgoing refetches (so they don't overwrite our optimistic update)
-      queryClient.cancelQueries({ queryKey: ["thread", id] });
+      // Only cancel if we actually have data in the cache, otherwise we cancel the initial load request
+      if (queryClient.getQueryData(["thread", id])) {
+        queryClient.cancelQueries({ queryKey: ["thread", id] });
+      }
 
       // Remove any previous error messages
       queryClient.setQueryData(["thread", id], (old: Thread | undefined) => {

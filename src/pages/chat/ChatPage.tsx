@@ -141,7 +141,8 @@ export function ChatPage() {
 
   const {
     data: thread,
-    isLoading
+    isLoading,
+    isFetching
   } = useQuery({
     queryKey: ["thread", id],
     queryFn: async () => {
@@ -1061,7 +1062,10 @@ export function ChatPage() {
   }, [id, displayMessages.filter(m => m.role === "assistant").length]);
 
   // Show loading indicator while fetching thread data
-  if (isLoading && !hasBootstrapData && displayMessages.length === 0) {
+  // Use isFetching (not just isLoading) so we cover the full network request duration.
+  // After signup via window.location.href, isLoading can briefly be false before the
+  // query transitions to pending — isFetching stays true the whole time.
+  if ((isLoading || isFetching) && !hasBootstrapData && displayMessages.length === 0) {
     return (
       <div className="flex flex-col h-full relative bg-gray-50 dark:bg-gray-900">
         <div className="flex-1 flex items-center justify-center">
@@ -1071,15 +1075,17 @@ export function ChatPage() {
               <div className="w-2 h-2 bg-gray-400 dark:bg-gray-500 rounded-full animate-bounce" style={{ animationDelay: "150ms" }}></div>
               <div className="w-2 h-2 bg-gray-400 dark:bg-gray-500 rounded-full animate-bounce" style={{ animationDelay: "300ms" }}></div>
             </div>
-            <p className="text-gray-500 dark:text-gray-400">Loading chat...</p>
+            <p className="text-gray-500 dark:text-gray-400">Loading your chat...</p>
           </div>
         </div>
       </div>
     );
   }
 
-  // Show error state for authenticated users if thread not found
-  if (!isGuest && !thread && !isLoading && !hasBootstrapData) {
+  // Show error state for authenticated users if thread not found.
+  // Guard against isFetching too — avoids a false "Thread not found" while the
+  // request is still in flight (e.g. immediately after signup redirect).
+  if (!isGuest && !thread && !isLoading && !isFetching && !hasBootstrapData) {
     return (
       <div className="flex items-center justify-center h-96">
         <div className="text-center">

@@ -71,7 +71,7 @@ export function LoginPage() {
 
       // If user signed up via email first and is now logging in
       if (sessionStorage.getItem("just_signed_up") === "true") {
-        sessionStorage.setItem("pending_auto_send_message", "I signed up");
+        // sessionStorage.setItem("pending_auto_send_message", "I signed up");
         sessionStorage.removeItem("just_signed_up");
       }
 
@@ -122,7 +122,7 @@ export function LoginPage() {
 
       // If user signed up via social first and is now logging in
       if (sessionStorage.getItem("just_signed_up") === "true") {
-        sessionStorage.setItem("pending_auto_send_message", "I signed up");
+        // sessionStorage.setItem("pending_auto_send_message", "I signed up");
         sessionStorage.removeItem("just_signed_up");
       }
 

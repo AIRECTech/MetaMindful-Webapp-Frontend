@@ -58,7 +58,7 @@ export function LoginPopup({ isOpen, onClose, currentThreadId, onSuccess, onSwit
       // If user signed up via email first and is now logging in
       if (sessionStorage.getItem("just_signed_up") === "true") {
         if (autoSend) {
-          sessionStorage.setItem("pending_auto_send_message", "I signed up");
+          // sessionStorage.setItem("pending_auto_send_message", "I signed up");
         }
         sessionStorage.removeItem("just_signed_up");
       }
@@ -110,7 +110,7 @@ export function LoginPopup({ isOpen, onClose, currentThreadId, onSuccess, onSwit
       // If user signed up via social first and is now logging in
       if (sessionStorage.getItem("just_signed_up") === "true") {
         if (autoSend) {
-          sessionStorage.setItem("pending_auto_send_message", "I signed up");
+          // sessionStorage.setItem("pending_auto_send_message", "I signed up");
         }
         sessionStorage.removeItem("just_signed_up");
       }

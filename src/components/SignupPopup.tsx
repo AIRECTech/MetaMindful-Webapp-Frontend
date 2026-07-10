@@ -109,7 +109,7 @@ export function SignupPopup({ isOpen, onClose, currentThreadId, onSuccess, onSwi
         // Navigate to current thread if provided, otherwise to new chat
         if (currentThreadId) {
           if (autoSend) {
-            sessionStorage.setItem("pending_auto_send_message", "I signed up");
+            // sessionStorage.setItem("pending_auto_send_message", "I signed up");
           }
           // Use window.location to force full page reload to clear any guest state with a small delay
           // to ensure database migrations fully commit and the toast is visible

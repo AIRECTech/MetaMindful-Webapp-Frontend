@@ -702,7 +702,7 @@ export function ChatPage() {
       setTokens(responseData.accessToken, responseData.refreshToken, false);
       toast.success("Welcome!");
       // Store pending auto-send message to send after reload
-      sessionStorage.setItem("pending_auto_send_message", "I signed up");
+      // sessionStorage.setItem("pending_auto_send_message", "I signed up");
       // Force reload to current thread as authenticated user with a small delay
       // to ensure database migrations fully commit and the toast is visible
       setTimeout(() => {
@@ -1034,6 +1034,7 @@ export function ChatPage() {
 
     // As long as we have an ID and we're not currently sending, we should trigger the auto-send
     // This is more resilient than waiting for bootstrap data or cache synchronization
+    /*
     if (id && !isSending) {
       console.log("[ChatPage] Conditions met, triggering auto-send");
       hasAutoSentRef.current = true;
@@ -1043,6 +1044,7 @@ export function ChatPage() {
       }
       sendText(autoSendTextToUse);
     }
+    */
   }, [id, state.autoSendText, hasBootstrapData, isGuest, queryClient, isSending]);
 
   // Hide disclaimer after 2 user messages are sent

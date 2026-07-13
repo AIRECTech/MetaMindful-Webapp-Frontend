@@ -36,11 +36,11 @@ export function GuestTopbar() {
       </div>
 
       {/* Center content - Toasts */}
-      <div className="w-full md:w-auto md:flex-1 flex justify-center items-center px-4 order-3 md:order-2 mt-4 md:mt-0 min-h-[44px]">
+      <div className="w-full md:w-auto md:flex-1 flex justify-center items-center px-4 order-2 mt-4 md:mt-0 min-h-[44px]">
         <ChatToasts />
       </div>
 
-      <div className="flex justify-end items-center gap-3 w-auto md:w-[200px] order-2 md:order-3 ml-auto md:ml-0">
+      <div className="flex justify-end items-center gap-3 w-auto md:w-[200px] order-3 ml-auto md:ml-0">
         {isIosOrSafari ? (
           <a
             href="https://apps.apple.com/us/app/metamindful/id6569248759"

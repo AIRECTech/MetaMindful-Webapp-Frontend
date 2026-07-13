@@ -369,9 +369,9 @@ export function Sidebar() {
                           </div>
                           <div className="flex items-center gap-3 text-xs text-gray-500 dark:text-gray-400 ml-6">
                             <span>{formatDate(thread.updatedAt || thread.createdAt)}</span>
-                            {(thread.actionsCount !== undefined && thread.actionsCount > 0) && (
+                            {/* {(thread.actionsCount !== undefined && thread.actionsCount > 0) && (
                               <span>• {thread.actionsCount} action{thread.actionsCount !== 1 ? 's' : ''}</span>
-                            )}
+                            )} */}
                             {(thread.exercisesCount !== undefined && thread.exercisesCount > 0) && (
                               <span>• {thread.exercisesCount} exercise{thread.exercisesCount !== 1 ? 's' : ''}</span>
                             )}

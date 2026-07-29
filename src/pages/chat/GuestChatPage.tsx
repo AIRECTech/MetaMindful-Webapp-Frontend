@@ -151,8 +151,9 @@ export function GuestChatPage() {
 
   // Create thread after token is generated
   const createThread = useMutation({
-    mutationFn: async () => {
-      const res = await api.post("/threads/chat", { message: pendingMessage }, {
+    mutationFn: async (messageToSend?: string) => {
+      const msg = messageToSend || pendingMessage;
+      const res = await api.post("/threads/chat", { message: msg }, {
         timeout: 300000 // 5 minute timeout for AI response
       });
       return res.data.data;
@@ -291,7 +292,7 @@ export function GuestChatPage() {
           setSearchParams(searchParams, { replace: true });
           setPendingMessage(trimmedQueryMessage);
           setIsLoading(true);
-          createThread.mutate();
+          createThread.mutate(trimmedQueryMessage);
         }
       }
     }
@@ -339,7 +340,7 @@ export function GuestChatPage() {
     if (!threadId) {
       setPendingMessage(userMessage);
       setIsLoading(true);
-      createThread.mutate();
+      createThread.mutate(userMessage);
     } else {
       navigateToChatWithFirstUserMessage(userMessage);
     }
@@ -359,7 +360,7 @@ export function GuestChatPage() {
     if (!threadId) {
       setPendingMessage(suggestion);
       setIsLoading(true);
-      createThread.mutate();
+      createThread.mutate(suggestion);
       return;
     }
 

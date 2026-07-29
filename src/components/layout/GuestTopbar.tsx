@@ -36,21 +36,12 @@ export function GuestTopbar() {
       </div>
 
       {/* Center content - Toasts */}
-      <div className="w-full md:w-auto md:flex-1 flex justify-center items-center px-4 order-3 md:order-2 mt-4 md:mt-0 min-h-[44px]">
+      <div className="w-full md:w-auto md:flex-1 flex justify-center items-center px-4 order-2 mt-4 md:mt-0 min-h-[44px]">
         <ChatToasts />
       </div>
 
-      <div className="flex justify-end items-center gap-3 w-auto md:w-[200px] order-2 md:order-3 ml-auto md:ml-0">
-        {isIosOrSafari ? (
-          <a
-            href="https://apps.apple.com/us/app/metamindful/id6569248759"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="px-5 py-2 bg-yellow-400 hover:bg-yellow-500 text-gray-800 font-medium rounded-full text-sm transition"
-          >
-            Use app
-          </a>
-        ) : (
+      <div className="flex justify-end items-center gap-3 w-auto md:w-[200px] order-3 ml-auto md:ml-0">
+        {!isIosOrSafari && (
           <button
             onClick={() => setShowSignupPopup(true)}
             className="px-4 py-2 bg-yellow-400 hover:bg-yellow-500 text-gray-800 font-medium rounded-lg text-sm transition"

@@ -10,6 +10,7 @@ import { LayoutProvider } from "../../contexts/LayoutContext";
 import { isAuthenticated, isGuestUser } from "../../lib/auth";
 import { initializePushNotifications } from "../../lib/notifications";
 import { toast } from "react-hot-toast";
+import { SmartAppBanner } from "./SmartAppBanner";
 
 
 export function AppShell({ children }: PropsWithChildren) {
@@ -58,14 +59,17 @@ export function AppShell({ children }: PropsWithChildren) {
             },
           }}
         />
-        <div className="flex h-full relative">
-          {showSidebar ? <Sidebar /> : null}
+        <div className="flex h-full relative flex-col">
+          <SmartAppBanner />
+          <div className="flex flex-1 relative overflow-hidden">
+            {showSidebar ? <Sidebar /> : null}
           <div className="flex-1 flex flex-col overflow-hidden">
             {isGuest ? <GuestTopbar /> : <Topbar />}
             <main className="flex-1 overflow-hidden">{children}</main>
           </div>
+            </div>
+          </div>
         </div>
-      </div>
     </LayoutProvider>
   );
 }

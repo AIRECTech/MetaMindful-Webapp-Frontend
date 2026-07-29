@@ -6,9 +6,10 @@ export function SmartAppBanner() {
   const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
-    // Check if device is mobile
+    // Check if device is mobile but NOT Android (per user request)
     const ua = window.navigator.userAgent.toLowerCase();
-    const isMobileDevice = /mobile|android|iphone|ipad|ipod/.test(ua) || window.innerWidth < 768;
+    const isAndroid = /android/.test(ua);
+    const isMobileDevice = (/mobile|iphone|ipad|ipod/.test(ua) || window.innerWidth < 768) && !isAndroid;
     setIsMobile(isMobileDevice);
 
     if (isMobileDevice) {
@@ -40,7 +41,13 @@ export function SmartAppBanner() {
   };
 
   const handleGetApp = () => {
-    window.open("https://apps.apple.com/us/app/metamindful/id6569248759", "_blank");
+    const ua = window.navigator.userAgent.toLowerCase();
+    if (/android/.test(ua)) {
+      // TODO: Replace with the actual Google Play Store link for MetaMindful
+      window.open("https://play.google.com/store/apps/details?id=com.metamindful", "_blank");
+    } else {
+      window.open("https://apps.apple.com/us/app/metamindful/id6569248759", "_blank");
+    }
   };
 
   if (!isMobile || !isVisible) {

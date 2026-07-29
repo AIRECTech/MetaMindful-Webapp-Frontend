@@ -78,6 +78,7 @@ const router = createBrowserRouter([
   { path: "/reset-password", element: <ResetPasswordPage /> },
   { path: "/verify-email", element: <VerifyEmailPage /> },
   { path: "/start-chat", element: <StartChatPage /> },
+  { path: "/clip", element: <Navigate to="/guest" replace /> },
   { path: "/auth/google/callback", element: <GoogleCallbackPage /> },
   { path: "/privacy-policy", element: <PrivacyPolicyPage /> },
   { path: "/terms", element: <TermsPage /> },
@@ -114,7 +115,7 @@ const router = createBrowserRouter([
       <pre style={{ padding: '20px', whiteSpace: 'pre-wrap', wordBreak: 'break-all' }}>
         {JSON.stringify({
           "appclips": {
-            "apps": [ "BB45CSH5W3.com.AIREC.MetaMindful.Clip" ]
+            "apps": [ import.meta.env.VITE_APPLE_APP_CLIP_APP_ID || "BB45CSH5W3.com.AIREC.MetaMindful.Clip" ]
           }
         }, null, 2)}
       </pre>

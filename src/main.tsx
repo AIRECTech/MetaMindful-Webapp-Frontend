@@ -56,73 +56,85 @@ import { GuestChatPage } from "./pages/chat/GuestChatPage";
 import { GoogleCallbackPage } from "./pages/auth/GoogleCallbackPage";
 import { PrivacyPolicyPage } from "./pages/legal/PrivacyPolicyPage";
 import { TermsPage } from "./pages/legal/TermsPage";
+import { Outlet } from "react-router-dom";
+import { PageTracker } from "./components/layout/PageTracker";
 
 const router = createBrowserRouter([
-  { 
-    path: "/", 
-    element: (
-      <RedirectIfAuth>
-        <LoginPage />
-      </RedirectIfAuth>
-    ) 
-  },
-  { 
-    path: "/signup", 
-    element: (
-      <RedirectIfAuth>
-        <SignupPage />
-      </RedirectIfAuth>
-    ) 
-  },
-  { path: "/forgot-password", element: <ForgotPasswordPage /> },
-  { path: "/reset-password", element: <ResetPasswordPage /> },
-  { path: "/verify-email", element: <VerifyEmailPage /> },
-  { path: "/start-chat", element: <StartChatPage /> },
-  { path: "/clip", element: <Navigate to="/guest" replace /> },
-  { path: "/auth/google/callback", element: <GoogleCallbackPage /> },
-  { path: "/privacy-policy", element: <PrivacyPolicyPage /> },
-  { path: "/terms", element: <TermsPage /> },
-  // Guest routes
   {
-    path: "/guest",
-    element: <App />,
-    children: [
-      { index: true, element: <GuestChatPage /> },
-      { path: ":id", element: <GuestChatPage /> },
-    ]
-  },
-  // Authenticated user routes
-  {
-    path: "/user",
     element: (
-      <RequireAuth>
-        <App />
-      </RequireAuth>
+      <>
+        <PageTracker />
+        <Outlet />
+      </>
     ),
     children: [
-      { index: true, element: <NewChatPage /> },
-      { path: "threads", element: <ThreadsPage /> },
-      { path: "chat/new", element: <NewChatPage /> },
-      { path: "chat/:id", element: <ChatPage /> },
-      { path: "profile", element: <ProfilePage /> },
-      { path: "settings", element: <SettingsPage /> },
-    ],
-  },
-  // Apple App Site Association
-  {
-    path: "/.well-known/apple-app-site-association",
-    element: (
-      <pre style={{ padding: '20px', whiteSpace: 'pre-wrap', wordBreak: 'break-all' }}>
-        {JSON.stringify({
-          "appclips": {
-            "apps": [ import.meta.env.VITE_APPLE_APP_CLIP_APP_ID || "BB45CSH5W3.com.AIREC.MetaMindful.Clip" ]
-          }
-        }, null, 2)}
-      </pre>
-    )
-  },
-  // Catch-all route for 404 - redirect to root
-  { path: "*", element: <Navigate to="/" replace /> },
+      { 
+        path: "/", 
+        element: (
+          <RedirectIfAuth>
+            <LoginPage />
+          </RedirectIfAuth>
+        ) 
+      },
+      { 
+        path: "/signup", 
+        element: (
+          <RedirectIfAuth>
+            <SignupPage />
+          </RedirectIfAuth>
+        ) 
+      },
+      { path: "/forgot-password", element: <ForgotPasswordPage /> },
+      { path: "/reset-password", element: <ResetPasswordPage /> },
+      { path: "/verify-email", element: <VerifyEmailPage /> },
+      { path: "/start-chat", element: <StartChatPage /> },
+      { path: "/clip", element: <Navigate to="/guest" replace /> },
+      { path: "/auth/google/callback", element: <GoogleCallbackPage /> },
+      { path: "/privacy-policy", element: <PrivacyPolicyPage /> },
+      { path: "/terms", element: <TermsPage /> },
+      // Guest routes
+      {
+        path: "/guest",
+        element: <App />,
+        children: [
+          { index: true, element: <GuestChatPage /> },
+          { path: ":id", element: <GuestChatPage /> },
+        ]
+      },
+      // Authenticated user routes
+      {
+        path: "/user",
+        element: (
+          <RequireAuth>
+            <App />
+          </RequireAuth>
+        ),
+        children: [
+          { index: true, element: <NewChatPage /> },
+          { path: "threads", element: <ThreadsPage /> },
+          { path: "chat/new", element: <NewChatPage /> },
+          { path: "chat/:id", element: <ChatPage /> },
+          { path: "profile", element: <ProfilePage /> },
+          { path: "settings", element: <SettingsPage /> },
+        ],
+      },
+      // Apple App Site Association
+      {
+        path: "/.well-known/apple-app-site-association",
+        element: (
+          <pre style={{ padding: '20px', whiteSpace: 'pre-wrap', wordBreak: 'break-all' }}>
+            {JSON.stringify({
+              "appclips": {
+                "apps": [ import.meta.env.VITE_APPLE_APP_CLIP_APP_ID || "BB45CSH5W3.com.AIREC.MetaMindful.Clip" ]
+              }
+            }, null, 2)}
+          </pre>
+        )
+      },
+      // Catch-all route for 404 - redirect to root
+      { path: "*", element: <Navigate to="/" replace /> },
+    ]
+  }
 ]);
 
 const queryClient = new QueryClient();

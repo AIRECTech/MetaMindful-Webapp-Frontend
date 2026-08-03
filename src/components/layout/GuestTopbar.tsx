@@ -5,6 +5,7 @@ import { SignupPopup } from "../SignupPopup";
 import { ChatToasts } from "../chat/ChatToasts";
 import { Menu } from "lucide-react";
 import { useLayout } from "../../contexts/LayoutContext";
+import { isClipSession } from "../../lib/clipDetection";
 
 export function GuestTopbar() {
   const params = useParams();
@@ -41,7 +42,7 @@ export function GuestTopbar() {
       </div>
 
       <div className="flex justify-end items-center gap-3 w-auto md:w-[200px] order-3 ml-auto md:ml-0">
-        {!isIosOrSafari && (
+        {!isIosOrSafari && !isClipSession() && (
           <button
             onClick={() => setShowSignupPopup(true)}
             className="px-4 py-2 bg-yellow-400 hover:bg-yellow-500 text-gray-800 font-medium rounded-lg text-sm transition"

@@ -1,6 +1,7 @@
-import { StrictMode } from "react";
+import { StrictMode, useEffect } from "react";
 import { createRoot } from "react-dom/client";
 import { createBrowserRouter, RouterProvider, Navigate } from "react-router-dom";
+import { markAsClipSession } from "./lib/clipDetection";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { GoogleOAuthProvider } from "@react-oauth/google";
 import { ChatToastProvider } from "./contexts/ChatToastContext";
@@ -88,7 +89,17 @@ const router = createBrowserRouter([
       { path: "/reset-password", element: <ResetPasswordPage /> },
       { path: "/verify-email", element: <VerifyEmailPage /> },
       { path: "/start-chat", element: <StartChatPage /> },
-      { path: "/clip", element: <Navigate to="/guest" replace /> },
+      {
+        path: "/clip",
+        element: (() => {
+          // Tiny inline component: set clip session flag, then redirect
+          function ClipEntry() {
+            useEffect(() => { markAsClipSession(); }, []);
+            return <Navigate to="/guest" replace />;
+          }
+          return <ClipEntry />;
+        })()
+      },
       { path: "/auth/google/callback", element: <GoogleCallbackPage /> },
       { path: "/privacy-policy", element: <PrivacyPolicyPage /> },
       { path: "/terms", element: <TermsPage /> },

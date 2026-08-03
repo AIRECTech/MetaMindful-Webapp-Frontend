@@ -13,6 +13,7 @@ const CLIP_UNIVERSAL_LINK = 'https://airec.io/clip';
 export function AppClipBanner() {
   const [visible, setVisible] = useState(false);
   const [iconUrl, setIconUrl] = useState<string | null>(null);
+  const [opening, setOpening] = useState(false);
 
   useEffect(() => {
 
@@ -33,6 +34,7 @@ export function AppClipBanner() {
   }, []);
 
   const handleOpen = () => {
+    setOpening(true);
     const ua = window.navigator.userAgent.toLowerCase();
     if (/iphone|ipad|ipod/.test(ua)) {
       // On iOS: try the universal link first — iOS routes it to the App Clip
@@ -43,6 +45,8 @@ export function AppClipBanner() {
       }, 2000);
     } else {
       window.open(APP_STORE_URL, '_blank');
+      // Reset after brief delay for non-iOS
+      setTimeout(() => setOpening(false), 800);
     }
   };
 
@@ -133,9 +137,9 @@ export function AppClipBanner() {
         </div>
       </div>
 
-      {/* OPEN button */}
       <button
         onClick={handleOpen}
+        disabled={opening}
         style={{
           background: '#007aff',
           color: '#fff',
@@ -144,14 +148,34 @@ export function AppClipBanner() {
           padding: '7px 18px',
           fontSize: 15,
           fontWeight: 600,
-          cursor: 'pointer',
+          cursor: opening ? 'default' : 'pointer',
           flexShrink: 0,
           letterSpacing: '-0.2px',
           fontFamily: 'inherit',
           WebkitTapHighlightColor: 'transparent',
+          display: 'flex',
+          alignItems: 'center',
+          gap: 6,
+          opacity: opening ? 0.85 : 1,
+          transition: 'opacity 0.2s',
         }}
       >
-        OPEN
+        {opening && (
+          <svg
+            width="14"
+            height="14"
+            viewBox="0 0 14 14"
+            fill="none"
+            style={{
+              animation: 'appclip-spin 0.7s linear infinite',
+            }}
+          >
+            <style>{`@keyframes appclip-spin { to { transform: rotate(360deg); } }`}</style>
+            <circle cx="7" cy="7" r="5.5" stroke="rgba(255,255,255,0.4)" strokeWidth="2" />
+            <path d="M7 1.5A5.5 5.5 0 0 1 12.5 7" stroke="white" strokeWidth="2" strokeLinecap="round" />
+          </svg>
+        )}
+        {opening ? 'Opening…' : 'OPEN'}
       </button>
     </div>
   );

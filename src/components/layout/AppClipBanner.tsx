@@ -13,14 +13,10 @@ const CLIP_UNIVERSAL_LINK = 'https://airec.io/clip';
 export function AppClipBanner() {
   const [visible, setVisible] = useState(false);
   const [iconUrl, setIconUrl] = useState<string | null>(null);
-  const [isIos, setIsIos] = useState(false);
 
   useEffect(() => {
-    const ua = window.navigator.userAgent.toLowerCase();
-    const ios = /iphone|ipad|ipod/.test(ua);
-    setIsIos(ios);
 
-    if (ios && isClipSession()) {
+    if (isClipSession()) {
       setVisible(true);
 
       // Fetch the real App Store icon via iTunes lookup API
@@ -50,7 +46,7 @@ export function AppClipBanner() {
     }
   };
 
-  if (!isIos || !visible) return null;
+  if (!visible) return null;
 
   return (
     <div

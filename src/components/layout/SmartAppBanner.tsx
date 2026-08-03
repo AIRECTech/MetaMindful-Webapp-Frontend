@@ -76,10 +76,10 @@ export function SmartAppBanner() {
   if (!isMobile || !isVisible) return null;
 
   return (
-    <div className="flex items-center justify-between w-full bg-[#1c1c1e] text-white px-3 py-2.5 sm:px-4 z-[100] relative border-b border-black">
+    <div className="flex items-center justify-between w-full bg-white text-[#1c1c1e] px-3 py-2.5 sm:px-4 z-[100] relative border-b border-[#e5e5ea]" style={{ boxShadow: '0 1px 4px rgba(0,0,0,0.08)' }}>
       <div className="flex items-center gap-3">
         {/* App Icon */}
-        <div className="w-10 h-10 rounded-[10px] overflow-hidden border border-[#3c3c3e] flex-shrink-0">
+        <div className="w-10 h-10 rounded-[10px] overflow-hidden border border-[#e5e5ea] flex-shrink-0">
           {iconUrl ? (
             <img
               src={iconUrl}
@@ -98,7 +98,7 @@ export function SmartAppBanner() {
         </div>
 
         <div className="flex flex-col justify-center">
-          <span className="font-semibold text-[15px] leading-snug">MetaMindful</span>
+          <span className="font-semibold text-[15px] leading-snug text-[#1c1c1e]">MetaMindful</span>
           <span className="text-[#98989f] text-[11px] leading-snug">
             One conversation can change your next step
           </span>
@@ -114,7 +114,7 @@ export function SmartAppBanner() {
         </button>
         <button
           onClick={handleClose}
-          className="p-1 text-[#8e8e93] hover:text-white transition"
+          className="p-1 text-[#8e8e93] hover:text-[#1c1c1e] transition"
           aria-label="Close"
         >
           <X size={20} />

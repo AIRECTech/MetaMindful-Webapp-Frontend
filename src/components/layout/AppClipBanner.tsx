@@ -132,7 +132,7 @@ export function AppClipBanner() {
             MetaMindful
           </span>
           <span style={{ fontSize: 12, color: '#8e8e93', lineHeight: 1.3 }}>
-            Open in the MetaMindful app clip
+            One conversation can change your next step
           </span>
         </div>
       </div>

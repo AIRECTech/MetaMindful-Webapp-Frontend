@@ -21,6 +21,7 @@ interface Message {
   createdAt: string;
   isError?: boolean;
   originalUserMessage?: string; // Store the original user message for retry
+  retry?: boolean; // Show retry button when backend signals ui_element.retry = true
   replies?: string[];
   feedback?: any[]; // To track if feedback was given
   requiresSignup?: boolean;
@@ -333,6 +334,8 @@ export function ChatPage() {
           );
         }
 
+        const shouldRetry = data.ui_element?.retry === true;
+
         const assistantMsg: Message = {
           id: assistantMsgId,
           role: "assistant" as const,
@@ -340,6 +343,7 @@ export function ChatPage() {
           replies: data.message?.suggested_replies || [],
           requiresSignup: data.message?.auth_gate?.should_show || false,
           createdAt: new Date().toISOString(),
+          ...(shouldRetry ? { retry: true, originalUserMessage: variables } : {}),
         };
 
         const userMsg: Message = {
@@ -535,6 +539,7 @@ export function ChatPage() {
                   replies: data.message.suggested_replies || [],
                   requiresSignup: data.message.auth_gate?.should_show || false,
                   createdAt: new Date().toISOString(),
+                  ...(shouldRetry ? { retry: true, originalUserMessage: variables } : {}),
                 });
                 logAnalyticsEvent("chat_message_received", {
                   thread_id: id,
@@ -1149,7 +1154,7 @@ export function ChatPage() {
                         : "text-gray-600 dark:text-gray-300"
                       }`}
                   >
-                    <MessageFormatter content={msg.content} />
+                    {!msg.retry && <MessageFormatter content={msg.content} />}
 
                     {msg.role === "assistant" && isGuest && msg.requiresSignup && (() => {
                       const isLastMessage = displayMessages[displayMessages.length - 1]?.id === msg.id;
@@ -1204,7 +1209,7 @@ export function ChatPage() {
                       );
                     })()}
 
-                    {msg.role === "assistant" && !msg.isError && !msg.id.startsWith("temp-") && (
+                    {msg.role === "assistant" && !msg.isError && !msg.retry && !msg.id.startsWith("temp-") && (
                       <div className="mt-2 flex items-center gap-2">
                         {(() => {
                           const isLastAssistantMessage = [...displayMessages]
@@ -1265,6 +1270,40 @@ export function ChatPage() {
                         }}
                         disabled={isSending}
                         className="mt-3 flex items-center gap-2 px-4 py-2 bg-red-100 dark:bg-red-900/30 hover:bg-red-200 dark:hover:bg-red-900/50 text-red-800 dark:text-red-300 rounded-lg text-sm font-medium transition disabled:opacity-50 disabled:cursor-not-allowed border border-red-300 dark:border-red-800"
+                      >
+                        <RefreshCw className="h-4 w-4" />
+                        Try again
+                      </button>
+                    )}
+
+                    {!msg.isError && msg.retry && msg.originalUserMessage && displayMessages[displayMessages.length - 1]?.id === msg.id && (
+                      <button
+                        onClick={() => {
+                          if (!msg.originalUserMessage) return;
+                          // Remove the assistant retry-bubble AND the preceding user message
+                          const removeRetryMessages = (messages: Message[]) => {
+                            const assistantIdx = messages.findIndex((m) => m.id === msg.id);
+                            const filtered = messages.filter((m, i) => {
+                              if (m.id === msg.id) return false; // remove assistant retry bubble
+                              // remove the user message immediately before this assistant message
+                              if (i === assistantIdx - 1 && m.role === "user") return false;
+                              return true;
+                            });
+                            return filtered;
+                          };
+                          if (isGuest) {
+                            setGuestMessages((prev) => removeRetryMessages(prev));
+                          } else {
+                            queryClient.setQueryData(["thread", id], (old: Thread | undefined) => {
+                              if (!old) return old;
+                              return { ...old, messages: removeRetryMessages(old.messages) };
+                            });
+                          }
+                          logAnalyticsEvent("thread_refreshed", { thread_id: id });
+                          sendText(msg.originalUserMessage);
+                        }}
+                        disabled={isSending}
+                        className="mt-3 flex items-center gap-2 px-4 py-2 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg text-sm font-medium transition disabled:opacity-50 disabled:cursor-not-allowed border border-gray-300 dark:border-gray-600"
                       >
                         <RefreshCw className="h-4 w-4" />
                         Try again

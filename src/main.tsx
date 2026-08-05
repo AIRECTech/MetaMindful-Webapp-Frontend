@@ -135,8 +135,14 @@ const router = createBrowserRouter([
         element: (
           <pre style={{ padding: '20px', whiteSpace: 'pre-wrap', wordBreak: 'break-all' }}>
             {JSON.stringify({
-              "appclips": {
-                "apps": [ import.meta.env.VITE_APPLE_APP_CLIP_APP_ID || "BB45CSH5W3.com.AIREC.MetaMindful.Clip" ]
+              "applinks": {
+                "apps": [],
+                "details": [
+                  {
+                    "appID": import.meta.env.VITE_APPLE_TEAM_APP_ID || "BB45CSH5W3.com.AIREC.MetaMindful",
+                    "paths": ["*"]
+                  }
+                ]
               }
             }, null, 2)}
           </pre>

@@ -1,7 +1,13 @@
 {
-  "appclips": {
-    "apps": [
-      "BB45CSH5W3.com.AIREC.MetaMindful.Clip"
+  "applinks": {
+    "apps": [],
+    "details": [
+      {
+        "appID": "BB45CSH5W3.com.AIREC.MetaMindful",
+        "paths": [
+          "*"
+        ]
+      }
     ]
   }
 }

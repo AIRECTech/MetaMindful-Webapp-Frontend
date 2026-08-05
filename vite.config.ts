@@ -4,7 +4,7 @@ import react from '@vitejs/plugin-react'
 // https://vite.dev/config/
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '');
-  const appId = env.VITE_APPLE_APP_CLIP_APP_ID || 'BB45CSH5W3.com.AIREC.MetaMindful.Clip';
+  const appId = env.VITE_APPLE_TEAM_APP_ID || 'BB45CSH5W3.com.AIREC.MetaMindful';
 
   return {
     plugins: [
@@ -16,8 +16,14 @@ export default defineConfig(({ mode }) => {
             if (req.url === '/.well-known/apple-app-site-association') {
               res.setHeader('Content-Type', 'application/json');
               res.end(JSON.stringify({
-                appclips: {
-                  apps: [appId]
+                applinks: {
+                  apps: [],
+                  details: [
+                    {
+                      appID: appId,
+                      paths: ["*"]
+                    }
+                  ]
                 }
               }, null, 2));
             } else {
@@ -30,8 +36,14 @@ export default defineConfig(({ mode }) => {
             type: 'asset',
             fileName: '.well-known/apple-app-site-association',
             source: JSON.stringify({
-              appclips: {
-                apps: [appId]
+              applinks: {
+                apps: [],
+                details: [
+                  {
+                    appID: appId,
+                    paths: ["*"]
+                  }
+                ]
               }
             }, null, 2)
           });

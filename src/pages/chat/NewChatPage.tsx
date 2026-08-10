@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQueryClient, useQuery } from "@tanstack/react-query";
 import { useNavigate, Link } from "react-router-dom";
-import { ArrowUp } from "lucide-react";
+import { ArrowUp, ChevronRight } from "lucide-react";
 import { api } from "../../lib/api";
 import { extractErrorMessage } from "../../lib/errors";
 import { logAnalyticsEvent } from "../../lib/firebase";
@@ -37,6 +37,32 @@ export function NewChatPage() {
   });
 
   useTimeOnScreen("new-chat", "NewChatPage");
+
+  const isGuest = isGuestUser();
+  
+  const { data: recentThreads } = useQuery({
+    queryKey: ["threads"],
+    queryFn: async () => {
+      const res = await api.get("/threads");
+      return (res.data.data?.data || res.data.data || []) as any[];
+    },
+    enabled: !isGuest,
+  });
+
+  const latestThreadId = recentThreads && recentThreads.length > 0 ? recentThreads[0].id : null;
+
+  const { data: latestThreadDetail } = useQuery({
+    queryKey: ["thread", latestThreadId],
+    queryFn: async () => {
+      const res = await api.get(`/threads/${latestThreadId}`);
+      return res.data.data || null;
+    },
+    enabled: !!latestThreadId && !isGuest,
+  });
+
+  const threadCard = latestThreadDetail?.thread_card;
+  const theSign = threadCard?.thread_card?.trigger || threadCard?.thread_card?.primary_trigger || null;
+  const toDo = threadCard?.thread_card?.move_that_helped || threadCard?.thread_card?.primary_move || null;
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -189,11 +215,10 @@ export function NewChatPage() {
   // Note: retry is handled by simply refreshing the page / reloading the route.
 
   return (
-    <div className="flex flex-col h-full relative bg-gray-50 dark:bg-gray-900">
-      {/* Initial greeting view / Loading view */}
-      <div className="flex-1 flex items-center justify-center px-4">
+    <div className="flex flex-col h-full relative bg-gray-50 dark:bg-gray-900 overflow-y-auto">
+      <div className="flex-1 flex flex-col items-center pt-16 pb-12 px-4 min-h-min">
         {isLoading ? (
-          <div className="text-center">
+          <div className="text-center mt-32">
             <div className="flex items-center justify-center gap-2 mb-4">
               <div className="w-2 h-2 bg-gray-400 dark:bg-gray-500 rounded-full animate-bounce" style={{ animationDelay: "0ms" }}></div>
               <div className="w-2 h-2 bg-gray-400 dark:bg-gray-500 rounded-full animate-bounce" style={{ animationDelay: "150ms" }}></div>
@@ -202,7 +227,7 @@ export function NewChatPage() {
             <p className="text-gray-500 dark:text-gray-400">Setting up your chat...</p>
           </div>
         ) : messages.some(m => m.isError) ? (
-          <div className="text-center max-w-4xl w-full">
+          <div className="text-center max-w-4xl w-full mt-32">
             <div className="bg-red-50 dark:bg-red-900/30 text-red-800 dark:text-red-300 p-6 rounded-2xl border border-red-200 dark:border-red-800 mb-6">
               <p className="text-lg font-medium mb-2">Oops! Something went wrong.</p>
               <p>{messages.find(m => m.isError)?.content}</p>
@@ -215,89 +240,145 @@ export function NewChatPage() {
             </button>
           </div>
         ) : (
-          <div className="text-center max-w-4xl w-full">
-            <div className="space-y-4">
-              <h2 className="text-4xl md:text-5xl font-bold text-gray-800 dark:text-gray-100">
-                Get unstuck in 90 seconds.
+          <div className="w-full max-w-3xl flex flex-col items-center">
+            {/* Header */}
+            <div className="text-center space-y-3 mb-10">
+              <h2 className="text-3xl md:text-4xl font-bold text-gray-800 dark:text-gray-100">
+                Welcome back
               </h2>
-              <p className="text-xl md:text-2xl text-gray-500 dark:text-gray-400">
-                Tell me what's happening. I'll suggest one small step you can try now.
+              <p className="text-lg text-gray-600 dark:text-gray-400">
+                How would you like to start?
               </p>
             </div>
+
+            {/* Talk about something new card */}
+            <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm p-6 w-full max-w-2xl mb-8">
+              <h3 className="text-[17px] font-medium text-gray-700 dark:text-gray-200 mb-5 text-left ml-2">
+                Talk about something new
+              </h3>
+              
+              {!suggestionUsed && (
+                <div className="flex flex-wrap gap-3 justify-center mb-6">
+                  {suggestions.map((suggestion, idx) => (
+                    <button
+                      key={idx}
+                      onClick={() => handleSuggestionClick(suggestion)}
+                      disabled={isLoading}
+                      className="px-5 py-4 w-[calc(50%-6px)] bg-blue-50/50 dark:bg-blue-900/30 text-gray-700 dark:text-gray-300 rounded-xl border border-blue-100 dark:border-blue-800 hover:bg-blue-100 dark:hover:bg-blue-900/50 text-[13px] leading-relaxed font-normal transition disabled:opacity-50 disabled:cursor-not-allowed text-center [text-wrap-mode:wrap]"
+                    >
+                      {suggestion}
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              <div className="bg-gray-50 dark:bg-gray-900 rounded-xl border border-gray-100 dark:border-gray-700 flex items-end gap-3 p-2">
+                <textarea
+                  ref={messageInputRef}
+                  className="flex-1 px-4 py-2.5 text-gray-800 dark:text-gray-200 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none text-[15px] border-0 bg-transparent resize-none min-h-[44px] max-h-[150px] overflow-y-auto"
+                  placeholder="Start with something new..."
+                  value={message}
+                  onChange={(e) => setMessage(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && !e.shiftKey) {
+                      e.preventDefault();
+                      handleSend();
+                    }
+                  }}
+                  disabled={isLoading}
+                  rows={1}
+                />
+                <button
+                  onClick={handleSend}
+                  disabled={!message.trim() || isLoading}
+                  className="bg-yellow-300 hover:bg-yellow-400 p-2.5 rounded-full disabled:opacity-50 disabled:cursor-not-allowed transition flex-shrink-0"
+                >
+                  <ArrowUp className="h-4 w-4 text-gray-900" strokeWidth={2.5} fill="none" />
+                </button>
+              </div>
+            </div>
+
+            {/* Separator */}
+            {latestThreadDetail && (
+              <>
+                <div className="flex items-center w-full max-w-[200px] mb-8">
+                  <div className="flex-1 border-t border-gray-200 dark:border-gray-700"></div>
+                  <span className="px-4 text-gray-400 dark:text-gray-500 text-[15px]">or</span>
+                  <div className="flex-1 border-t border-gray-200 dark:border-gray-700"></div>
+                </div>
+
+                {/* Continue where you left card */}
+                <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm p-6 w-full max-w-2xl">
+                  <div className="mb-5 text-left ml-2">
+                    <h3 className="text-[17px] font-medium text-gray-700 dark:text-gray-200">
+                      Continue where you left
+                    </h3>
+                    <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                      Let's build on that instead of starting from scratch
+                    </p>
+                  </div>
+
+                  {/* Yellow embedded thread card */}
+                  <div className="bg-yellow-400 rounded-[14px] p-5 text-left text-gray-900">
+                    <h4 className="font-bold text-[17px] mb-1">{threadCard?.title_name || latestThreadDetail.title || "New Thread"}</h4>
+                    {theSign && (
+                      <p className="text-[13px] font-medium opacity-90 mb-4 truncate">
+                        <span className="italic font-normal">The Sign:</span> {theSign}
+                      </p>
+                    )}
+                    
+                    {toDo ? (
+                      <button 
+                        onClick={() => navigate(`/user/chat/${latestThreadDetail.threadId || latestThreadDetail.id}`)}
+                        className="w-full bg-white text-gray-900 rounded-lg px-4 py-3.5 flex items-center justify-between hover:bg-gray-50 transition shadow-sm"
+                      >
+                        <div className="flex items-center gap-2 truncate pr-4">
+                          <span className="text-yellow-400 text-xl leading-none font-bold pb-0.5">•</span>
+                          <span className="font-bold text-[13px] truncate">To do : {toDo}</span>
+                        </div>
+                        <ChevronRight className="h-4 w-4 flex-shrink-0 text-gray-500" />
+                      </button>
+                    ) : (
+                      <button 
+                        onClick={() => navigate(`/user/chat/${latestThreadDetail.threadId || latestThreadDetail.id}`)}
+                        className="w-full bg-white text-gray-900 rounded-lg px-4 py-3.5 flex items-center justify-between hover:bg-gray-50 transition shadow-sm"
+                      >
+                        <div className="flex items-center gap-2 truncate pr-4">
+                          <span className="font-bold text-[13px] truncate">Continue chat</span>
+                        </div>
+                        <ChevronRight className="h-4 w-4 flex-shrink-0 text-gray-500" />
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </>
+            )}
           </div>
         )}
       </div>
 
-      {/* Input area with suggestions */}
-      <div className="pb-4 flex-shrink-0">
-        <div className="max-w-4xl mx-auto px-4 space-y-3">
-          {/* Suggested prompts */}
-          {!suggestionUsed && (
-            <div className="flex flex-col items-center gap-3 w-full">
-              <div className="flex flex-wrap gap-3 justify-center w-full">
-                {suggestions.map((suggestion, idx) => (
-                  <button
-                    key={idx}
-                    onClick={() => handleSuggestionClick(suggestion)}
-                    disabled={isLoading}
-                    className="px-5 py-3 w-[190px] bg-blue-100 dark:bg-blue-900/30 text-gray-700 dark:text-gray-300 rounded-xl border border-blue-200 dark:border-blue-800 hover:bg-blue-200 dark:hover:bg-blue-900/50 text-[12px] leading-normal font-normal transition disabled:opacity-50 disabled:cursor-not-allowed text-left [text-wrap-mode:wrap] flex-shrink-0"
-                  >
-                    {suggestion}
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
-
-          <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm flex items-end gap-3 p-4">
-            <textarea
-              ref={messageInputRef}
-              className="flex-1 px-6 py-3 text-gray-800 dark:text-gray-200 placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none text-base border-0 bg-gray-100 dark:bg-gray-700 rounded-xl resize-none min-h-[48px] max-h-[200px] overflow-y-auto"
-              placeholder="Type here ....."
-              value={message}
-              onChange={(e) => setMessage(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" && !e.shiftKey) {
-                  e.preventDefault();
-                  handleSend();
-                }
-              }}
-              disabled={isLoading}
-              rows={1}
-            />
-            <button
-              onClick={handleSend}
-              disabled={!message.trim() || isLoading}
-              className="bg-yellow-300 hover:bg-yellow-400 p-3 rounded-full disabled:opacity-50 disabled:cursor-not-allowed transition flex-shrink-0 mb-1"
+      {/* Guest user login/signup prompt - text only */}
+      {isGuestUser() && (
+        <div className="pb-8 text-center flex-shrink-0">
+          <p className="text-sm text-gray-600 dark:text-gray-400">
+            Don't lose your progress. Let's{" "}
+            <Link
+              to="/"
+              className="underline text-gray-800 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-200"
             >
-              <ArrowUp className="h-5 w-5 text-gray-900" strokeWidth={2.5} fill="none" />
-            </button>
-          </div>
-
-          {/* Guest user login/signup prompt - text only */}
-          {isGuestUser() && (
-            <div className="text-center">
-              <p className="text-sm text-gray-600 dark:text-gray-400">
-                Don't lose your progress. Let's{" "}
-                <Link
-                  to="/"
-                  className="underline text-gray-800 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-200"
-                >
-                  log in
-                </Link>{" "}
-                or{" "}
-                <Link
-                  to="/signup"
-                  className="underline text-gray-800 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-200"
-                >
-                  sign up
-                </Link>{" "}
-                to save your thread
-              </p>
-            </div>
-          )}
+              log in
+            </Link>{" "}
+            or{" "}
+            <Link
+              to="/signup"
+              className="underline text-gray-800 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-200"
+            >
+              sign up
+            </Link>{" "}
+            to save your thread
+          </p>
         </div>
-      </div>
+      )}
     </div>
   );
 }

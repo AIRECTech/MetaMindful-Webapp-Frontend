@@ -11,7 +11,7 @@ import { isAuthenticated, isGuestUser } from "../../lib/auth";
 import { initializePushNotifications } from "../../lib/notifications";
 import { toast } from "react-hot-toast";
 import { AppClipBanner } from "./AppClipBanner";
-
+import { SmartAppBanner } from "./SmartAppBanner";
 
 export function AppShell({ children }: PropsWithChildren) {
   const location = useLocation();
@@ -62,6 +62,7 @@ export function AppShell({ children }: PropsWithChildren) {
         <div className="flex h-full relative flex-col">
           {/* App Clip banner — shown on all pages when in a clip session */}
           <AppClipBanner />
+          <SmartAppBanner />
           <div className="flex flex-1 relative overflow-hidden">
             {showSidebar ? <Sidebar /> : null}
           <div className="flex-1 flex flex-col overflow-hidden">

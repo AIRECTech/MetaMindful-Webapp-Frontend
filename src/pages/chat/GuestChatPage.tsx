@@ -2,13 +2,12 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 import { useState, useEffect, useRef } from "react";
 import { useParams, useNavigate, Link, useSearchParams } from "react-router-dom";
 import { toast } from "react-hot-toast";
-import { ArrowUp } from "lucide-react";
+import { ArrowUp, X, ChevronRight, Lock } from "lucide-react";
 import { api } from "../../lib/api";
 import { extractErrorMessage } from "../../lib/errors";
 import { logAnalyticsEvent } from "../../lib/firebase";
 import { useTimeOnScreen } from "../../hooks/useTimeOnScreen";
-import { X } from "lucide-react";
-import { ensureToken } from "../../lib/auth";
+import { ensureToken, isGuestUser } from "../../lib/auth";
 import { ChatPage } from "./ChatPage";
 import { LoginPopup } from "../../components/LoginPopup";
 import { SignupPopup } from "../../components/SignupPopup";
@@ -148,6 +147,32 @@ export function GuestChatPage() {
     enabled: !id && !hasCreatedThreadRef.current,
     retry: false,
   });
+
+  const isGuest = isGuestUser();
+  const { data: recentThreads } = useQuery({
+    queryKey: ["guest-threads"],
+    queryFn: async () => {
+      const res = await api.get("/threads?type=guest");
+      return (res.data.data?.data || res.data.data || []) as any[];
+    },
+    enabled: !!generateToken.isSuccess && !id && isGuest,
+  });
+
+  const lastThread = recentThreads && recentThreads.length > 0 ? recentThreads[0] : null;
+
+  const formatTimeAgo = (dateString: string) => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffMs = now.getTime() - date.getTime();
+    const diffDays = Math.floor(diffMs / 86400000);
+    const diffHours = Math.floor(diffMs / 3600000);
+    const diffMins = Math.floor(diffMs / 60000);
+
+    if (diffDays > 0) return `${diffDays} day${diffDays > 1 ? 's' : ''} ago`;
+    if (diffHours > 0) return `${diffHours} hour${diffHours > 1 ? 's' : ''} ago`;
+    if (diffMins > 0) return `${diffMins} min${diffMins > 1 ? 's' : ''} ago`;
+    return "Just now";
+  };
 
   // Create thread after token is generated
   const createThread = useMutation({
@@ -484,6 +509,32 @@ export function GuestChatPage() {
               })()}
             </div>
 
+            {/* Recent Guest Chat Banner */}
+            {lastThread && !id && !threadId && (
+              <div className="bg-white dark:bg-gray-800 rounded-xl border border-yellow-300 dark:border-yellow-500/50 p-4 mb-4 text-left shadow-sm">
+                <div className="text-sm text-gray-500 dark:text-gray-400 mb-2">On this Browser</div>
+                <div className="flex items-center gap-2 mb-1">
+                  <div className="w-1.5 h-1.5 bg-yellow-400 rounded-full"></div>
+                  <div className="text-base font-medium text-gray-800 dark:text-gray-200 truncate">
+                    {lastThread.title || "New Thread"}
+                  </div>
+                </div>
+                <div className="text-xs text-gray-400 dark:text-gray-500 ml-3.5 mb-3">
+                  Last visited {formatTimeAgo(lastThread.updatedAt || lastThread.createdAt)}
+                </div>
+                <button
+                  onClick={() => navigate(`/guest/${lastThread.threadId || lastThread.id}`)}
+                  className="w-full bg-yellow-400 hover:bg-yellow-500 text-gray-900 font-medium py-2 px-4 rounded-lg flex items-center justify-center transition-colors mb-2"
+                >
+                  Pick it up <ChevronRight className="h-4 w-4 ml-1" />
+                </button>
+                <div className="flex items-center justify-center text-[11px] text-gray-500 dark:text-gray-400 gap-1">
+                  <Lock className="h-3 w-3" />
+                  Saved on this browser only. No one else can see it
+                </div>
+              </div>
+            )}
+
             {/* Terms and Privacy Disclaimer - Above input field */}
             {showDisclaimer && (
               <div className="relative bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 px-4 py-3 pr-8 flex items-center">
@@ -517,12 +568,12 @@ export function GuestChatPage() {
 
             <div className="relative">
               {/* Inline Thread Card */}
-              <InlineThreadCard 
+              <InlineThreadCard
                 details={requiresSignup ? [] : threadCardDetails}
                 isOpen={showThreadCard}
                 onToggle={() => setShowThreadCard(!showThreadCard)}
               />
-              
+
               <div className="relative z-10 bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm flex items-end gap-3 p-4">
                 <textarea
                   ref={textareaRef}

@@ -13,6 +13,7 @@ import { LoginPopup } from "../../components/LoginPopup";
 import { SignupPopup } from "../../components/SignupPopup";
 import { InlineThreadCard } from "../../components/chat/InlineThreadCard";
 import { useChatToast } from "../../contexts/ChatToastContext";
+import { setMmHasChatCookie } from "../../lib/cookies";
 
 const suggestions = [
   "I’m overwhelmed by something coming up",
@@ -185,6 +186,7 @@ export function GuestChatPage() {
     },
     onSuccess: (data) => {
       if (data?.threadId) {
+        setMmHasChatCookie();
         // Handle Conditional Toasts (Detect created vs completed) using explicit show_reminder_card flag
         if (data.ui_element?.show_reminder_card) {
           setHasAction(true);
@@ -287,15 +289,6 @@ export function GuestChatPage() {
       setIsLoading(false);
     },
   });
-
-  // Create thread when token is ready - REMOVED: Now created on first message
-  // useEffect(() => {
-  //   if (generateToken.isSuccess && !threadId && !hasCreatedThreadRef.current && !createThread.isPending && !id) {
-  //     hasCreatedThreadRef.current = true;
-  //     setIsLoading(true);
-  //     createThread.mutate();
-  //   }
-  // }, [generateToken.isSuccess, threadId, createThread, id]);
 
   // Auto-resize textarea
   useEffect(() => {
@@ -444,11 +437,11 @@ export function GuestChatPage() {
             </div>
           ) : (
             <div className="text-center max-w-4xl w-full">
-              <div className="space-y-4">
-                <h2 className="text-4xl md:text-5xl font-bold text-gray-800 dark:text-gray-100">
+              <div className="space-y-2 md:space-y-4">
+                <h2 className="text-3xl md:text-5xl font-bold text-gray-800 dark:text-gray-100">
                   Get unstuck in 90 seconds.
                 </h2>
-                <p className="text-xl md:text-2xl text-gray-500 dark:text-gray-400">
+                <p className="text-lg md:text-2xl text-gray-500 dark:text-gray-400">
                   Tell me what's happening. I'll suggest one small step you can try now.
                 </p>
               </div>
@@ -461,7 +454,7 @@ export function GuestChatPage() {
           <div className="max-w-4xl mx-auto space-y-3">
             {/* Suggested prompts */}
             {/* Suggested prompts - Dynamic mapping */}
-            <div className="flex flex-col items-center gap-3 mb-8 mt-2 w-full">
+            <div className="flex flex-col items-center gap-2 md:gap-3 mb-4 md:mb-8 mt-2 w-full">
               {!suggestionUsed && (() => {
                 // Try to find the last assistant message with replies first
                 const lastAssistantMessageWithReplies = [...messages]
@@ -493,13 +486,13 @@ export function GuestChatPage() {
 
                 // Show initial suggestions in the old wrapping layout
                 return (
-                  <div className="flex flex-wrap gap-3 justify-center w-full">
+                  <div className="flex flex-wrap gap-2 md:gap-3 justify-center w-full">
                     {currentSuggestions.map((suggestion, idx) => (
                       <button
                         key={idx}
                         onClick={() => handleSuggestionClick(suggestion)}
                         disabled={isLoading}
-                        className="px-5 py-3 w-[190px] bg-blue-100 dark:bg-blue-900/30 text-gray-700 dark:text-gray-300 rounded-xl border border-blue-200 dark:border-blue-800 hover:bg-blue-200 dark:hover:bg-blue-900/50 text-[12px] leading-normal font-normal transition disabled:opacity-50 disabled:cursor-not-allowed text-left [text-wrap-mode:wrap]"
+                        className="px-3 py-3 md:px-5 md:py-3 w-[calc(50%-4px)] md:w-[190px] bg-blue-100 dark:bg-blue-900/30 text-gray-700 dark:text-gray-300 rounded-xl border border-blue-200 dark:border-blue-800 hover:bg-blue-200 dark:hover:bg-blue-900/50 text-[11px] md:text-[12px] leading-normal font-normal transition disabled:opacity-50 disabled:cursor-not-allowed text-left [text-wrap-mode:wrap]"
                       >
                         {suggestion}
                       </button>

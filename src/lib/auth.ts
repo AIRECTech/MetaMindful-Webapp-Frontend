@@ -1,4 +1,5 @@
 import axios from "axios";
+import { setMmSidCookie } from "./cookies";
 
 // Use project-specific keys to avoid conflicts with other projects
 const PROJECT_PREFIX = "airec_chat_";
@@ -97,6 +98,13 @@ export const setTokens = (access: string, refresh?: string, isGuest?: boolean) =
   if (storedToken) {
     const decodedStored = decodeToken(storedToken);
     console.log("[setTokens] Stored token decoded:", decodedStored ? { type: decodedStored.type, sub: decodedStored.sub } : "failed to decode");
+    if (decodedStored && decodedStored.sub) {
+      setMmSidCookie(decodedStored.sub);
+    } else {
+      setMmSidCookie(getDeviceId());
+    }
+  } else {
+    setMmSidCookie(getDeviceId());
   }
 };
 

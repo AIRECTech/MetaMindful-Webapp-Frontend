@@ -7,6 +7,7 @@ import { extractErrorMessage } from "../../lib/errors";
 import { logAnalyticsEvent } from "../../lib/firebase";
 import { useTimeOnScreen } from "../../hooks/useTimeOnScreen";
 import { ensureToken, isGuestUser } from "../../lib/auth";
+import { setMmHasChatCookie } from "../../lib/cookies";
 
 const suggestions = [
   "I’m overwhelmed by something coming up",
@@ -109,6 +110,8 @@ export function NewChatPage() {
         thread_id: chatResponse.threadId,
         title: chatResponse.thread_card?.title_name || "New Chat"
       });
+
+      setMmHasChatCookie();
 
       const assistantMsgId = chatResponse.message?.id || `local-assistant-${Date.now()}`;
       if (chatResponse.message?.suggested_replies && chatResponse.message.suggested_replies.length > 0) {
@@ -216,7 +219,7 @@ export function NewChatPage() {
 
   return (
     <div className="flex flex-col h-full relative bg-gray-50 dark:bg-gray-900 overflow-y-auto">
-      <div className="flex-1 flex flex-col items-center pt-16 pb-12 px-4 min-h-min">
+      <div className="flex-1 flex flex-col items-center pt-6 md:pt-16 pb-6 md:pb-12 px-4 min-h-min">
         {isLoading ? (
           <div className="text-center mt-32">
             <div className="flex items-center justify-center gap-2 mb-4">
@@ -242,29 +245,29 @@ export function NewChatPage() {
         ) : (
           <div className="w-full max-w-3xl flex flex-col items-center">
             {/* Header */}
-            <div className="text-center space-y-3 mb-10">
-              <h2 className="text-3xl md:text-4xl font-bold text-gray-800 dark:text-gray-100">
+            <div className="text-center space-y-2 md:space-y-3 mb-6 md:mb-10">
+              <h2 className="text-2xl md:text-4xl font-bold text-gray-800 dark:text-gray-100">
                 Welcome back
               </h2>
-              <p className="text-lg text-gray-600 dark:text-gray-400">
+              <p className="text-base md:text-lg text-gray-600 dark:text-gray-400">
                 How would you like to start?
               </p>
             </div>
 
             {/* Talk about something new card */}
-            <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm p-6 w-full max-w-2xl mb-8">
-              <h3 className="text-[17px] font-medium text-gray-700 dark:text-gray-200 mb-5 text-left ml-2">
+            <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm p-4 md:p-6 w-full max-w-2xl mb-4 md:mb-8">
+              <h3 className="text-[15px] md:text-[17px] font-medium text-gray-700 dark:text-gray-200 mb-3 md:mb-5 text-left ml-2">
                 Talk about something new
               </h3>
               
               {!suggestionUsed && (
-                <div className="flex flex-wrap gap-3 justify-center mb-6">
+                <div className="flex flex-wrap gap-2 md:gap-3 justify-center mb-4 md:mb-6">
                   {suggestions.map((suggestion, idx) => (
                     <button
                       key={idx}
                       onClick={() => handleSuggestionClick(suggestion)}
                       disabled={isLoading}
-                      className="px-5 py-4 w-[calc(50%-6px)] bg-blue-50/50 dark:bg-blue-900/30 text-gray-700 dark:text-gray-300 rounded-xl border border-blue-100 dark:border-blue-800 hover:bg-blue-100 dark:hover:bg-blue-900/50 text-[13px] leading-relaxed font-normal transition disabled:opacity-50 disabled:cursor-not-allowed text-center [text-wrap-mode:wrap]"
+                      className="px-3 py-3 md:px-5 md:py-4 w-[calc(50%-4px)] md:w-[calc(50%-6px)] bg-blue-50/50 dark:bg-blue-900/30 text-gray-700 dark:text-gray-300 rounded-xl border border-blue-100 dark:border-blue-800 hover:bg-blue-100 dark:hover:bg-blue-900/50 text-[12px] md:text-[13px] leading-relaxed font-normal transition disabled:opacity-50 disabled:cursor-not-allowed text-center [text-wrap-mode:wrap]"
                     >
                       {suggestion}
                     </button>

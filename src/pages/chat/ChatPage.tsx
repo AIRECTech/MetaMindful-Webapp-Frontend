@@ -1425,7 +1425,7 @@ export function ChatPage() {
           })()}
 
           {/* Terms and Privacy Disclaimer - Above input field */}
-          {showDisclaimer && (
+          {!isGuest && showDisclaimer && (
             <div className="relative bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 px-4 py-3 pr-8 flex items-center">
               <button
                 onClick={() => setShowDisclaimer(false)}

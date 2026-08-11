@@ -109,8 +109,8 @@ export function ChatPage() {
   const [lastFailedMessage, setLastFailedMessage] = useState<string | null>(null); // Store last failed message for retry
   // Only show disclaimer for guest users
   const [showDisclaimer, setShowDisclaimer] = useState(() => {
-    // Only show for guest users on initial load
-    return isGuestUser();
+    // Only show for new guest users on initial load
+    return isGuestUser() && !document.cookie.includes("mm_has_chat=1");
   });
   const [suggestionUsed, setSuggestionUsed] = useState(false);
 

@@ -78,7 +78,9 @@ export function GuestChatPage() {
     const saved = localStorage.getItem(`toast_thread_card_${tid}`);
     return saved ? JSON.parse(saved) : [];
   });
-  const [showDisclaimer, setShowDisclaimer] = useState(true); // Always show for guest users
+  const [showDisclaimer, setShowDisclaimer] = useState(() => {
+    return !document.cookie.includes("mm_has_chat=1");
+  });
   const hasCreatedThreadRef = useRef(false);
   const hasAutoSentQueryMessageRef = useRef(false); // Track if we've auto-sent the query message
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -451,10 +453,10 @@ export function GuestChatPage() {
 
         {/* Input area with suggestions */}
         <div className="pb-4 px-4 flex-shrink-0">
-          <div className="max-w-4xl mx-auto space-y-3">
+          <div className="max-w-4xl mx-auto flex flex-col gap-3">
             {/* Suggested prompts */}
             {/* Suggested prompts - Dynamic mapping */}
-            <div className="flex flex-col items-center gap-2 md:gap-3 mb-4 md:mb-8 mt-2 w-full">
+            <div className="flex flex-col items-center gap-2 md:gap-3 mb-4 md:mb-8 mt-2 w-full order-2 md:order-1">
               {!suggestionUsed && (() => {
                 // Try to find the last assistant message with replies first
                 const lastAssistantMessageWithReplies = [...messages]
@@ -504,7 +506,7 @@ export function GuestChatPage() {
 
             {/* Recent Guest Chat Banner */}
             {lastThread && !id && !threadId && (
-              <div className="bg-white dark:bg-gray-800 rounded-xl border border-yellow-300 dark:border-yellow-500/50 p-4 mb-4 text-left shadow-sm">
+              <div className="bg-white dark:bg-gray-800 rounded-xl border border-yellow-300 dark:border-yellow-500/50 p-4 mb-4 text-left shadow-sm order-1 md:order-2">
                 <div className="text-sm text-gray-500 dark:text-gray-400 mb-2">On this Browser</div>
                 <div className="flex items-center gap-2 mb-1">
                   <div className="w-1.5 h-1.5 bg-yellow-400 rounded-full"></div>
@@ -530,7 +532,7 @@ export function GuestChatPage() {
 
             {/* Terms and Privacy Disclaimer - Above input field */}
             {showDisclaimer && (
-              <div className="relative bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 px-4 py-3 pr-8 flex items-center">
+              <div className="relative bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 px-4 py-3 pr-8 flex items-center order-3">
                 <button
                   onClick={() => setShowDisclaimer(false)}
                   className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition"
@@ -559,7 +561,7 @@ export function GuestChatPage() {
               </div>
             )}
 
-            <div className="relative">
+            <div className="relative order-4">
               {/* Inline Thread Card */}
               <InlineThreadCard
                 details={requiresSignup ? [] : threadCardDetails}
@@ -594,7 +596,7 @@ export function GuestChatPage() {
             </div>
 
             {/* Guest user message */}
-            <div className="text-center mt-4">
+            <div className="text-center mt-4 order-5">
               <p className="text-sm text-gray-600 dark:text-gray-400">
                 Don't lose your chat history. <button
                   onClick={() => { setIsAuthGate(true); setShowLoginPopup(true); }}

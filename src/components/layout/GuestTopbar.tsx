@@ -36,7 +36,7 @@ export function GuestTopbar() {
         {!isClipSession() && (
           <button
             onClick={() => setShowSignupPopup(true)}
-            className="px-4 py-2 bg-yellow-400 hover:bg-yellow-500 text-gray-800 font-medium rounded-lg text-sm transition"
+            className="px-4 py-2 bg-yellow-400 hover:bg-yellow-500 text-gray-800 font-medium rounded-lg text-sm transition whitespace-nowrap"
           >
             Sign up
           </button>

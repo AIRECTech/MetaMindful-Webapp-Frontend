@@ -219,7 +219,7 @@ export function NewChatPage() {
 
   return (
     <div className="flex flex-col h-full relative bg-gray-50 dark:bg-gray-900 overflow-y-auto">
-      <div className="flex-1 flex flex-col items-center pt-4 md:pt-6 pb-4 md:pb-6 px-4 min-h-min">
+      <div className="flex-1 flex flex-col items-center pt-1 md:pt-6 pb-4 md:pb-6 px-4 min-h-min">
         {isLoading ? (
           <div className="text-center mt-32">
             <div className="flex items-center justify-center gap-2 mb-4">
@@ -245,7 +245,7 @@ export function NewChatPage() {
         ) : (
           <div className="w-full max-w-3xl flex flex-col items-center">
             {/* Header */}
-            <div className="text-center space-y-0.5 md:space-y-1 mb-3 md:mb-4">
+            <div className="text-center space-y-0.5 md:space-y-1 mb-2 md:mb-4">
               <h2 className="text-2xl md:text-4xl font-bold text-gray-800 dark:text-gray-100">
                 Welcome back
               </h2>
@@ -303,7 +303,7 @@ export function NewChatPage() {
 
             {/* Separator */}
             {latestThreadDetail && (
-              <div className="flex items-center w-full max-w-[200px] my-2 md:my-3">
+              <div className="flex items-center w-full max-w-[200px] my-0">
                 <div className="flex-1 border-t border-gray-200 dark:border-gray-700"></div>
                 <span className="px-4 text-gray-400 dark:text-gray-500 text-[14px]">or</span>
                 <div className="flex-1 border-t border-gray-200 dark:border-gray-700"></div>

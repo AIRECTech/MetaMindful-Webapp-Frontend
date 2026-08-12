@@ -245,7 +245,7 @@ export function NewChatPage() {
         ) : (
           <div className="w-full max-w-3xl flex flex-col items-center">
             {/* Header */}
-            <div className="text-center space-y-1 md:space-y-2 mb-4 md:mb-5">
+            <div className="text-center space-y-0.5 md:space-y-1 mb-3 md:mb-4">
               <h2 className="text-2xl md:text-4xl font-bold text-gray-800 dark:text-gray-100">
                 Welcome back
               </h2>
@@ -255,19 +255,19 @@ export function NewChatPage() {
             </div>
 
             {/* Talk about something new card */}
-            <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm p-4 md:p-6 w-full max-w-2xl mb-4 md:mb-5">
-              <h3 className="text-[15px] md:text-[17px] font-medium text-gray-700 dark:text-gray-200 mb-3 md:mb-5 text-left ml-2">
+            <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm p-3.5 md:p-4 w-full max-w-2xl mb-2 md:mb-3">
+              <h3 className="text-[15px] md:text-[17px] font-medium text-gray-700 dark:text-gray-200 mb-2 md:mb-3 text-left ml-2">
                 Talk about something new
               </h3>
               
               {!suggestionUsed && (
-                <div className="flex flex-wrap gap-2 md:gap-3 justify-center mb-4 md:mb-6">
+                <div className="flex flex-wrap gap-2 md:gap-3 justify-center mb-3 md:mb-4">
                   {suggestions.map((suggestion, idx) => (
                     <button
                       key={idx}
                       onClick={() => handleSuggestionClick(suggestion)}
                       disabled={isLoading}
-                      className="px-3 py-3 md:px-5 md:py-4 w-[calc(50%-4px)] md:w-[calc(50%-6px)] bg-blue-50/50 dark:bg-blue-900/30 text-gray-700 dark:text-gray-300 rounded-xl border border-blue-100 dark:border-blue-800 hover:bg-blue-100 dark:hover:bg-blue-900/50 text-[12px] md:text-[13px] leading-relaxed font-normal transition disabled:opacity-50 disabled:cursor-not-allowed text-center [text-wrap-mode:wrap]"
+                      className="px-3 py-2.5 md:px-4 md:py-3 w-[calc(50%-4px)] md:w-[calc(50%-6px)] bg-blue-50/50 dark:bg-blue-900/30 text-gray-700 dark:text-gray-300 rounded-xl border border-blue-100 dark:border-blue-800 hover:bg-blue-100 dark:hover:bg-blue-900/50 text-[11px] md:text-[12px] leading-relaxed font-normal transition disabled:opacity-50 disabled:cursor-not-allowed text-center [text-wrap-mode:wrap]"
                     >
                       {suggestion}
                     </button>
@@ -301,10 +301,19 @@ export function NewChatPage() {
               </div>
             </div>
 
+            {/* Separator */}
+            {latestThreadDetail && (
+              <div className="flex items-center w-full max-w-[200px] my-2 md:my-3">
+                <div className="flex-1 border-t border-gray-200 dark:border-gray-700"></div>
+                <span className="px-4 text-gray-400 dark:text-gray-500 text-[14px]">or</span>
+                <div className="flex-1 border-t border-gray-200 dark:border-gray-700"></div>
+              </div>
+            )}
+
             {/* Continue where you left card */}
             {latestThreadDetail && (
-              <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm p-6 w-full max-w-2xl">
-                <div className="mb-5 text-left ml-2">
+              <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm p-4 md:p-5 w-full max-w-2xl">
+                <div className="mb-3 text-left ml-2">
                   <h3 className="text-[17px] font-medium text-gray-700 dark:text-gray-200">
                     Continue where you left
                   </h3>

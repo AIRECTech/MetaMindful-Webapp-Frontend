@@ -17,8 +17,9 @@ export function SmartAppBanner() {
     const isAndroid = /android/.test(ua);
     const isMobileDevice =
       (/mobile|iphone|ipad|ipod/.test(ua) || window.innerWidth < 768) && !isAndroid;
+    const isSafari = /safari/.test(ua) && !/chrome|crios|crmodo|firefox|fxios|opera|opios|ucbrowser/.test(ua);
 
-    setIsMobile(isMobileDevice);
+    setIsMobile(isMobileDevice && !isSafari);
 
     if (!isMobileDevice || isClipSession()) return;
 

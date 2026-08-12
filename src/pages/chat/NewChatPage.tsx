@@ -219,7 +219,7 @@ export function NewChatPage() {
 
   return (
     <div className="flex flex-col h-full relative bg-gray-50 dark:bg-gray-900 overflow-y-auto">
-      <div className="flex-1 flex flex-col items-center pt-1 md:pt-6 pb-4 md:pb-6 px-4 min-h-min">
+      <div className="flex-1 flex flex-col items-center pt-0 md:pt-4 pb-0 md:pb-4 px-4 min-h-min">
         {isLoading ? (
           <div className="text-center mt-32">
             <div className="flex items-center justify-center gap-2 mb-4">
@@ -245,7 +245,7 @@ export function NewChatPage() {
         ) : (
           <div className="w-full max-w-3xl flex flex-col items-center">
             {/* Header */}
-            <div className="text-center space-y-0.5 md:space-y-1 mb-2 md:mb-4">
+            <div className="text-center space-y-0 md:space-y-1 mb-0 md:mb-4">
               <h2 className="text-2xl md:text-4xl font-bold text-gray-800 dark:text-gray-100">
                 Welcome back
               </h2>
@@ -255,7 +255,7 @@ export function NewChatPage() {
             </div>
 
             {/* Talk about something new card */}
-            <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm p-3.5 md:p-4 w-full max-w-2xl mb-2 md:mb-3">
+            <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm p-3.5 md:p-4 w-full max-w-2xl mb-1 md:mb-3">
               <h3 className="text-[15px] md:text-[17px] font-medium text-gray-700 dark:text-gray-200 mb-2 md:mb-3 text-left ml-2">
                 Talk about something new
               </h3>
@@ -267,7 +267,7 @@ export function NewChatPage() {
                       key={idx}
                       onClick={() => handleSuggestionClick(suggestion)}
                       disabled={isLoading}
-                      className="px-3 py-2.5 md:px-4 md:py-3 w-[calc(50%-4px)] md:w-[calc(50%-6px)] bg-blue-50/50 dark:bg-blue-900/30 text-gray-700 dark:text-gray-300 rounded-xl border border-blue-100 dark:border-blue-800 hover:bg-blue-100 dark:hover:bg-blue-900/50 text-[11px] md:text-[12px] leading-relaxed font-normal transition disabled:opacity-50 disabled:cursor-not-allowed text-center [text-wrap-mode:wrap]"
+                      className="px-3 py-2.5 md:px-4 md:py-3 w-[calc(50%-4px)] md:w-[calc(50%-6px)] bg-blue-50/50 dark:bg-blue-900/30 text-gray-700 dark:text-gray-300 rounded-xl border border-blue-100 dark:border-blue-800 hover:bg-blue-100 dark:hover:bg-blue-900/50 text-[10px] md:text-[11px] leading-relaxed font-normal transition disabled:opacity-50 disabled:cursor-not-allowed text-center [text-wrap-mode:wrap]"
                     >
                       {suggestion}
                     </button>

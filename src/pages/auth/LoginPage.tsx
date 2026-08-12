@@ -353,8 +353,8 @@ export function LoginPage() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gray-100 px-4">
-      <div className="w-full max-w-md">
+    <div className="flex min-h-[100dvh] bg-gray-100 px-4 py-8">
+      <div className="w-full max-w-md m-auto">
         {/* Login Card */}
         <div className="rounded-3xl bg-white p-8 shadow-sm">
           {/* Logo and Branding */}

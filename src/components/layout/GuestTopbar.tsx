@@ -1,5 +1,5 @@
 import { useParams } from "react-router-dom";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { LoginPopup } from "../LoginPopup";
 import { SignupPopup } from "../SignupPopup";
 import { ChatToasts } from "../chat/ChatToasts";
@@ -14,15 +14,6 @@ export function GuestTopbar() {
 
   const [showLoginPopup, setShowLoginPopup] = useState(false);
   const [showSignupPopup, setShowSignupPopup] = useState(false);
-  const [isIosOrSafari, setIsIosOrSafari] = useState(false);
-
-  useEffect(() => {
-    const ua = window.navigator.userAgent.toLowerCase();
-    const isIos = /iphone|ipad|ipod/.test(ua);
-    const isSafari = /safari/.test(ua) && !/chrome|crios|crmodo|firefox|fxios|opera|opios|ucbrowser/.test(ua);
-    const isMobile = /mobile|android|iphone|ipad|ipod/.test(ua) || window.innerWidth < 768;
-    setIsIosOrSafari(isMobile && (isIos || isSafari));
-  }, []);
 
   return (
     <header className="flex items-center justify-between px-4 py-3 h-[64px] flex-shrink-0 z-30 relative bg-white dark:bg-gray-900 border-b border-gray-100 dark:border-gray-800">
@@ -42,7 +33,7 @@ export function GuestTopbar() {
       </div>
 
       <div className="flex justify-end items-center gap-3 w-auto md:w-[200px] order-3 ml-auto md:ml-0">
-        {!isIosOrSafari && !isClipSession() && (
+        {!isClipSession() && (
           <button
             onClick={() => setShowSignupPopup(true)}
             className="px-4 py-2 bg-yellow-400 hover:bg-yellow-500 text-gray-800 font-medium rounded-lg text-sm transition"

@@ -219,7 +219,7 @@ export function NewChatPage() {
 
   return (
     <div className="flex flex-col h-full relative bg-gray-50 dark:bg-gray-900 overflow-y-auto">
-      <div className="flex-1 flex flex-col items-center pt-6 md:pt-16 pb-6 md:pb-12 px-4 min-h-min">
+      <div className="flex-1 flex flex-col items-center pt-4 md:pt-6 pb-4 md:pb-6 px-4 min-h-min">
         {isLoading ? (
           <div className="text-center mt-32">
             <div className="flex items-center justify-center gap-2 mb-4">
@@ -245,7 +245,7 @@ export function NewChatPage() {
         ) : (
           <div className="w-full max-w-3xl flex flex-col items-center">
             {/* Header */}
-            <div className="text-center space-y-2 md:space-y-3 mb-6 md:mb-10">
+            <div className="text-center space-y-1 md:space-y-2 mb-4 md:mb-5">
               <h2 className="text-2xl md:text-4xl font-bold text-gray-800 dark:text-gray-100">
                 Welcome back
               </h2>
@@ -255,7 +255,7 @@ export function NewChatPage() {
             </div>
 
             {/* Talk about something new card */}
-            <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm p-4 md:p-6 w-full max-w-2xl mb-4 md:mb-8">
+            <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm p-4 md:p-6 w-full max-w-2xl mb-4 md:mb-5">
               <h3 className="text-[15px] md:text-[17px] font-medium text-gray-700 dark:text-gray-200 mb-3 md:mb-5 text-left ml-2">
                 Talk about something new
               </h3>
@@ -301,60 +301,51 @@ export function NewChatPage() {
               </div>
             </div>
 
-            {/* Separator */}
+            {/* Continue where you left card */}
             {latestThreadDetail && (
-              <>
-                <div className="flex items-center w-full max-w-[200px] mb-8">
-                  <div className="flex-1 border-t border-gray-200 dark:border-gray-700"></div>
-                  <span className="px-4 text-gray-400 dark:text-gray-500 text-[15px]">or</span>
-                  <div className="flex-1 border-t border-gray-200 dark:border-gray-700"></div>
+              <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm p-6 w-full max-w-2xl">
+                <div className="mb-5 text-left ml-2">
+                  <h3 className="text-[17px] font-medium text-gray-700 dark:text-gray-200">
+                    Continue where you left
+                  </h3>
+                  <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                    Let's build on that instead of starting from scratch
+                  </p>
                 </div>
 
-                {/* Continue where you left card */}
-                <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm p-6 w-full max-w-2xl">
-                  <div className="mb-5 text-left ml-2">
-                    <h3 className="text-[17px] font-medium text-gray-700 dark:text-gray-200">
-                      Continue where you left
-                    </h3>
-                    <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                      Let's build on that instead of starting from scratch
+                {/* Yellow embedded thread card */}
+                <div className="bg-yellow-400 rounded-[14px] p-5 text-left text-gray-900">
+                  <h4 className="font-bold text-[17px] mb-1">{threadCard?.title_name || latestThreadDetail.title || "New Thread"}</h4>
+                  {theSign && (
+                    <p className="text-[13px] font-medium opacity-90 mb-4 truncate">
+                      <span className="italic font-normal">The Sign:</span> {theSign}
                     </p>
-                  </div>
-
-                  {/* Yellow embedded thread card */}
-                  <div className="bg-yellow-400 rounded-[14px] p-5 text-left text-gray-900">
-                    <h4 className="font-bold text-[17px] mb-1">{threadCard?.title_name || latestThreadDetail.title || "New Thread"}</h4>
-                    {theSign && (
-                      <p className="text-[13px] font-medium opacity-90 mb-4 truncate">
-                        <span className="italic font-normal">The Sign:</span> {theSign}
-                      </p>
-                    )}
-                    
-                    {toDo ? (
-                      <button 
-                        onClick={() => navigate(`/user/chat/${latestThreadDetail.threadId || latestThreadDetail.id}`)}
-                        className="w-full bg-white text-gray-900 rounded-lg px-4 py-3.5 flex items-center justify-between hover:bg-gray-50 transition shadow-sm"
-                      >
-                        <div className="flex items-center gap-2 truncate pr-4">
-                          <span className="text-yellow-400 text-xl leading-none font-bold pb-0.5">•</span>
-                          <span className="font-bold text-[13px] truncate">To do : {toDo}</span>
-                        </div>
-                        <ChevronRight className="h-4 w-4 flex-shrink-0 text-gray-500" />
-                      </button>
-                    ) : (
-                      <button 
-                        onClick={() => navigate(`/user/chat/${latestThreadDetail.threadId || latestThreadDetail.id}`)}
-                        className="w-full bg-white text-gray-900 rounded-lg px-4 py-3.5 flex items-center justify-between hover:bg-gray-50 transition shadow-sm"
-                      >
-                        <div className="flex items-center gap-2 truncate pr-4">
-                          <span className="font-bold text-[13px] truncate">Continue chat</span>
-                        </div>
-                        <ChevronRight className="h-4 w-4 flex-shrink-0 text-gray-500" />
-                      </button>
-                    )}
-                  </div>
+                  )}
+                  
+                  {toDo ? (
+                    <button 
+                      onClick={() => navigate(`/user/chat/${latestThreadDetail.threadId || latestThreadDetail.id}`)}
+                      className="w-full bg-white text-gray-900 rounded-lg px-4 py-3.5 flex items-center justify-between hover:bg-gray-50 transition shadow-sm"
+                    >
+                      <div className="flex items-center gap-2 truncate pr-4">
+                        <span className="text-yellow-400 text-xl leading-none font-bold pb-0.5">•</span>
+                        <span className="font-bold text-[13px] truncate">To do : {toDo}</span>
+                      </div>
+                      <ChevronRight className="h-4 w-4 flex-shrink-0 text-gray-500" />
+                    </button>
+                  ) : (
+                    <button 
+                      onClick={() => navigate(`/user/chat/${latestThreadDetail.threadId || latestThreadDetail.id}`)}
+                      className="w-full bg-white text-gray-900 rounded-lg px-4 py-3.5 flex items-center justify-between hover:bg-gray-50 transition shadow-sm"
+                    >
+                      <div className="flex items-center gap-2 truncate pr-4">
+                        <span className="font-bold text-[13px] truncate">Continue chat</span>
+                      </div>
+                      <ChevronRight className="h-4 w-4 flex-shrink-0 text-gray-500" />
+                    </button>
+                  )}
                 </div>
-              </>
+              </div>
             )}
           </div>
         )}

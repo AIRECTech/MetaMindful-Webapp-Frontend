@@ -1,5 +1,5 @@
 import axios from "axios";
-import { setMmSidCookie } from "./cookies";
+import { setMmSidCookie, setMmAuthCookie, clearMmAuthCookie } from "./cookies";
 
 // Use project-specific keys to avoid conflicts with other projects
 const PROJECT_PREFIX = "airec_chat_";
@@ -80,6 +80,11 @@ export const setTokens = (access: string, refresh?: string, isGuest?: boolean) =
     // Use the isGuest parameter from API response (most reliable)
     localStorage.setItem(USER_IS_GUEST_KEY, String(isGuest));
     console.log("[setTokens] User isGuest status stored (from parameter):", isGuest);
+    if (isGuest) {
+      clearMmAuthCookie();
+    } else {
+      setMmAuthCookie();
+    }
   } else {
     // Fallback: try to detect from token (only if parameter not provided)
     const decoded = decodeToken(access);
@@ -89,6 +94,11 @@ export const setTokens = (access: string, refresh?: string, isGuest?: boolean) =
       const tokenIsGuest = decoded.type === "guest" || decoded.sub === "guest";
       localStorage.setItem(USER_IS_GUEST_KEY, String(tokenIsGuest));
       console.log("[setTokens] User isGuest status stored (detected from token):", tokenIsGuest, "(type:", decoded.type, ", sub:", decoded.sub, ")");
+      if (tokenIsGuest) {
+        clearMmAuthCookie();
+      } else {
+        setMmAuthCookie();
+      }
     }
   }
   
@@ -112,6 +122,7 @@ export const clearTokens = () => {
   localStorage.removeItem(ACCESS_TOKEN_KEY);
   localStorage.removeItem(REFRESH_TOKEN_KEY);
   localStorage.removeItem(USER_IS_GUEST_KEY);
+  clearMmAuthCookie();
 };
 
 export const isAuthenticated = () => Boolean(getAccessToken());
@@ -218,6 +229,7 @@ export const ensureToken = async (): Promise<void> => {
         console.log("[ensureToken] Guest token is valid (not expired), using existing token");
         // Ensure guest status is set
         localStorage.setItem(USER_IS_GUEST_KEY, "true");
+        clearMmAuthCookie();
         return;
       } else {
         // For real user tokens, if not expired, they're valid
@@ -225,6 +237,7 @@ export const ensureToken = async (): Promise<void> => {
         console.log("[ensureToken] Real user token is valid (not expired), using existing token");
         // Ensure real user status is set
         localStorage.setItem(USER_IS_GUEST_KEY, "false");
+        setMmAuthCookie();
         return;
       }
     }

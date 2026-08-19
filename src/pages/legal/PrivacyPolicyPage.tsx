@@ -33,6 +33,24 @@ export function PrivacyPolicyPage() {
 
             <section className="mb-8">
               <h2 className="text-2xl font-semibold text-gray-900 dark:text-gray-100 mb-4">
+                Account and Data Deletion
+              </h2>
+              <p className="text-gray-700 dark:text-gray-300 leading-relaxed mb-4">
+                You can delete your MetaMindful account at any time from within the app.
+              </p>
+              <p className="text-gray-700 dark:text-gray-300 leading-relaxed mb-4">
+                When your account is deleted, your account and the identifying connection to your saved conversations and Threads are removed. Your previous conversations will no longer be accessible to you, associated with your account, or restored if you create a new MetaMindful account later.
+              </p>
+              <p className="text-gray-700 dark:text-gray-300 leading-relaxed mb-4">
+                Conversation data may remain only after it has been anonymized as described in the Data Storage and Retention section.
+              </p>
+              <p className="text-gray-700 dark:text-gray-300 leading-relaxed mb-4">
+                You can also request account deletion by visiting <a href="https://metamindful.ai/delete-account/" target="_blank" rel="noopener noreferrer" className="text-blue-600 dark:text-blue-400 hover:underline">https://metamindful.ai/delete-account/</a>
+              </p>
+            </section>
+
+            <section className="mb-8">
+              <h2 className="text-2xl font-semibold text-gray-900 dark:text-gray-100 mb-4">
                 Data Collection
               </h2>
               <p className="text-gray-700 dark:text-gray-300 leading-relaxed mb-4">
@@ -79,10 +97,18 @@ export function PrivacyPolicyPage() {
               <h2 className="text-2xl font-semibold text-gray-900 dark:text-gray-100 mb-4">
                 Data Storage and Retention
               </h2>
-              <ul className="list-disc pl-6 text-gray-700 dark:text-gray-300 mb-4 space-y-2">
-                <li><strong>Instant Deletion:</strong> You have the "Right to be Forgotten." You can delete specific threads or your entire account data at any time from your profile page. This action is immediate and permanent.</li>
-                <li><strong>Security:</strong> All interactions are encrypted in transit and at rest using industry-standard protocols.</li>
-              </ul>
+              <p className="text-gray-700 dark:text-gray-300 leading-relaxed mb-4">
+                We retain your account information, saved conversations, Threads, and related data while your MetaMindful account is active so you can return to your previous conversations and continue your progress.
+              </p>
+              <p className="text-gray-700 dark:text-gray-300 leading-relaxed mb-4">
+                When you delete your MetaMindful account, your account and the identifying connection between you and your conversation history are removed. Your previous conversations will no longer be accessible through your account, associated with your account, or restored if you create a new MetaMindful account later.
+              </p>
+              <p className="text-gray-700 dark:text-gray-300 leading-relaxed mb-4">
+                Conversation data may be retained only after it has been anonymized so that it is no longer associated with an identifiable MetaMindful account. Anonymized conversation data may be retained indefinitely for aggregate analytics, safety, and service improvement.
+              </p>
+              <p className="text-gray-700 dark:text-gray-300 leading-relaxed mb-4">
+                We use appropriate technical and organizational safeguards to protect information handled by MetaMindful, including encryption in transit and at rest where applicable.
+              </p>
             </section>
 
             <section className="mb-8">

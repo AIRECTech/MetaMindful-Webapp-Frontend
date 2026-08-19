@@ -370,7 +370,7 @@ export function ChatPage() {
           });
 
           // For guest users, update local state
-          if (data.message?.assistantMessage) {
+          if (data.message?.assistantMessage || data.message?.assistantMessage === "" || shouldRetry) {
             setGuestMessages((prev) => {
               console.log("BEFORE:", prev);
               const newMessages: Message[] = [
@@ -381,7 +381,7 @@ export function ChatPage() {
               console.log("AFTER:", newMessages);
               logAnalyticsEvent("chat_message_received", {
                 thread_id: id,
-                response_length: data.message.assistantMessage.length
+                response_length: data.message.assistantMessage?.length || 0
               });
               return newMessages;
             });
@@ -531,7 +531,7 @@ export function ChatPage() {
               ];
 
               // Add assistant message if available
-              if (data.message?.assistantMessage) {
+              if (data.message?.assistantMessage || data.message?.assistantMessage === "" || shouldRetry) {
                 newMessages.push({
                   id: data.message.id || `local-assistant-${Date.now()}`,
                   role: "assistant",
@@ -543,7 +543,7 @@ export function ChatPage() {
                 });
                 logAnalyticsEvent("chat_message_received", {
                   thread_id: id,
-                  response_length: data.message.assistantMessage.length
+                  response_length: data.message.assistantMessage?.length || 0
                 });
               }
 

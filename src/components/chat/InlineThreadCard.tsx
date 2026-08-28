@@ -1,5 +1,5 @@
 import { useEffect, useRef } from "react";
-import { ChevronDown, ChevronUp, MessagesSquare } from "lucide-react";
+import { ChevronDown, MessagesSquare, ListChecks } from "lucide-react";
 
 interface InlineThreadCardProps {
   details: { label: string; value: string }[];
@@ -76,22 +76,22 @@ export function InlineThreadCard({ details, isOpen, onToggle }: InlineThreadCard
  
         {/* The Trigger Tab */}
         {!isOpen && (
-          <button
-            onClick={onToggle}
-            className={`
-              bg-white dark:bg-gray-800
-              border border-yellow-400 md:border-b-0
-              rounded-t-xl md:rounded-t-2xl
-              flex items-center justify-center
-              hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors
-              px-6 py-1 md:py-1 md:px-6
-              translate-y-[2px] md:translate-y-1
-              pointer-events-auto
-              absolute bottom-0
-            `}
-          >
-            <ChevronUp className="h-5 w-5 text-gray-500" />
-          </button>
+          <div className="w-full flex justify-start pointer-events-none absolute bottom-4 px-4 md:px-0">
+            <button
+              onClick={onToggle}
+              className={`
+                bg-yellow-300 dark:bg-yellow-400
+                rounded-[12px]
+                flex items-center justify-center gap-2
+                hover:bg-yellow-400 dark:hover:bg-yellow-500 transition-colors
+                px-4 py-2.5
+                pointer-events-auto shadow-md
+              `}
+            >
+              <ListChecks className="h-5 w-5 text-gray-900" />
+              <span className="text-gray-900 font-medium text-[14px]">View threadcard</span>
+            </button>
+          </div>
         )}
       </div>
     </div>

@@ -2,7 +2,7 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 import { useState, useEffect, useRef } from "react";
 import { useParams, useNavigate, Link, useSearchParams } from "react-router-dom";
 import { toast } from "react-hot-toast";
-import { ArrowUp, X, ChevronRight, Lock } from "lucide-react";
+import { ArrowUp, X, Mic } from "lucide-react";
 import { api } from "../../lib/api";
 import { extractErrorMessage } from "../../lib/errors";
 import { logAnalyticsEvent } from "../../lib/firebase";
@@ -16,10 +16,11 @@ import { useChatToast } from "../../contexts/ChatToastContext";
 import { setMmHasChatCookie } from "../../lib/cookies";
 
 const suggestions = [
-  "I’m overwhelmed by something coming up",
-  "I feel stuck and keep avoiding things",
-  "I feel anxious in my body and I don’t know why",
-  "My mind won’t slow down and I can’t sleep",
+  "😔 I'm feeling stressed",
+  "🧠 My mind feels overwhelmed",
+  "😴 I'm having trouble sleeping",
+  "🌿 I just want to feel calmer",
+  "✨ Something else",
 ];
 
 interface Message {
@@ -163,19 +164,7 @@ export function GuestChatPage() {
 
   const lastThread = recentThreads && recentThreads.length > 0 ? recentThreads[0] : null;
 
-  const formatTimeAgo = (dateString: string) => {
-    const date = new Date(dateString);
-    const now = new Date();
-    const diffMs = now.getTime() - date.getTime();
-    const diffDays = Math.floor(diffMs / 86400000);
-    const diffHours = Math.floor(diffMs / 3600000);
-    const diffMins = Math.floor(diffMs / 60000);
-
-    if (diffDays > 0) return `${diffDays} day${diffDays > 1 ? 's' : ''} ago`;
-    if (diffHours > 0) return `${diffHours} hour${diffHours > 1 ? 's' : ''} ago`;
-    if (diffMins > 0) return `${diffMins} min${diffMins > 1 ? 's' : ''} ago`;
-    return "Just now";
-  };
+  // formatTimeAgo removed
 
   // Create thread after token is generated
   const createThread = useMutation({
@@ -368,7 +357,19 @@ export function GuestChatPage() {
 
   const handleSuggestionClick = async (suggestion: string) => {
     if (isLoading) return;
-    setMessage(suggestion);
+
+    if (suggestion.includes("Something else")) {
+      setSuggestionUsed(true);
+      localStorage.setItem("suggestion_used_guest_new", "true");
+      if (textareaRef.current) {
+        textareaRef.current.focus();
+      }
+      return;
+    }
+
+    // Clean suggestion text to remove leading emoji
+    const cleanSuggestion = suggestion.replace(/^[\s\S]*?\s/, '');
+    setMessage(cleanSuggestion);
     setSuggestionUsed(true);
     localStorage.setItem("suggestion_used_guest_new", "true");
 
@@ -378,22 +379,22 @@ export function GuestChatPage() {
     }
 
     if (!threadId) {
-      setPendingMessage(suggestion);
+      setPendingMessage(cleanSuggestion);
       setIsLoading(true);
-      createThread.mutate(suggestion);
+      createThread.mutate(cleanSuggestion);
       return;
     }
 
     try {
       await api.post("/threads/suggestion-click", {
-        suggestion,
+        suggestion: cleanSuggestion,
         threadId,
       });
     } catch (error) {
       console.error("[GuestChatPage] Error logging suggestion click:", error);
     }
 
-    navigateToChatWithFirstUserMessage(suggestion);
+    navigateToChatWithFirstUserMessage(cleanSuggestion);
   };
 
   // If we have a thread ID, show the ChatPage (after all hooks)
@@ -439,16 +440,26 @@ export function GuestChatPage() {
             </div>
           ) : (
             <div className="text-center max-w-lg w-full mx-auto my-auto flex flex-col items-center py-2">
-              <div className="space-y-2 md:space-y-3 mb-6 md:mb-8">
-                <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-800 dark:text-gray-100 leading-tight">
-                  Get unstuck in 90 seconds.
+              {/* MetaMindful logo profile avatar outline with heart inside */}
+              <div className="flex justify-center mb-5">
+                <div className="w-16 h-16 rounded-full bg-sky-100 dark:bg-sky-950/40 flex items-center justify-center text-sky-600 dark:text-sky-400">
+                  <svg className="w-10 h-10" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M38 12C31.5 12 26 15.5 23 21C22 23 20 23.5 18 24.5C16.5 25.2 15 26.5 15.5 28.5C16 30 18 30.5 19 32C20.2 33.8 19.5 35 19 36C18.5 37 17.5 37.5 18 39C18.5 40.5 20.5 41 21.5 42C23.5 44 26 47 30 48.5C34 50 36 52 38 52C46.8366 52 54 44.8366 54 36C54 27.1634 46.8366 12 38 12Z" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+                    <path d="M36 24C34.5 22.5 32 22.5 30.5 24C29 25.5 29 28 30.5 29.5L36 35L41.5 29.5C43 28 43 25.5 41.5 24C40 22.5 37.5 22.5 36 24Z" fill="currentColor" opacity="0.8" />
+                  </svg>
+                </div>
+              </div>
+
+              <div className="space-y-1.5 mb-6 md:mb-8">
+                <h2 className="text-2xl sm:text-3xl font-bold text-gray-800 dark:text-gray-100 leading-tight">
+                  Welcome back!
                 </h2>
-                <p className="text-sm sm:text-base md:text-lg text-gray-500 dark:text-gray-400 max-w-xs sm:max-w-sm md:max-w-md mx-auto leading-relaxed">
-                  Tell me what's happening. I'll suggest one small step you can try now.
+                <p className="text-sm sm:text-base text-gray-500 dark:text-gray-400 max-w-xs sm:max-w-sm md:max-w-md mx-auto leading-relaxed">
+                  How would you like to start?
                 </p>
               </div>
 
-              {/* Suggested prompts - Single column vertical pill layout */}
+              {/* Suggested prompts - Vertical stacked pills left-aligned */}
               {!suggestionUsed && (() => {
                 const lastAssistantMessageWithReplies = [...messages]
                   .reverse()
@@ -477,13 +488,13 @@ export function GuestChatPage() {
                 }
 
                 return (
-                  <div className="grid grid-cols-2 gap-2.5 sm:gap-3 w-full max-w-lg mx-auto">
+                  <div className="flex flex-col items-start gap-2.5 w-full max-w-sm mx-auto">
                     {currentSuggestions.map((suggestion, idx) => (
                       <button
                         key={idx}
                         onClick={() => handleSuggestionClick(suggestion)}
                         disabled={isLoading}
-                        className="p-3 sm:p-4 bg-blue-100 dark:bg-blue-900/30 text-gray-700 dark:text-gray-300 rounded-xl border border-blue-200 dark:border-blue-800 hover:bg-blue-200 dark:hover:bg-blue-900/50 text-xs sm:text-sm leading-snug font-normal transition disabled:opacity-50 disabled:cursor-not-allowed text-center flex items-center justify-center min-h-[56px]"
+                        className="px-5 py-2.5 bg-blue-50/70 hover:bg-blue-100/90 dark:bg-blue-950/20 dark:hover:bg-blue-950/40 text-gray-700 dark:text-gray-300 rounded-2xl border-0 text-sm leading-normal font-normal transition text-left flex items-center gap-2"
                       >
                         {suggestion}
                       </button>
@@ -500,27 +511,19 @@ export function GuestChatPage() {
           <div className="max-w-lg md:max-w-2xl mx-auto flex flex-col gap-3">
             {/* Recent Guest Chat Banner (Yellow Card floating over bottom) */}
             {lastThread && !id && !threadId && (
-              <div className="bg-white dark:bg-gray-800 rounded-2xl border border-yellow-300 dark:border-yellow-500/50 p-4 text-left shadow-lg">
-                <div className="text-xs text-gray-500 dark:text-gray-400 mb-1.5 font-medium">On this Browser</div>
-                <div className="flex items-center gap-2 mb-0.5">
-                  <div className="w-2 h-2 bg-yellow-400 rounded-full flex-shrink-0"></div>
-                  <div className="text-sm font-semibold text-gray-800 dark:text-gray-200 truncate">
-                    {lastThread.title || "New Thread"}
-                  </div>
-                </div>
-                <div className="text-xs text-gray-400 dark:text-gray-500 ml-4 mb-3">
-                  Last visited {formatTimeAgo(lastThread.updatedAt || lastThread.createdAt)}
-                </div>
+              <div className="bg-gray-50/50 dark:bg-gray-800/40 rounded-2xl border border-gray-100 dark:border-gray-800 p-5 text-left w-full max-w-md mx-auto mt-6 shadow-sm">
+                <h3 className="text-base font-semibold text-gray-800 dark:text-gray-100 mb-1">
+                  Continue where you left off
+                </h3>
+                <p className="text-xs text-gray-500 dark:text-gray-400 mb-4 leading-relaxed">
+                  Your previous conversation is saved on this browser only. No one else can see it
+                </p>
                 <button
                   onClick={() => navigate(`/guest/${lastThread.threadId || lastThread.id}`)}
-                  className="w-full bg-yellow-400 hover:bg-yellow-500 text-gray-900 font-semibold py-2.5 px-4 rounded-xl flex items-center justify-center transition-colors mb-2 text-sm shadow-sm"
+                  className="w-full bg-[#FCD34D] hover:bg-[#FBBF24] text-gray-900 font-semibold py-3 px-4 rounded-xl flex items-center justify-center gap-1 transition shadow-sm text-sm"
                 >
-                  Pick it up <ChevronRight className="h-4 w-4 ml-1" />
+                  Continue <span className="text-base leading-none">↗</span>
                 </button>
-                <div className="flex items-center justify-center text-[11px] text-gray-400 dark:text-gray-500 gap-1.5">
-                  <Lock className="h-3 w-3" />
-                  Saved on this browser only. No one else can see it
-                </div>
               </div>
             )}
 
@@ -567,7 +570,7 @@ export function GuestChatPage() {
                 <textarea
                   ref={textareaRef}
                   className="flex-1 min-w-0 px-4 sm:px-6 py-2.5 sm:py-3 text-gray-800 dark:text-gray-200 placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none text-sm sm:text-base border-0 bg-gray-100 dark:bg-gray-700 rounded-xl resize-none min-h-[44px] max-h-[200px] overflow-y-auto"
-                  placeholder="Type here ....."
+                  placeholder="Write something"
                   value={message}
                   onChange={(e) => setMessage(e.target.value)}
                   onKeyDown={(e) => {
@@ -579,31 +582,46 @@ export function GuestChatPage() {
                   disabled={isLoading}
                   rows={1}
                 />
-                <button
-                  onClick={handleSend}
-                  disabled={!message.trim() || isLoading}
-                  className="bg-yellow-300 hover:bg-yellow-400 p-2.5 sm:p-3 rounded-full disabled:opacity-50 disabled:cursor-not-allowed transition flex-shrink-0 mb-0.5"
-                >
-                  <ArrowUp className="h-5 w-5 text-gray-900" strokeWidth={2.5} fill="none" />
-                </button>
+                <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0 mb-0.5">
+                  <button
+                    type="button"
+                    className="p-2.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition"
+                    title="Voice input (Not active)"
+                  >
+                    <Mic className="h-5 w-5" />
+                  </button>
+                  <button
+                    onClick={handleSend}
+                    disabled={!message.trim() || isLoading}
+                    className="bg-yellow-300 hover:bg-yellow-400 p-2.5 sm:p-3 rounded-full disabled:opacity-50 disabled:cursor-not-allowed transition flex-shrink-0"
+                  >
+                    <ArrowUp className="h-5 w-5 text-gray-900" strokeWidth={2.5} fill="none" />
+                  </button>
+                </div>
               </div>
             </div>
 
             {/* Guest user message */}
             <div className="text-center mt-1 sm:mt-2">
-              <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">
-                Don't lose your chat history. <button
-                  onClick={() => { setIsAuthGate(true); setShowLoginPopup(true); }}
-                  className="text-blue-600 dark:text-blue-400 hover:underline font-medium"
-                >
-                  Log in
-                </button> or <button
-                  onClick={() => { setIsAuthGate(true); setShowSignupPopup(true); }}
-                  className="text-blue-600 dark:text-blue-400 hover:underline font-medium"
-                >
-                  Sign up
-                </button> to save your conversations.
-              </p>
+              {!threadId ? (
+                <p className="text-xs sm:text-sm text-gray-400 dark:text-gray-500">
+                  Your data stays 100% private
+                </p>
+              ) : (
+                <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">
+                  Don't lose your chat history. <button
+                    onClick={() => { setIsAuthGate(true); setShowLoginPopup(true); }}
+                    className="text-blue-600 dark:text-blue-400 hover:underline font-medium"
+                  >
+                    Log in
+                  </button> or <button
+                    onClick={() => { setIsAuthGate(true); setShowSignupPopup(true); }}
+                    className="text-blue-600 dark:text-blue-400 hover:underline font-medium"
+                  >
+                    Sign up
+                  </button> to save your conversations.
+                </p>
+              )}
             </div>
           </div>
         </div>

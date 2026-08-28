@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useQueryClient, useQuery } from "@tanstack/react-query";
 import { useNavigate, Link } from "react-router-dom";
-import { ArrowUp, ChevronRight } from "lucide-react";
+import { ArrowUp, Mic } from "lucide-react";
 import { api } from "../../lib/api";
 import { extractErrorMessage } from "../../lib/errors";
 import { logAnalyticsEvent } from "../../lib/firebase";
@@ -10,10 +10,11 @@ import { ensureToken, isGuestUser } from "../../lib/auth";
 import { setMmHasChatCookie } from "../../lib/cookies";
 
 const suggestions = [
-  "I’m overwhelmed by something coming up",
-  "I feel stuck and keep avoiding things",
-  "I feel anxious in my body and I don’t know why",
-  "My mind won’t slow down and I can’t sleep",
+  "😔 I'm feeling stressed",
+  "🧠 My mind feels overwhelmed",
+  "😴 I'm having trouble sleeping",
+  "🌿 I just want to feel calmer",
+  "✨ Something else",
 ];
 
 interface Message {
@@ -204,7 +205,17 @@ export function NewChatPage() {
   const handleSuggestionClick = async (suggestion: string) => {
     if (isLoading) return;
 
-    setMessage(suggestion);
+    if (suggestion.includes("Something else")) {
+      setSuggestionUsed(true);
+      localStorage.setItem("suggestion_used_user_new", "true");
+      if (messageInputRef.current) {
+        messageInputRef.current.focus();
+      }
+      return;
+    }
+
+    const cleanSuggestion = suggestion.replace(/^[\s\S]*?\s/, '');
+    setMessage(cleanSuggestion);
     setSuggestionUsed(true);
     localStorage.setItem("suggestion_used_user_new", "true");
 
@@ -212,7 +223,7 @@ export function NewChatPage() {
       messageInputRef.current.focus();
     }
 
-    createThread(suggestion);
+    createThread(cleanSuggestion);
   };
 
   // Note: retry is handled by simply refreshing the page / reloading the route.
@@ -243,43 +254,50 @@ export function NewChatPage() {
             </button>
           </div>
         ) : (
-          <div className="w-full max-w-3xl flex flex-col items-center">
+          <div className="w-full max-w-lg flex flex-col items-center mx-auto my-auto py-2">
+            {/* MetaMindful logo profile avatar outline with heart inside */}
+            <div className="flex justify-center mb-5">
+              <div className="w-16 h-16 rounded-full bg-sky-100 dark:bg-sky-950/40 flex items-center justify-center text-sky-600 dark:text-sky-400">
+                <svg className="w-10 h-10" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M38 12C31.5 12 26 15.5 23 21C22 23 20 23.5 18 24.5C16.5 25.2 15 26.5 15.5 28.5C16 30 18 30.5 19 32C20.2 33.8 19.5 35 19 36C18.5 37 17.5 37.5 18 39C18.5 40.5 20.5 41 21.5 42C23.5 44 26 47 30 48.5C34 50 36 52 38 52C46.8366 52 54 44.8366 54 36C54 27.1634 46.8366 12 38 12Z" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+                  <path d="M36 24C34.5 22.5 32 22.5 30.5 24C29 25.5 29 28 30.5 29.5L36 35L41.5 29.5C43 28 43 25.5 41.5 24C40 22.5 37.5 22.5 36 24Z" fill="currentColor" opacity="0.8" />
+                </svg>
+              </div>
+            </div>
+
             {/* Header */}
-            <div className="text-center space-y-0 md:space-y-1 mb-0 md:mb-4">
-              <h2 className="text-2xl md:text-4xl font-bold text-gray-800 dark:text-gray-100">
-                Welcome back
+            <div className="text-center space-y-1.5 mb-6 md:mb-8">
+              <h2 className="text-2xl sm:text-3xl font-bold text-gray-800 dark:text-gray-100 leading-tight">
+                Welcome back!
               </h2>
-              <p className="text-base md:text-lg text-gray-600 dark:text-gray-400">
+              <p className="text-sm sm:text-base text-gray-500 dark:text-gray-400">
                 How would you like to start?
               </p>
             </div>
 
-            {/* Talk about something new card */}
-            <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm p-3.5 md:p-4 w-full max-w-2xl mb-1 md:mb-3">
-              <h3 className="text-[15px] md:text-[17px] font-medium text-gray-700 dark:text-gray-200 mb-2 md:mb-3 text-left ml-2">
-                Talk about something new
-              </h3>
-              
-              {!suggestionUsed && (
-                <div className="flex flex-wrap gap-2 md:gap-3 justify-center mb-3 md:mb-4">
-                  {suggestions.map((suggestion, idx) => (
-                    <button
-                      key={idx}
-                      onClick={() => handleSuggestionClick(suggestion)}
-                      disabled={isLoading}
-                      className="px-3 py-2.5 md:px-4 md:py-3 w-[calc(50%-4px)] md:w-[calc(50%-6px)] bg-blue-50/50 dark:bg-blue-900/30 text-gray-700 dark:text-gray-300 rounded-xl border border-blue-100 dark:border-blue-800 hover:bg-blue-100 dark:hover:bg-blue-900/50 text-[10px] md:text-[11px] leading-relaxed font-normal transition disabled:opacity-50 disabled:cursor-not-allowed text-center [text-wrap-mode:wrap]"
-                    >
-                      {suggestion}
-                    </button>
-                  ))}
-                </div>
-              )}
+            {/* Suggested prompts - Vertical Stack left-aligned pill layout */}
+            {!suggestionUsed && (
+              <div className="flex flex-col items-start gap-2.5 w-full max-w-sm mx-auto mb-6">
+                {suggestions.map((suggestion, idx) => (
+                  <button
+                    key={idx}
+                    onClick={() => handleSuggestionClick(suggestion)}
+                    disabled={isLoading}
+                    className="px-5 py-2.5 bg-blue-50/70 hover:bg-blue-100/90 dark:bg-blue-950/20 dark:hover:bg-blue-950/40 text-gray-700 dark:text-gray-300 rounded-2xl border-0 text-sm leading-normal font-normal transition text-left flex items-center gap-2"
+                  >
+                    {suggestion}
+                  </button>
+                ))}
+              </div>
+            )}
 
-              <div className="bg-gray-50 dark:bg-gray-900 rounded-xl border border-gray-100 dark:border-gray-700 flex items-end gap-3 p-2">
+            {/* Text input area */}
+            <div className="w-full max-w-md mx-auto mb-6 relative">
+              <div className="relative z-10 bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm flex items-end gap-3 p-3 sm:p-4">
                 <textarea
                   ref={messageInputRef}
-                  className="flex-1 px-4 py-2.5 text-gray-800 dark:text-gray-200 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none text-[15px] border-0 bg-transparent resize-none min-h-[44px] max-h-[150px] overflow-y-auto"
-                  placeholder="Start with something new..."
+                  className="flex-1 min-w-0 px-4 sm:px-6 py-2.5 sm:py-3 text-gray-800 dark:text-gray-200 placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none text-sm sm:text-base border-0 bg-gray-100 dark:bg-gray-700 rounded-xl resize-none min-h-[44px] max-h-[150px] overflow-y-auto"
+                  placeholder="Write something"
                   value={message}
                   onChange={(e) => setMessage(e.target.value)}
                   onKeyDown={(e) => {
@@ -291,42 +309,42 @@ export function NewChatPage() {
                   disabled={isLoading}
                   rows={1}
                 />
-                <button
-                  onClick={handleSend}
-                  disabled={!message.trim() || isLoading}
-                  className="bg-yellow-300 hover:bg-yellow-400 p-2.5 rounded-full disabled:opacity-50 disabled:cursor-not-allowed transition flex-shrink-0"
-                >
-                  <ArrowUp className="h-4 w-4 text-gray-900" strokeWidth={2.5} fill="none" />
-                </button>
+                <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0 mb-0.5">
+                  <button
+                    type="button"
+                    className="p-2.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition"
+                    title="Voice input (Not active)"
+                  >
+                    <Mic className="h-5 w-5" />
+                  </button>
+                  <button
+                    onClick={handleSend}
+                    disabled={!message.trim() || isLoading}
+                    className="bg-yellow-300 hover:bg-yellow-400 p-2.5 sm:p-3 rounded-full disabled:opacity-50 disabled:cursor-not-allowed transition flex-shrink-0"
+                  >
+                    <ArrowUp className="h-5 w-5 text-gray-900" strokeWidth={2.5} fill="none" />
+                  </button>
+                </div>
               </div>
             </div>
 
-            {/* Separator */}
-            {latestThreadDetail && (
-              <div className="flex items-center w-full max-w-[200px] my-0">
-                <div className="flex-1 border-t border-gray-200 dark:border-gray-700"></div>
-                <span className="px-4 text-gray-400 dark:text-gray-500 text-[14px]">or</span>
-                <div className="flex-1 border-t border-gray-200 dark:border-gray-700"></div>
-              </div>
-            )}
-
             {/* Continue where you left card */}
             {latestThreadDetail && (
-              <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm p-4 md:p-5 w-full max-w-2xl">
-                <div className="mb-3 text-left ml-2">
-                  <h3 className="text-[17px] font-medium text-gray-700 dark:text-gray-200">
-                    Continue where you left
+              <div className="bg-gray-50/50 dark:bg-gray-800/40 rounded-2xl border border-gray-100 dark:border-gray-800 p-5 text-left w-full max-w-md mx-auto mt-2 shadow-sm">
+                <div className="mb-4 text-left ml-1">
+                  <h3 className="text-base font-semibold text-gray-800 dark:text-gray-100">
+                    Continue where you left off
                   </h3>
-                  <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 leading-relaxed">
                     Let's build on that instead of starting from scratch
                   </p>
                 </div>
 
                 {/* Yellow embedded thread card */}
-                <div className="bg-yellow-400 rounded-[14px] p-5 text-left text-gray-900">
-                  <h4 className="font-bold text-[17px] mb-1">{threadCard?.title_name || latestThreadDetail.title || "New Thread"}</h4>
+                <div className="bg-[#FCD34D] rounded-xl p-5 text-left text-gray-900 shadow-sm">
+                  <h4 className="font-bold text-[16px] mb-1">{threadCard?.title_name || latestThreadDetail.title || "New Thread"}</h4>
                   {theSign && (
-                    <p className="text-[13px] font-medium opacity-90 mb-4 truncate">
+                    <p className="text-[12px] font-medium opacity-90 mb-4 truncate">
                       <span className="italic font-normal">The Sign:</span> {theSign}
                     </p>
                   )}
@@ -334,23 +352,23 @@ export function NewChatPage() {
                   {toDo ? (
                     <button 
                       onClick={() => navigate(`/user/chat/${latestThreadDetail.threadId || latestThreadDetail.id}`)}
-                      className="w-full bg-white text-gray-900 rounded-lg px-4 py-3.5 flex items-center justify-between hover:bg-gray-50 transition shadow-sm"
+                      className="w-full bg-white text-gray-900 rounded-lg px-4 py-3 flex items-center justify-between hover:bg-gray-50 transition shadow-sm"
                     >
                       <div className="flex items-center gap-2 truncate pr-4">
                         <span className="text-yellow-400 text-xl leading-none font-bold pb-0.5">•</span>
                         <span className="font-bold text-[13px] truncate">To do : {toDo}</span>
                       </div>
-                      <ChevronRight className="h-4 w-4 flex-shrink-0 text-gray-500" />
+                      <span className="text-[15px] font-semibold">↗</span>
                     </button>
                   ) : (
                     <button 
                       onClick={() => navigate(`/user/chat/${latestThreadDetail.threadId || latestThreadDetail.id}`)}
-                      className="w-full bg-white text-gray-900 rounded-lg px-4 py-3.5 flex items-center justify-between hover:bg-gray-50 transition shadow-sm"
+                      className="w-full bg-white text-gray-900 rounded-lg px-4 py-3 flex items-center justify-between hover:bg-gray-50 transition shadow-sm"
                     >
                       <div className="flex items-center gap-2 truncate pr-4">
                         <span className="font-bold text-[13px] truncate">Continue chat</span>
                       </div>
-                      <ChevronRight className="h-4 w-4 flex-shrink-0 text-gray-500" />
+                      <span className="text-[15px] font-semibold">↗</span>
                     </button>
                   )}
                 </div>

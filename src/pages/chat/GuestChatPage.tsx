@@ -2,7 +2,7 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 import { useState, useEffect, useRef } from "react";
 import { useParams, useNavigate, Link, useSearchParams } from "react-router-dom";
 import { toast } from "react-hot-toast";
-import { ArrowUp, X, Mic } from "lucide-react";
+import { X, Mic, Send } from "lucide-react";
 import { api } from "../../lib/api";
 import { extractErrorMessage } from "../../lib/errors";
 import { logAnalyticsEvent } from "../../lib/firebase";
@@ -86,9 +86,7 @@ export function GuestChatPage() {
   const hasAutoSentQueryMessageRef = useRef(false); // Track if we've auto-sent the query message
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const [pendingMessage, setPendingMessage] = useState<string | null>(null);
-  const [suggestionUsed, setSuggestionUsed] = useState(() => {
-    return localStorage.getItem("suggestion_used_guest_new") === "true";
-  });
+  const [suggestionUsed, setSuggestionUsed] = useState(false);
 
   // Default suggestions provided as constant
   const [currentSuggestions] = useState<string[]>(suggestions);
@@ -426,40 +424,41 @@ export function GuestChatPage() {
 
   return (
     <>
-      <div className="h-full flex flex-col relative bg-gray-50 dark:bg-gray-900 overflow-hidden">
+      <div className="h-full flex flex-col relative bg-white overflow-hidden">
         {/* Main scrollable content view */}
         <div className="flex-1 overflow-y-auto px-4 py-6 flex flex-col items-center justify-start md:justify-center min-h-0">
           {(generateToken.isLoading || (isLoading && !messages[0])) ? (
             <div className="text-center my-auto">
               <div className="flex items-center justify-center gap-2 mb-4">
-                <div className="w-2 h-2 bg-gray-400 dark:bg-gray-500 rounded-full animate-bounce" style={{ animationDelay: "0ms" }}></div>
-                <div className="w-2 h-2 bg-gray-400 dark:bg-gray-500 rounded-full animate-bounce" style={{ animationDelay: "150ms" }}></div>
-                <div className="w-2 h-2 bg-gray-400 dark:bg-gray-500 rounded-full animate-bounce" style={{ animationDelay: "300ms" }}></div>
+                <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: "0ms" }}></div>
+                <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: "150ms" }}></div>
+                <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: "300ms" }}></div>
               </div>
-              <p className="text-gray-500 dark:text-gray-400">Setting up your chat...</p>
+              <p className="text-gray-500">Setting up your chat...</p>
             </div>
           ) : (
-            <div className="text-center max-w-lg w-full mx-auto my-auto flex flex-col items-center py-2">
-              {/* MetaMindful logo profile avatar outline with heart inside */}
-              <div className="flex justify-center mb-5">
-                <div className="w-16 h-16 rounded-full bg-sky-100 dark:bg-sky-950/40 flex items-center justify-center text-sky-600 dark:text-sky-400">
-                  <svg className="w-10 h-10" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <div className="text-left max-w-lg md:max-w-2xl w-full mx-auto my-auto flex flex-col items-start py-2">
+              {/* Profile logo on top */}
+              <div className="mb-4">
+                <div className="w-14 h-14 rounded-full bg-sky-100 flex items-center justify-center text-sky-600">
+                  <svg className="w-8 h-8" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
                     <path d="M38 12C31.5 12 26 15.5 23 21C22 23 20 23.5 18 24.5C16.5 25.2 15 26.5 15.5 28.5C16 30 18 30.5 19 32C20.2 33.8 19.5 35 19 36C18.5 37 17.5 37.5 18 39C18.5 40.5 20.5 41 21.5 42C23.5 44 26 47 30 48.5C34 50 36 52 38 52C46.8366 52 54 44.8366 54 36C54 27.1634 46.8366 12 38 12Z" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
                     <path d="M36 24C34.5 22.5 32 22.5 30.5 24C29 25.5 29 28 30.5 29.5L36 35L41.5 29.5C43 28 43 25.5 41.5 24C40 22.5 37.5 22.5 36 24Z" fill="currentColor" opacity="0.8" />
                   </svg>
                 </div>
               </div>
 
-              <div className="space-y-1.5 mb-6 md:mb-8">
-                <h2 className="text-2xl sm:text-3xl font-bold text-gray-800 dark:text-gray-100 leading-tight">
+              {/* Text underneath the logo */}
+              <div className="space-y-1 mb-6">
+                <h2 className="text-3xl font-bold text-gray-850 leading-tight">
                   Welcome back!
                 </h2>
-                <p className="text-sm sm:text-base text-gray-500 dark:text-gray-400 max-w-xs sm:max-w-sm md:max-w-md mx-auto leading-relaxed">
+                <p className="text-sm text-gray-500 font-semibold">
                   How would you like to start?
                 </p>
               </div>
 
-              {/* Suggested prompts - Vertical stacked pills left-aligned */}
+              {/* Suggested prompts - Vertical Stack left-aligned pill layout, no indentation */}
               {!suggestionUsed && (() => {
                 const lastAssistantMessageWithReplies = [...messages]
                   .reverse()
@@ -472,13 +471,13 @@ export function GuestChatPage() {
                   if (requiresSignup) return null;
 
                   return (
-                    <div className="flex overflow-x-auto gap-3 pb-2 w-full no-scrollbar">
+                    <div className="flex flex-col gap-2 w-full">
                       {lastAssistantMessageWithReplies.replies.map((reply, idx) => (
                         <button
                           key={idx}
                           onClick={() => handleSuggestionClick(reply)}
                           disabled={isLoading || requiresSignup}
-                          className="px-5 py-3 w-[190px] bg-blue-100 dark:bg-blue-900/30 text-gray-700 dark:text-gray-300 rounded-full border border-blue-200 dark:border-blue-800 hover:bg-blue-200 dark:hover:bg-blue-900/50 text-[12px] leading-normal font-normal transition disabled:opacity-50 disabled:cursor-not-allowed text-left [text-wrap-mode:wrap] flex-shrink-0"
+                          className="px-5 py-2.5 bg-blue-50/70 hover:bg-blue-100/90 text-gray-700 rounded-2xl border-0 text-sm leading-normal font-semibold transition text-left"
                         >
                           {reply}
                         </button>
@@ -488,13 +487,13 @@ export function GuestChatPage() {
                 }
 
                 return (
-                  <div className="flex flex-col items-start gap-2.5 w-full max-w-sm mx-auto">
+                  <div className="flex flex-col items-start gap-2.5 w-full">
                     {currentSuggestions.map((suggestion, idx) => (
                       <button
                         key={idx}
                         onClick={() => handleSuggestionClick(suggestion)}
                         disabled={isLoading}
-                        className="px-5 py-2.5 bg-blue-50/70 hover:bg-blue-100/90 dark:bg-blue-950/20 dark:hover:bg-blue-950/40 text-gray-700 dark:text-gray-300 rounded-2xl border-0 text-sm leading-normal font-normal transition text-left flex items-center gap-2"
+                        className="px-5 py-2.5 bg-blue-50/70 hover:bg-blue-100/90 text-gray-700 rounded-2xl border-0 text-sm leading-normal font-semibold transition text-left flex items-center gap-2"
                       >
                         {suggestion}
                       </button>
@@ -509,13 +508,12 @@ export function GuestChatPage() {
         {/* Input area with recent thread card floating above it */}
         <div className="pb-4 px-4 flex-shrink-0 z-20 relative bg-gradient-to-t from-gray-50 via-gray-50/90 to-transparent dark:from-gray-900 dark:via-gray-900/90 pt-2">
           <div className="max-w-lg md:max-w-2xl mx-auto flex flex-col gap-3">
-            {/* Recent Guest Chat Banner (Yellow Card floating over bottom) */}
             {lastThread && !id && !threadId && (
-              <div className="bg-gray-50/50 dark:bg-gray-800/40 rounded-2xl border border-gray-100 dark:border-gray-800 p-5 text-left w-full max-w-md mx-auto mt-6 shadow-sm">
-                <h3 className="text-base font-semibold text-gray-800 dark:text-gray-100 mb-1">
+              <div className="bg-gray-50/50 rounded-2xl border border-gray-150 p-5 text-left w-full mt-6 shadow-sm">
+                <h3 className="text-base font-semibold text-gray-800 mb-1">
                   Continue where you left off
                 </h3>
-                <p className="text-xs text-gray-500 dark:text-gray-400 mb-4 leading-relaxed">
+                <p className="text-xs text-gray-500 mb-4 leading-relaxed">
                   Your previous conversation is saved on this browser only. No one else can see it
                 </p>
                 <button
@@ -566,10 +564,10 @@ export function GuestChatPage() {
                 onToggle={() => setShowThreadCard(!showThreadCard)}
               />
 
-              <div className="relative z-10 bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm flex items-end gap-3 p-3 sm:p-4">
+              <div className="relative z-10 bg-gray-100 rounded-full border border-gray-200/50 flex items-center gap-2 p-1.5 pl-4 pr-1.5 shadow-sm">
                 <textarea
                   ref={textareaRef}
-                  className="flex-1 min-w-0 px-4 sm:px-6 py-2.5 sm:py-3 text-gray-800 dark:text-gray-200 placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none text-sm sm:text-base border-0 bg-gray-100 dark:bg-gray-700 rounded-xl resize-none min-h-[44px] max-h-[200px] overflow-y-auto"
+                  className="flex-1 min-w-0 px-2 sm:px-4 py-2 m-0 text-gray-800 placeholder-gray-500 focus:outline-none text-sm sm:text-base border-0 bg-transparent resize-none overflow-y-auto max-h-[120px] leading-normal"
                   placeholder="Write something"
                   value={message}
                   onChange={(e) => setMessage(e.target.value)}
@@ -582,10 +580,10 @@ export function GuestChatPage() {
                   disabled={isLoading}
                   rows={1}
                 />
-                <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0 mb-0.5">
+                <div className="flex items-center gap-1 flex-shrink-0">
                   <button
                     type="button"
-                    className="p-2.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition"
+                    className="p-2 text-gray-400 hover:text-gray-650 transition"
                     title="Voice input (Not active)"
                   >
                     <Mic className="h-5 w-5" />
@@ -593,9 +591,9 @@ export function GuestChatPage() {
                   <button
                     onClick={handleSend}
                     disabled={!message.trim() || isLoading}
-                    className="bg-yellow-300 hover:bg-yellow-400 p-2.5 sm:p-3 rounded-full disabled:opacity-50 disabled:cursor-not-allowed transition flex-shrink-0"
+                    className="bg-gray-200 hover:bg-gray-300 p-2 rounded-full disabled:opacity-50 disabled:cursor-not-allowed transition flex-shrink-0 flex items-center justify-center h-9 w-9"
                   >
-                    <ArrowUp className="h-5 w-5 text-gray-900" strokeWidth={2.5} fill="none" />
+                    <Send className="h-4.5 w-4.5 text-gray-600" />
                   </button>
                 </div>
               </div>

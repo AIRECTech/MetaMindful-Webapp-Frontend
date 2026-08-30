@@ -1,6 +1,6 @@
 import { useNavigate, useParams } from "react-router-dom";
 import { cn } from "../../lib/utils";
-import { MessageSquare, Settings, Plus, Moon, Sun, LogOut, Edit2, Trash2, MoreVertical, X } from "lucide-react";
+import { MessageSquare, Settings, Search, Columns, ListTodo, Edit2, Trash2, MoreVertical, LogOut } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "../../lib/api";
@@ -11,7 +11,6 @@ import { LoginPopup } from "../LoginPopup";
 import { SignupPopup } from "../SignupPopup";
 import { extractErrorMessage } from "../../lib/errors";
 import { toast } from "react-hot-toast";
-import { getDarkMode, toggleDarkMode as toggleDarkModeUtil } from "../../lib/darkMode";
 import { useLayout } from "../../contexts/LayoutContext";
 
 interface Thread {
@@ -31,30 +30,9 @@ export function Sidebar() {
   const isGuest = isGuestUser();
   const queryClient = useQueryClient();
   const { isSidebarOpen, closeSidebar } = useLayout();
-  const [darkMode, setDarkMode] = useState(() => {
-    return getDarkMode();
-  });
-
   const [showLoginPopup, setShowLoginPopup] = useState(false);
   const [showSignupPopup, setShowSignupPopup] = useState(false);
   const [signupPopupText, setSignupPopupText] = useState<string | undefined>(undefined);
-
-  // Sync dark mode state with DOM changes
-  useEffect(() => {
-    const observer = new MutationObserver(() => {
-      const isDark = document.documentElement.classList.contains("dark");
-      if (isDark !== darkMode) {
-        setDarkMode(isDark);
-      }
-    });
-
-    observer.observe(document.documentElement, {
-      attributes: true,
-      attributeFilter: ["class"],
-    });
-
-    return () => observer.disconnect();
-  }, [darkMode]);
   const [editingThreadId, setEditingThreadId] = useState<string | null>(null);
   const [editingTitle, setEditingTitle] = useState("");
   const [hoveredThreadId, setHoveredThreadId] = useState<string | null>(null);
@@ -193,41 +171,17 @@ export function Sidebar() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [showMenuThreadId]);
 
-  // Format date helper
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    const now = new Date();
-    const diffMs = now.getTime() - date.getTime();
-    const diffMins = Math.floor(diffMs / 60000);
-    const diffHours = Math.floor(diffMs / 3600000);
-    const diffDays = Math.floor(diffMs / 86400000);
-
-    if (diffMins < 1) return "Just now";
-    if (diffMins < 60) return `${diffMins}m ago`;
-    if (diffHours < 24) return `${diffHours}h ago`;
-    if (diffDays < 7) return `${diffDays}d ago`;
-
-    // For older dates, show formatted date
-    return date.toLocaleDateString("en-US", { month: "short", day: "numeric", year: date.getFullYear() !== now.getFullYear() ? "numeric" : undefined });
-  };
-
-  const toggleDarkMode = () => {
-    const newMode = toggleDarkModeUtil();
-    setDarkMode(newMode);
-  };
+  // formatDate removed
 
   const handleLogout = async () => {
     try {
-      // Try to call logout endpoint if user is logged in
       if (isRealUser()) {
         logAnalyticsEvent("logout");
         await api.post("/auth/logout");
       }
     } catch (error) {
-      // Continue with logout even if API call fails
       console.error("Logout API call failed:", error);
     }
-    // Clear tokens and redirect to login
     clearTokens();
     navigate("/");
   };
@@ -244,167 +198,196 @@ export function Sidebar() {
       )}
 
       <aside className={cn(
-        "fixed inset-y-0 left-0 z-[70] w-64 bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-700 flex flex-col transition-transform duration-300 lg:static lg:translate-x-0 lg:h-full",
-        isSidebarOpen ? "translate-x-0" : "-translate-x-full"
+        "fixed inset-y-0 left-0 z-[70] w-64 bg-white border-r border-gray-200 flex flex-col transition-all duration-300 h-full lg:relative",
+        isSidebarOpen 
+          ? "translate-x-0 lg:w-64 lg:border-r" 
+          : "-translate-x-full lg:w-0 lg:border-r-0 lg:overflow-hidden lg:-translate-x-full"
       )}>
-        {/* Logo and close button at top */}
-        <div className="p-4 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
+        {/* Logo and toggle/search at top */}
+        <div className="p-4 border-b border-gray-200 flex items-center justify-between flex-shrink-0">
           <div
-            className="flex items-center gap-3 cursor-pointer"
+            className="flex items-center gap-2 cursor-pointer"
             onClick={() => {
-              navigate("/");
+              navigate(isGuest ? "/guest" : "/user");
               if (window.innerWidth < 1024) closeSidebar();
             }}
           >
             <img
               src="/logo.png"
               alt="MetaMindful"
-              className="h-8 w-auto"
+              className="h-7 w-auto"
             />
             <div className="flex flex-col">
-              <span className="text-lg font-bold text-gray-800 dark:text-gray-200">MetaMindful</span>
+              <span className="text-[15px] font-bold text-gray-800">MetaMindful</span>
               {isGuest && (
-                <span className="text-xs text-gray-500 dark:text-gray-400">Guest mode</span>
+                <span className="text-[10px] text-gray-400 font-medium">Guest mode</span>
               )}
             </div>
           </div>
 
+          <div className="flex items-center gap-1">
+            <button
+              onClick={() => {
+                toast.success("Search is coming soon!");
+              }}
+              className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-50 rounded-lg transition"
+              title="Search"
+            >
+              <Search className="h-4 w-4" />
+            </button>
+            <button
+              onClick={closeSidebar}
+              className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-50 rounded-lg transition"
+              title="Close sidebar"
+            >
+              <Columns className="h-4 w-4" />
+            </button>
+          </div>
+        </div>
+
+        {/* Main Navigation */}
+        <div className="p-2 space-y-1 border-b border-gray-100 flex-shrink-0">
           <button
-            onClick={closeSidebar}
-            className="lg:hidden p-2 text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition"
+            onClick={() => {
+              if (isGuest) {
+                navigate("/guest");
+              } else {
+                navigate("/user/chat/new");
+              }
+              if (window.innerWidth < 1024) closeSidebar();
+            }}
+            className={cn(
+              "w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold transition text-left",
+              location.pathname === "/guest" || location.pathname === "/user/chat/new" || location.pathname === "/user"
+                ? "bg-gray-100 text-gray-900"
+                : "text-gray-650 hover:bg-gray-50 hover:text-gray-900"
+            )}
           >
-            <X className="h-5 w-5" />
+            <MessageSquare className="h-4.5 w-4.5 text-gray-500" />
+            <span>New chat</span>
+          </button>
+
+          <button
+            onClick={() => {
+              if (isGuest) {
+                setSignupPopupText("Create your free account to view and complete actions");
+                setShowSignupPopup(true);
+              } else {
+                navigate("/user/threads");
+              }
+              if (window.innerWidth < 1024) closeSidebar();
+            }}
+            className={cn(
+              "w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-sm font-semibold transition",
+              location.pathname === "/user/threads"
+                ? "bg-gray-100 text-gray-900"
+                : "text-gray-650 hover:bg-gray-50 hover:text-gray-900"
+            )}
+          >
+            <div className="flex items-center gap-3">
+              <ListTodo className="h-4.5 w-4.5 text-gray-500" />
+              <span>Actions</span>
+            </div>
+            <span className="bg-blue-50 text-blue-600 text-[10px] font-bold px-2 py-0.5 rounded-full">
+              New
+            </span>
           </button>
         </div>
 
         {/* Threads section */}
-        <div className="flex-1 overflow-y-auto">
-          <div className="p-2">
-            {/* New Thread button */}
-            <button
-              onClick={() => {
-                if (isGuest) {
-                  setSignupPopupText("Create your free account to start more threads");
-                  setShowSignupPopup(true);
-                } else {
-                  navigate("/user/chat/new");
-                }
-              }}
-              disabled={!isGuest && threads !== undefined && threads.length > 3}
-              className={cn(
-                "w-full flex items-center gap-3 px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-700 transition text-sm font-medium mb-2",
-                !isGuest && threads && threads.length > 3
-                  ? "opacity-50 cursor-not-allowed bg-gray-100 dark:bg-gray-800 text-gray-400 border-gray-100 dark:border-gray-800"
-                  : "hover:bg-gray-50 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-300"
-              )}
-            >
-              <Plus className="h-4 w-4" />
-              New Thread
-            </button>
+        <div className="flex-1 overflow-y-auto mt-2">
+          <div className="px-5 py-2 text-[11px] font-semibold text-gray-400 uppercase tracking-wider">
+            Chats
+          </div>
+          <div className="p-2 space-y-1">
+            {threadsToDisplay && threadsToDisplay.length > 0 ? (
+              threadsToDisplay.map((thread) => (
+                <div
+                  key={thread.id}
+                  className={cn(
+                    "group relative flex items-center gap-2 rounded-xl transition",
+                    currentThreadId === (thread.threadId || thread.id)
+                      ? "bg-gray-100"
+                      : "hover:bg-gray-50/70"
+                  )}
+                  onMouseEnter={() => setHoveredThreadId(thread.threadId || thread.id)}
+                  onMouseLeave={() => {
+                    if (!showMenuThreadId) {
+                      setHoveredThreadId(null);
+                    }
+                  }}
+                >
+                  {editingThreadId === (thread.threadId || thread.id) ? (
+                    // Edit mode
+                    <div className="flex-1 px-3 py-2 min-w-0">
+                      <input
+                        ref={editInputRef}
+                        type="text"
+                        value={editingTitle}
+                        onChange={(e) => setEditingTitle(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") {
+                            e.preventDefault();
+                            handleSaveEdit();
+                          } else if (e.key === "Escape") {
+                            e.preventDefault();
+                            handleCancelEdit();
+                          }
+                        }}
+                        onBlur={() => {
+                          if (editingThreadId && editingTitle.trim() && editingTitle.trim() !== thread.title) {
+                            handleSaveEdit();
+                          } else {
+                            handleCancelEdit();
+                          }
+                        }}
+                        className="w-full px-2 py-1 text-sm text-gray-900 bg-white border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 overflow-hidden"
+                        disabled={updateThread.isPending}
+                      />
+                    </div>
+                  ) : (
+                    // Normal mode
+                    <>
+                      <button
+                        onClick={() => navigate(isGuest ? `/guest/${thread.threadId || thread.id}` : `/user/chat/${thread.threadId || thread.id}`)}
+                        className={cn(
+                          "flex-1 px-4 py-2.5 text-sm transition text-left min-w-0 font-medium",
+                          currentThreadId === (thread.threadId || thread.id)
+                            ? "text-gray-900"
+                            : "text-gray-650"
+                        )}
+                        title={thread.title}
+                      >
+                        <span className="truncate block">{thread.title}</span>
+                      </button>
 
-            {/* Threads list */}
-            <div className="space-y-1 mt-2">
-              {threadsToDisplay && threadsToDisplay.length > 0 ? (
-                threadsToDisplay.map((thread) => (
-                  <div
-                    key={thread.id}
-                    className={cn(
-                      "group relative flex items-center gap-2 rounded-lg transition",
-                      currentThreadId === (thread.threadId || thread.id)
-                        ? "bg-gray-100 dark:bg-gray-800"
-                        : "hover:bg-gray-50 dark:hover:bg-gray-800"
-                    )}
-                    onMouseEnter={() => setHoveredThreadId(thread.threadId || thread.id)}
-                    onMouseLeave={() => {
-                      if (!showMenuThreadId) {
-                        setHoveredThreadId(null);
-                      }
-                    }}
-                  >
-                    {editingThreadId === (thread.threadId || thread.id) ? (
-                      // Edit mode
-                      <div className="flex-1 px-3 py-2 min-w-0">
-                        <input
-                          ref={editInputRef}
-                          type="text"
-                          value={editingTitle}
-                          onChange={(e) => setEditingTitle(e.target.value)}
-                          onKeyDown={(e) => {
-                            if (e.key === "Enter") {
-                              e.preventDefault();
-                              handleSaveEdit();
-                            } else if (e.key === "Escape") {
-                              e.preventDefault();
-                              handleCancelEdit();
-                            }
-                          }}
-                          onBlur={() => {
-                            // Auto-save on blur if there's a change
-                            if (editingThreadId && editingTitle.trim() && editingTitle.trim() !== thread.title) {
-                              handleSaveEdit();
-                            } else {
-                              handleCancelEdit();
-                            }
-                          }}
-                          className="w-full px-2 py-1 text-sm text-gray-900 dark:text-gray-200 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 overflow-hidden"
-                          disabled={updateThread.isPending}
-                        />
-                      </div>
-                    ) : (
-                      // Normal mode
-                      <>
-                        <button
-                          onClick={() => navigate(isGuest ? `/guest/${thread.threadId || thread.id}` : `/user/chat/${thread.threadId || thread.id}`)}
-                          className={cn(
-                            "flex-1 flex flex-col gap-1 px-3 py-2 text-sm transition text-left min-w-0",
-                            currentThreadId === (thread.threadId || thread.id)
-                              ? "text-gray-900 dark:text-gray-100 font-medium"
-                              : "text-gray-600 dark:text-gray-400"
-                          )}
-                          title={thread.title}
-                        >
-                          <div className="flex items-center gap-2 min-w-0">
-                            <MessageSquare className="h-4 w-4 flex-shrink-0" />
-                            <span className="truncate flex-1">{thread.title}</span>
-                          </div>
-                          <div className="flex items-center gap-3 text-xs text-gray-500 dark:text-gray-400 ml-6">
-                            <span>{formatDate(thread.updatedAt || thread.createdAt)}</span>
-                            {/* {(thread.actionsCount !== undefined && thread.actionsCount > 0) && (
-                              <span>• {thread.actionsCount} action{thread.actionsCount !== 1 ? 's' : ''}</span>
-                            )} */}
-                            {(thread.exercisesCount !== undefined && thread.exercisesCount > 0) && (
-                              <span>• {thread.exercisesCount} exercise{thread.exercisesCount !== 1 ? 's' : ''}</span>
-                            )}
-                          </div>
-                        </button>
+                      {/* Menu button - show on hover */}
+                      {hoveredThreadId === (thread.threadId || thread.id) && (
+                        <div className="relative" data-thread-menu={thread.threadId || thread.id}>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              const threadIdentifier = thread.threadId || thread.id;
+                              setShowMenuThreadId(showMenuThreadId === threadIdentifier ? null : threadIdentifier);
+                            }}
+                            className="p-1 text-gray-400 hover:text-gray-650 hover:bg-gray-100 rounded mr-2"
+                          >
+                            <MoreVertical className="h-4 w-4" />
+                          </button>
 
-                        {/* Menu button - show on hover */}
-                        {hoveredThreadId === (thread.threadId || thread.id) && (
-                          <div className="relative" data-thread-menu={thread.threadId || thread.id}>
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                const threadIdentifier = thread.threadId || thread.id;
-                                setShowMenuThreadId(showMenuThreadId === threadIdentifier ? null : threadIdentifier);
-                              }}
-                              className="p-1 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 rounded mr-2"
-                            >
-                              <MoreVertical className="h-4 w-4" />
-                            </button>
-
-                            {/* Dropdown menu */}
-                            {showMenuThreadId === (thread.threadId || thread.id) && (
-                              <div className="absolute right-0 top-full mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg z-50 min-w-[120px]">
-                                <button
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    handleStartEdit(thread);
-                                  }}
-                                  className={cn(
-                                    "w-full flex items-center gap-2 px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700",
-                                    isGuest ? "rounded-lg" : "rounded-t-lg"
-                                  )}
-                                >
+                          {/* Dropdown menu */}
+                          {showMenuThreadId === (thread.threadId || thread.id) && (
+                            <div className="absolute right-0 top-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-50 min-w-[120px]">
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleStartEdit(thread);
+                                }}
+                                className={cn(
+                                  "w-full flex items-center gap-2 px-3 py-2 text-sm text-gray-750 hover:bg-gray-50",
+                                  isGuest ? "rounded-lg" : "rounded-t-lg"
+                                )}
+                              >
                                   <Edit2 className="h-3 w-3" />
                                   Rename
                                 </button>
@@ -414,7 +397,7 @@ export function Sidebar() {
                                       e.stopPropagation();
                                       handleDelete(thread.threadId || thread.id);
                                     }}
-                                    className="w-full flex items-center gap-2 px-3 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-b-lg"
+                                    className="w-full flex items-center gap-2 px-3 py-2 text-sm text-red-600 hover:bg-red-50 rounded-b-lg"
                                     disabled={deleteThread.isPending}
                                   >
                                     <Trash2 className="h-3 w-3" />
@@ -430,57 +413,39 @@ export function Sidebar() {
                   </div>
                 ))
               ) : (
-                <div className="text-xs text-gray-400 dark:text-gray-500 px-3 py-2 text-center">
-                  No threads yet
+                <div className="text-xs text-gray-400 px-3 py-2 text-center">
+                  No chats yet
                 </div>
               )}
             </div>
           </div>
-        </div>
 
-        {/* Divider */}
-        <div className="border-t border-gray-200 dark:border-gray-700"></div>
-
-        {/* Bottom section: Theme, Settings, Logout */}
-        <div className="p-2 space-y-1">
+        {/* Bottom section: Settings, Logout */}
+        <div className="p-2 space-y-1 border-t border-gray-150 flex-shrink-0">
           <button
-            onClick={toggleDarkMode}
-            className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 transition"
-          >
-            {darkMode ? (
-              <>
-                <Sun className="h-4 w-4" />
-                Light Mode
-              </>
-            ) : (
-              <>
-                <Moon className="h-4 w-4" />
-                Dark Mode
-              </>
-            )}
-          </button>
-
-          <button
-            onClick={() => navigate("/user/settings")}
+            onClick={() => {
+              navigate("/user/settings");
+              if (window.innerWidth < 1024) closeSidebar();
+            }}
             className={cn(
-              "w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition",
+              "w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition text-left",
               location.pathname === "/user/settings"
-                ? "bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-gray-100 font-medium"
-                : "text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800"
+                ? "bg-gray-100 text-gray-900 font-semibold"
+                : "text-gray-650 hover:bg-gray-50 hover:text-gray-900"
             )}
           >
-            <Settings className="h-4 w-4" />
-            Settings
+            <Settings className="h-4.5 w-4.5 text-gray-500" />
+            <span>Settings</span>
           </button>
 
           {/* Logout button - only show if user is logged in */}
           {isRealUser() && (
             <button
               onClick={handleLogout}
-              className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition"
+              className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-red-650 hover:bg-red-50 transition text-left"
             >
-              <LogOut className="h-4 w-4" />
-              Logout
+              <LogOut className="h-4.5 w-4.5 text-red-500" />
+              <span>Logout</span>
             </button>
           )}
         </div>

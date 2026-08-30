@@ -10,21 +10,23 @@ import { isClipSession } from "../../lib/clipDetection";
 export function GuestTopbar() {
   const params = useParams();
   const threadId = params.id;
-  const { toggleSidebar } = useLayout();
+  const { toggleSidebar, isSidebarOpen } = useLayout();
 
   const [showLoginPopup, setShowLoginPopup] = useState(false);
   const [showSignupPopup, setShowSignupPopup] = useState(false);
 
   return (
-    <header className="flex items-center justify-between px-4 py-3 h-[64px] flex-shrink-0 z-30 relative bg-white dark:bg-gray-900 border-b border-gray-100 dark:border-gray-800">
+    <header className="flex items-center justify-between px-4 py-3 h-[64px] flex-shrink-0 z-30 relative bg-white border-b border-gray-100">
       <div className="flex items-center gap-3 w-auto md:w-[200px] order-1">
-        <button
-          onClick={toggleSidebar}
-          className="lg:hidden p-2 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition"
-          aria-label="Toggle sidebar"
-        >
-          <Menu className="h-6 w-6" />
-        </button>
+        {!isSidebarOpen && (
+          <button
+            onClick={toggleSidebar}
+            className="p-2 text-gray-600 hover:bg-gray-100 rounded-lg transition"
+            aria-label="Toggle sidebar"
+          >
+            <Menu className="h-6 w-6" />
+          </button>
+        )}
       </div>
 
       {/* Center content - Toasts */}
@@ -34,12 +36,20 @@ export function GuestTopbar() {
 
       <div className="flex justify-end items-center gap-3 w-auto md:w-[200px] order-3 ml-auto md:ml-0">
         {!isClipSession() && (
-          <button
-            onClick={() => setShowSignupPopup(true)}
-            className="px-4 py-2 bg-yellow-400 hover:bg-yellow-500 text-gray-800 font-medium rounded-lg text-sm transition whitespace-nowrap"
-          >
-            Sign up
-          </button>
+          <>
+            <button
+              onClick={() => setShowLoginPopup(true)}
+              className="px-4 py-2 border border-gray-200 text-gray-800 hover:bg-gray-50 font-semibold rounded-xl text-sm transition whitespace-nowrap"
+            >
+              Sign in
+            </button>
+            <button
+              onClick={() => setShowSignupPopup(true)}
+              className="px-4 py-2 bg-yellow-400 hover:bg-yellow-500 text-gray-800 font-semibold rounded-xl text-sm transition whitespace-nowrap shadow-sm"
+            >
+              Sign up
+            </button>
+          </>
         )}
       </div>
 

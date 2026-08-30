@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ChevronDown, MessagesSquare, ListChecks } from "lucide-react";
 
 interface InlineThreadCardProps {
@@ -9,9 +9,11 @@ interface InlineThreadCardProps {
 
 export function InlineThreadCard({ details, isOpen, onToggle }: InlineThreadCardProps) {
   const containerRef = useRef<HTMLDivElement>(null);
+  const [hasBeenOpened, setHasBeenOpened] = useState(false);
 
   useEffect(() => {
     if (!isOpen) return;
+    setHasBeenOpened(true);
 
     function handleClickOutside(event: MouseEvent | TouchEvent) {
       if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
@@ -32,10 +34,10 @@ export function InlineThreadCard({ details, isOpen, onToggle }: InlineThreadCard
   return (
     <div 
       ref={containerRef}
-      className="absolute bottom-full left-0 right-0 flex justify-center px-4 md:px-0 z-20 pointer-events-none"
+      className="w-full flex justify-center z-20 pointer-events-none relative mb-3"
     >
       {/* Container to handle positioning and overflow */}
-      <div className="relative w-full max-w-4xl pointer-events-none flex justify-center">
+      <div className="relative w-full max-w-4xl pointer-events-none flex justify-start">
         {/* The Card - slides up/down */}
         <div 
           className={`
@@ -44,8 +46,8 @@ export function InlineThreadCard({ details, isOpen, onToggle }: InlineThreadCard
             rounded-t-2xl shadow-sm
             overflow-hidden transition-all duration-300 ease-in-out transform origin-bottom
             w-full md:w-auto md:min-w-[400px]
-            absolute bottom-0
-            ${isOpen ? 'translate-y-0 opacity-100 pointer-events-auto' : 'translate-y-full opacity-0 pointer-events-none'}
+            absolute bottom-full mb-3 left-0
+            ${isOpen ? 'translate-y-0 opacity-100 pointer-events-auto' : 'translate-y-4 opacity-0 pointer-events-none'}
           `}
         >
           <div className="p-5 border-b border-white dark:border-gray-800">
@@ -75,24 +77,22 @@ export function InlineThreadCard({ details, isOpen, onToggle }: InlineThreadCard
         </div>
  
         {/* The Trigger Tab */}
-        {!isOpen && (
-          <div className="w-full flex justify-start pointer-events-none absolute bottom-4 px-4 md:px-0">
-            <button
-              onClick={onToggle}
-              className={`
-                bg-yellow-300 dark:bg-yellow-400
-                rounded-[12px]
-                flex items-center justify-center gap-2
-                hover:bg-yellow-400 dark:hover:bg-yellow-500 transition-colors
-                px-4 py-2.5
-                pointer-events-auto shadow-md
-              `}
-            >
-              <ListChecks className="h-5 w-5 text-gray-900" />
-              <span className="text-gray-900 font-medium text-[14px]">View threadcard</span>
-            </button>
-          </div>
-        )}
+        <div className={`w-full flex justify-start pointer-events-none transition-all duration-300 ${isOpen ? 'h-0 opacity-0 overflow-hidden' : 'h-[44px] opacity-100'}`}>
+          <button
+            onClick={onToggle}
+            className={`
+              bg-yellow-300 dark:bg-yellow-400
+              ${hasBeenOpened ? 'rounded-[14px] h-[44px] w-[44px] px-0 justify-center' : 'rounded-[12px] px-4 py-2.5 gap-2'}
+              flex items-center
+              hover:bg-yellow-400 dark:hover:bg-yellow-500 transition-colors
+              pointer-events-auto shadow-md
+            `}
+            title={hasBeenOpened ? "View threadcard" : undefined}
+          >
+            <ListChecks className="h-5 w-5 text-gray-900 flex-shrink-0" />
+            {!hasBeenOpened && <span className="text-gray-900 font-medium text-[14px] whitespace-nowrap">View threadcard</span>}
+          </button>
+        </div>
       </div>
     </div>
   );

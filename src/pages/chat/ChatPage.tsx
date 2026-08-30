@@ -2,7 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState, useEffect, useRef } from "react";
 import { useParams, useNavigate, Link, useLocation } from "react-router-dom";
 import { toast } from "react-hot-toast";
-import { ArrowUp, X, RefreshCw, ThumbsUp, ThumbsDown, Mic, ListTodo } from "lucide-react";
+import { X, RefreshCw, ThumbsUp, ThumbsDown, Mic, ListTodo, Send } from "lucide-react";
 import { api } from "../../lib/api";
 import { extractErrorMessage } from "../../lib/errors";
 import { logAnalyticsEvent } from "../../lib/firebase";
@@ -46,6 +46,7 @@ export function ChatPage() {
   const location = useLocation();
   const [message, setMessage] = useState("");
   const [isSending, setIsSending] = useState(false);
+  const [expandedReminders, setExpandedReminders] = useState<Record<string, boolean>>({});
   const isSendingRef = useRef(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messageInputRef = useRef<HTMLTextAreaElement>(null);
@@ -149,7 +150,21 @@ export function ChatPage() {
       // Ensure token before fetching thread
       await ensureToken();
       const res = await api.get(`/threads/${id}`);
-      const fetchedThread = res.data.data as Thread;
+      const data = res.data.data;
+      const fetchedThread = data as Thread;
+      
+      // Attach reminders from ui_element to their respective messages on reload
+      if (fetchedThread.messages && data.ui_element?.reminders) {
+        const reminders = data.ui_element.reminders;
+        fetchedThread.messages = fetchedThread.messages.map(msg => {
+          const msgReminders = reminders.filter((r: any) => r.messageId === msg.id);
+          return {
+            ...msg,
+            reminders: msgReminders.length > 0 ? msgReminders : msg.reminders
+          };
+        });
+      }
+
       logAnalyticsEvent("thread_opened", {
         thread_id: id,
         message_count: fetchedThread.messages?.length || 0
@@ -542,13 +557,23 @@ export function ChatPage() {
                   replies: data.message.suggested_replies || [],
                   requiresSignup: data.message.auth_gate?.should_show || false,
                   createdAt: new Date().toISOString(),
-                  reminders: data.ui_element?.reminders || [],
                   ...(shouldRetry ? { retry: true, originalUserMessage: variables } : {}),
                 });
                 logAnalyticsEvent("chat_message_received", {
                   thread_id: id,
                   response_length: data.message.assistantMessage?.length || 0
                 });
+              }
+
+              // Properly map reminders to their respective messages
+              if (data.ui_element?.reminders) {
+                const reminders = data.ui_element.reminders;
+                for (let i = 0; i < newMessages.length; i++) {
+                  const msgReminders = reminders.filter((r: any) => r.messageId === newMessages[i].id);
+                  if (msgReminders.length > 0) {
+                    newMessages[i] = { ...newMessages[i], reminders: msgReminders };
+                  }
+                }
               }
 
               updated.messages = newMessages;
@@ -1089,7 +1114,7 @@ export function ChatPage() {
   // query transitions to pending — isFetching stays true the whole time.
   if ((isLoading || isFetching) && !hasBootstrapData && displayMessages.length === 0) {
     return (
-      <div className="flex flex-col h-full relative bg-gray-50 dark:bg-gray-900">
+      <div className="flex flex-col h-full relative bg-white">
         <div className="flex-1 flex items-center justify-center">
           <div className="text-center">
             <div className="flex items-center justify-center gap-2 mb-4">
@@ -1124,7 +1149,7 @@ export function ChatPage() {
   }
 
   const chatContent = (
-    <div className="flex flex-col h-full relative bg-gray-50 dark:bg-gray-900">
+    <div className="flex flex-col h-full relative bg-white">
       <div ref={scrollContainerRef} className="flex-1 overflow-y-auto">
         <div className="max-w-4xl mx-auto px-4 pt-6 pb-24 space-y-6">
           {(displayMessages.length === 0 && (isLoading || isSending || (state.autoSendText && !hasAutoSentRef.current))) ? (
@@ -1162,7 +1187,15 @@ export function ChatPage() {
                     
                     {/* Render Inline Reminders if available */}
                     {msg.reminders && msg.reminders.length > 0 && (
-                      <ReminderCard reminders={msg.reminders} />
+                      <ReminderCard 
+                        reminders={msg.reminders} 
+                        onClick={() => {
+                          setExpandedReminders(prev => ({
+                            ...prev,
+                            [msg.id]: !prev[msg.id]
+                          }));
+                        }}
+                      />
                     )}
 
                     {msg.role === "assistant" && isGuest && msg.requiresSignup && (() => {
@@ -1228,7 +1261,7 @@ export function ChatPage() {
                     })()}
 
                     {msg.role === "assistant" && !msg.isError && !msg.retry && !msg.id.startsWith("temp-") && (
-                      <div className="mt-2 flex items-center gap-2">
+                      <div className="mt-2 flex flex-col gap-2">
                         {(() => {
                           const isLastAssistantMessage = [...displayMessages]
                             .reverse()
@@ -1240,7 +1273,7 @@ export function ChatPage() {
                           const hasDisliked = msg.feedback?.some(f => f.stars === 2);
 
                           return (
-                            <>
+                            <div className="flex items-center gap-2">
                               <button
                                 onClick={() => handleFeedback(msg.id, 5)}
                                 className={`p-1.5 rounded-lg transition ${hasLiked
@@ -1263,9 +1296,31 @@ export function ChatPage() {
                               >
                                 <ThumbsDown className={`h-4 w-4 ${hasDisliked ? "fill-current" : ""}`} />
                               </button>
-                            </>
+                            </div>
                           );
                         })()}
+
+                        {msg.reminders && msg.reminders.length > 0 && expandedReminders[msg.id] && (
+                          <div className="mt-4 flex flex-col gap-3">
+                            <div>
+                              <div className="text-[15px] font-medium text-gray-900 dark:text-gray-100 mb-0.5">
+                                Your reminder is active 🎉
+                              </div>
+                              <div className="text-[15px] text-gray-700 dark:text-gray-300">
+                                Your <span className="font-semibold">{msg.reminders[msg.reminders.length - 1].actionDescription || "Task"}</span> reminder is now active. You'll receive a notification {msg.reminders[msg.reminders.length - 1].remindAt || msg.reminders[msg.reminders.length - 1].remind_at ? `at ${new Date(msg.reminders[msg.reminders.length - 1].remindAt || msg.reminders[msg.reminders.length - 1].remind_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}` : ''}.
+                              </div>
+                            </div>
+                            
+                            <div className="flex items-center gap-2 mt-1">
+                              <button className="px-5 py-2.5 bg-[#f0f6ff] dark:bg-blue-900/30 hover:bg-[#e0efff] dark:hover:bg-blue-900/50 text-[#1e3a8a] dark:text-blue-200 rounded-xl text-[14px] font-medium transition border-0 flex-shrink-0">
+                                Add another reminder
+                              </button>
+                              <button className="px-5 py-2.5 bg-[#f0f6ff] dark:bg-blue-900/30 hover:bg-[#e0efff] dark:hover:bg-blue-900/50 text-[#1e3a8a] dark:text-blue-200 rounded-xl text-[14px] font-medium transition border-0 flex-shrink-0">
+                                That's all
+                              </button>
+                            </div>
+                          </div>
+                        )}
                       </div>
                     )}
 
@@ -1548,10 +1603,10 @@ export function ChatPage() {
                   isOpen={showThreadCard}
                   onToggle={() => setShowThreadCard(!showThreadCard)}
                 />
-                <div className="relative z-10 bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm flex items-end gap-3 p-4">
+                <div className="relative z-10 bg-gray-100 rounded-full border border-gray-200/50 flex items-center gap-2 p-1.5 pl-4 pr-1.5 shadow-sm">
                   <textarea
                     ref={messageInputRef}
-                    className="flex-1 min-w-0 px-6 py-3 text-gray-800 dark:text-gray-200 placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none text-base border-0 bg-gray-100 dark:bg-gray-700 rounded-xl resize-none min-h-[48px] max-h-[200px] overflow-y-auto"
+                    className="flex-1 min-w-0 px-2 sm:px-4 py-2 m-0 text-gray-800 placeholder-gray-500 focus:outline-none text-sm sm:text-base border-0 bg-transparent resize-none overflow-y-auto max-h-[120px] leading-normal"
                     placeholder="Write something"
                     value={message}
                     onChange={(e) => setMessage(e.target.value)}
@@ -1564,10 +1619,10 @@ export function ChatPage() {
                     disabled={isSending || !!requiresSignup}
                     rows={1}
                   />
-                  <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0 mb-1">
+                  <div className="flex items-center gap-1 flex-shrink-0">
                     <button
                       type="button"
-                      className="p-2.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition"
+                      className="p-2 text-gray-400 hover:text-gray-650 transition"
                       title="Voice input (Not active)"
                     >
                       <Mic className="h-5 w-5" />
@@ -1575,9 +1630,9 @@ export function ChatPage() {
                     <button
                       onClick={handleSend}
                       disabled={!message.trim() || isSending || !!requiresSignup}
-                      className="bg-yellow-300 hover:bg-yellow-400 p-3 rounded-full disabled:opacity-50 disabled:cursor-not-allowed transition flex-shrink-0"
+                      className="bg-gray-200 hover:bg-gray-300 p-2 rounded-full disabled:opacity-50 disabled:cursor-not-allowed transition flex-shrink-0 flex items-center justify-center h-9 w-9"
                     >
-                      <ArrowUp className="h-5 w-5 text-gray-900" strokeWidth={2.5} fill="none" />
+                      <Send className="h-4.5 w-4.5 text-gray-600" />
                     </button>
                   </div>
                 </div>

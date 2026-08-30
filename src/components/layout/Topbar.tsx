@@ -11,7 +11,7 @@ import { ChatToasts } from "../chat/ChatToasts";
 export function Topbar() {
   const navigate = useNavigate();
   const authenticated = isAuthenticated();
-  const { toggleSidebar } = useLayout();
+  const { toggleSidebar, isSidebarOpen } = useLayout();
   
   const logout = async () => {
     try {
@@ -26,16 +26,18 @@ export function Topbar() {
   };
 
   return (
-    <header className="flex items-center justify-between px-4 py-3 h-[64px] flex-shrink-0 z-30 relative bg-white dark:bg-gray-900 border-b border-gray-100 dark:border-gray-800">
+    <header className="flex items-center justify-between px-4 py-3 h-[64px] flex-shrink-0 z-30 relative bg-white border-b border-gray-100">
     
         <div className="flex items-center gap-3 flex-1">
-          <button
-            onClick={toggleSidebar}
-            className="lg:hidden p-2 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition"
-            aria-label="Toggle sidebar"
-          >
-            <Menu className="h-6 w-6" />
-          </button>
+          {!isSidebarOpen && (
+            <button
+              onClick={toggleSidebar}
+              className="p-2 text-gray-600 hover:bg-gray-100 rounded-lg transition"
+              aria-label="Toggle sidebar"
+            >
+              <Menu className="h-6 w-6" />
+            </button>
+          )}
         </div>
 
         {/* Center content - Toasts */}

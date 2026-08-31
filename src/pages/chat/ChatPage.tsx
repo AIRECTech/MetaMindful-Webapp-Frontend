@@ -1621,7 +1621,7 @@ export function ChatPage() {
                             }
                           }}
                           disabled={isSending || !!requiresSignup}
-                          className="w-[200px] px-4 py-3 bg-[#e4f0ff] dark:bg-blue-900/30 text-[#475b75] dark:text-gray-300 rounded-[12px] border border-[#c6dfff] dark:border-blue-800 hover:bg-[#d4e6ff] dark:hover:bg-blue-900/50 text-[13px] leading-[1.4] font-medium transition disabled:opacity-50 disabled:cursor-not-allowed text-left flex items-start justify-start flex-shrink-0"
+                          className="w-max max-w-[80vw] px-4 py-3 bg-[#e8f1fc] dark:bg-blue-900/30 text-[#475b75] dark:text-gray-300 rounded-[12px] hover:bg-[#d8e7fa] dark:hover:bg-blue-900/50 text-[13px] leading-[1.4] font-medium transition disabled:opacity-50 disabled:cursor-not-allowed text-center whitespace-nowrap flex-shrink-0"
                         >
                           {reply}
                         </button>
@@ -1637,7 +1637,7 @@ export function ChatPage() {
                 <div className="relative z-10 bg-gray-100 rounded-full border border-gray-200/50 flex items-center gap-2 p-1.5 pl-4 pr-1.5 shadow-sm">
                   <textarea
                     ref={messageInputRef}
-                    className="flex-1 min-w-0 px-2 sm:px-4 py-2 m-0 text-gray-800 placeholder-gray-500 focus:outline-none text-sm sm:text-base border-0 bg-transparent resize-none overflow-y-auto max-h-[120px] leading-normal"
+                    className="flex-1 min-w-0 px-2 sm:px-4 py-2 m-0 text-gray-800 placeholder-gray-500 !outline-none !ring-0 focus:outline-none focus:ring-0 focus:border-transparent border-0 bg-transparent resize-none overflow-y-auto max-h-[120px] leading-normal"
                     placeholder="Write something"
                     value={message}
                     onChange={(e) => setMessage(e.target.value)}

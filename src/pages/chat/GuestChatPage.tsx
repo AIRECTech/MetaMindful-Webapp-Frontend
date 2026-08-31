@@ -568,7 +568,7 @@ export function GuestChatPage() {
               <div className="relative z-10 bg-gray-100 rounded-full border border-gray-200/50 flex items-center gap-2 p-1.5 pl-4 pr-1.5 shadow-sm">
                 <textarea
                   ref={textareaRef}
-                  className="flex-1 min-w-0 px-2 sm:px-4 py-2 m-0 text-gray-800 placeholder-gray-500 focus:outline-none text-sm sm:text-base border-0 bg-transparent resize-none overflow-y-auto max-h-[120px] leading-normal"
+                  className="flex-1 min-w-0 px-2 sm:px-4 py-2 m-0 text-gray-800 placeholder-gray-500 !outline-none !ring-0 focus:outline-none focus:ring-0 focus:border-transparent border-0 bg-transparent resize-none overflow-y-auto max-h-[120px] leading-normal"
                   placeholder="Write something"
                   value={message}
                   onChange={(e) => setMessage(e.target.value)}

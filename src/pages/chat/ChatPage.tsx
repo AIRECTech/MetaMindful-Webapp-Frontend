@@ -1541,13 +1541,13 @@ export function ChatPage() {
 
               return (
                 <div className="flex flex-col items-start gap-3 mt-2 w-full">
-                  <div className="flex flex-wrap items-center gap-2 pb-2 w-full">
+                  <div className="flex items-center gap-2 pb-2 w-full overflow-x-auto overflow-y-hidden custom-scrollbar">
                                         <InlineThreadCard
                       details={requiresSignup ? [] : threadCardDetails}
                       isOpen={showThreadCard}
                       onToggle={() => setShowThreadCard(!showThreadCard)}
                     />
-                    <div className="w-[1px] h-8 bg-gray-200 dark:bg-gray-700 mx-1"></div>
+                    <div className="w-[2px] h-10 bg-gradient-to-b from-transparent via-gray-200 dark:via-gray-600 to-transparent mx-2 flex-shrink-0 rounded-full"></div>
                     {replies.map((reply, idx) => {
                       const isReflection = reply.toLowerCase().includes("reflection");
                       if (isReflection) {

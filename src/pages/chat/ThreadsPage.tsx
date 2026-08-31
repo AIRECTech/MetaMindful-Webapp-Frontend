@@ -35,7 +35,7 @@ export function ThreadsPage() {
     queryKey: ["threads"],
     queryFn: async () => {
       const res = await api.get("/threads");
-      return res.data.data as Thread[];
+      return (res.data.data?.data || res.data.data || []) as Thread[];
     },
   });
 

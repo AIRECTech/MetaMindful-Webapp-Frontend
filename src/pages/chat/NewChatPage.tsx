@@ -315,16 +315,19 @@ export function NewChatPage() {
                   >
                     <Mic className="h-5 w-5" />
                   </button>
-                  <button
-                    onClick={handleSend}
-                    disabled={!message.trim() || isLoading}
-                    className="bg-gray-200 hover:bg-gray-300 p-2 rounded-full disabled:opacity-50 disabled:cursor-not-allowed transition flex-shrink-0 flex items-center justify-center h-9 w-9"
-                  >
-                    <Send className="h-4.5 w-4.5 text-gray-600" />
-                  </button>
+                    <button
+                      onClick={handleSend}
+                      disabled={!message.trim() || isLoading}
+                      className="bg-gray-200 hover:bg-gray-300 p-2 rounded-full disabled:opacity-50 disabled:cursor-not-allowed transition flex-shrink-0 flex items-center justify-center h-9 w-9"
+                    >
+                      <Send className="h-4.5 w-4.5 text-gray-600" />
+                    </button>
+                  </div>
+                </div>
+                <div className="text-center mt-3 w-full mb-1">
+                  <p className="text-[12px] text-gray-400 font-medium">Your data stays 100% private</p>
                 </div>
               </div>
-            </div>
 
             {/* Continue where you left card */}
             {latestThreadDetail && (

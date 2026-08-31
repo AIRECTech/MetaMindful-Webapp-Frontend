@@ -273,13 +273,13 @@ export function Sidebar() {
                 setSignupPopupText("Create your free account to view and complete actions");
                 setShowSignupPopup(true);
               } else {
-                navigate("/user/threads");
+                navigate("/user/actions");
               }
               if (window.innerWidth < 1024) closeSidebar();
             }}
             className={cn(
               "w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-sm font-semibold transition",
-              location.pathname === "/user/threads"
+              location.pathname === "/user/actions"
                 ? "bg-gray-100 text-gray-900"
                 : "text-gray-650 hover:bg-gray-50 hover:text-gray-900"
             )}

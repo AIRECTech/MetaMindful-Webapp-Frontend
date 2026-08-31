@@ -557,12 +557,13 @@ export function GuestChatPage() {
             )}
 
             <div className="relative">
-              {/* Inline Thread Card */}
-              <InlineThreadCard
-                details={requiresSignup ? [] : threadCardDetails}
-                isOpen={showThreadCard}
-                onToggle={() => setShowThreadCard(!showThreadCard)}
-              />
+              <div className="w-full flex justify-start mb-5 pl-2">
+                <InlineThreadCard
+                  details={requiresSignup ? [] : threadCardDetails}
+                  isOpen={showThreadCard}
+                  onToggle={() => setShowThreadCard(!showThreadCard)}
+                />
+              </div>
 
               <div className="relative z-10 bg-gray-100 rounded-full border border-gray-200/50 flex items-center gap-2 p-1.5 pl-4 pr-1.5 shadow-sm">
                 <textarea

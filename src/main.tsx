@@ -50,6 +50,7 @@ import { RedirectIfAuth } from "./components/RedirectIfAuth";
 import { ThreadsPage } from "./pages/chat/ThreadsPage";
 import { ChatPage } from "./pages/chat/ChatPage";
 import { NewChatPage } from "./pages/chat/NewChatPage";
+import { ActionsPage } from "./pages/actions/ActionsPage";
 import { ProfilePage } from "./pages/profile/ProfilePage";
 import { SettingsPage } from "./pages/profile/SettingsPage";
 import { StartChatPage } from "./pages/chat/StartChatPage";
@@ -123,6 +124,7 @@ const router = createBrowserRouter([
         children: [
           { index: true, element: <NewChatPage /> },
           { path: "threads", element: <ThreadsPage /> },
+          { path: "actions", element: <ActionsPage /> },
           { path: "chat/new", element: <NewChatPage /> },
           { path: "chat/:id", element: <ChatPage /> },
           { path: "profile", element: <ProfilePage /> },

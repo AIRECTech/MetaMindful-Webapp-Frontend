@@ -1170,7 +1170,29 @@ export function ChatPage() {
             </div>
           ) : (
             <>
-              {displayMessages.map((msg) => (
+              {displayMessages.filter((msg, index, array) => {
+                const isAssistantEmpty = (m: Message) => {
+                  if (m.role !== "assistant") return false;
+                  if (m.isError) return false;
+                  const hasContent = !!m.content;
+                  const hasReminders = m.reminders && m.reminders.length > 0;
+                  const hasRequiresSignup = !!m.requiresSignup;
+                  const hasRetry = !!m.retry;
+                  const hasReplies = m.replies && m.replies.length > 0;
+                  return !hasContent && !hasReminders && !hasRequiresSignup && !hasRetry && !hasReplies;
+                };
+
+                if (isAssistantEmpty(msg)) return false;
+                
+                if (msg.role === "user") {
+                  const nextMsg = array[index + 1];
+                  if (nextMsg && isAssistantEmpty(nextMsg)) {
+                    return false;
+                  }
+                }
+                
+                return true;
+              }).map((msg) => (
                 <div
                   key={msg.id}
                   className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}
@@ -1400,12 +1422,7 @@ export function ChatPage() {
               )}
             </>
           )}
-          <div ref={messagesEndRef} className="h-0" />
-        </div>
-      </div>
 
-      <div className="pb-4 flex-shrink-0">
-        <div className="max-w-4xl mx-auto px-4 w-full">
           {/* Suggested replies from the last assistant message */}
           {(() => {
             // Find the last assistant message
@@ -1443,8 +1460,8 @@ export function ChatPage() {
               if (requiresSignup) return null;
 
               return (
-                <div className="flex flex-col items-start gap-3 mb-8 mt-2 w-full">
-                  <div className="flex overflow-x-auto gap-3 pb-2 w-full no-scrollbar">
+                <div className="flex flex-col items-start gap-3 mt-2 w-full">
+                  <div className="flex flex-wrap gap-2 pb-2 w-full">
                     {replies.map((reply, idx) => {
                       const isReflection = reply.toLowerCase().includes("reflection");
                       if (isReflection) {
@@ -1522,6 +1539,13 @@ export function ChatPage() {
             return null;
           })()}
 
+          <div ref={messagesEndRef} className="h-0" />
+        </div>
+      </div>
+
+      <div className="pb-4 flex-shrink-0">
+        <div className="max-w-4xl mx-auto px-4 w-full">
+
           {/* Terms and Privacy Disclaimer - Above input field */}
           {!isGuest && showDisclaimer && (
             <div className="relative bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 px-4 py-3 pr-8 flex items-center">
@@ -1592,17 +1616,15 @@ export function ChatPage() {
               );
             }
 
-            if (requiresSignup) {
-              return null;
-            }
-
             return (
               <div className="relative">
-                <InlineThreadCard
-                  details={requiresSignup ? [] : threadCardDetails}
-                  isOpen={showThreadCard}
-                  onToggle={() => setShowThreadCard(!showThreadCard)}
-                />
+                <div className="w-full flex justify-start mb-5 pl-2">
+                  <InlineThreadCard
+                    details={requiresSignup ? [] : threadCardDetails}
+                    isOpen={showThreadCard}
+                    onToggle={() => setShowThreadCard(!showThreadCard)}
+                  />
+                </div>
                 <div className="relative z-10 bg-gray-100 rounded-full border border-gray-200/50 flex items-center gap-2 p-1.5 pl-4 pr-1.5 shadow-sm">
                   <textarea
                     ref={messageInputRef}
@@ -1635,6 +1657,9 @@ export function ChatPage() {
                       <Send className="h-4.5 w-4.5 text-gray-600" />
                     </button>
                   </div>
+                </div>
+                <div className="text-center mt-3 mb-1">
+                  <p className="text-[12px] text-gray-400 font-medium">Your data stays 100% private</p>
                 </div>
               </div>
             );

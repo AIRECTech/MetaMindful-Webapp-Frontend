@@ -506,7 +506,7 @@ export function GuestChatPage() {
         </div>
 
         {/* Input area with recent thread card floating above it */}
-        <div className="pb-4 px-4 flex-shrink-0 z-20 relative bg-gradient-to-t from-gray-50 via-gray-50/90 to-transparent dark:from-gray-900 dark:via-gray-900/90 pt-2">
+        <div className="pb-10 sm:pb-4 px-4 flex-shrink-0 z-20 relative bg-gradient-to-t from-gray-50 via-gray-50/90 to-transparent dark:from-gray-900 dark:via-gray-900/90 pt-2">
           <div className="max-w-lg md:max-w-2xl mx-auto flex flex-col gap-3">
             {lastThread && !id && !threadId && (
               <div className="bg-gray-50/50 rounded-2xl border border-gray-150 p-5 text-left w-full mt-6 shadow-sm">

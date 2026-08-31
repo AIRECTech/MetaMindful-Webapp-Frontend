@@ -227,8 +227,8 @@ export function NewChatPage() {
   // Note: retry is handled by simply refreshing the page / reloading the route.
 
   return (
-    <div className="flex flex-col h-full relative bg-white overflow-y-auto">
-      <div className="flex-1 flex flex-col items-center pt-0 md:pt-4 pb-0 md:pb-4 px-4 min-h-min">
+    <div className="flex flex-col h-full relative bg-white overflow-y-auto pb-12">
+      <div className="flex-1 flex flex-col items-center pt-6 pb-12 px-4 min-h-min">
         {isLoading ? (
           <div className="text-center mt-32">
             <div className="flex items-center justify-center gap-2 mb-4">
@@ -252,7 +252,7 @@ export function NewChatPage() {
             </button>
           </div>
         ) : (
-          <div className="w-full max-w-lg md:max-w-2xl flex flex-col items-start mx-auto my-auto py-2">
+          <div className="w-full max-w-lg md:max-w-2xl flex flex-col items-start mx-auto py-2">
             {/* Profile logo on top */}
             <div className="mb-4">
               <div className="w-14 h-14 rounded-full bg-sky-100 flex items-center justify-center text-sky-600">

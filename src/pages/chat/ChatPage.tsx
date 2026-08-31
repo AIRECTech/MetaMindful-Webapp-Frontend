@@ -1543,7 +1543,7 @@ export function ChatPage() {
         </div>
       </div>
 
-      <div className="pb-4 flex-shrink-0">
+      <div className="pb-10 sm:pb-4 flex-shrink-0">
         <div className="max-w-4xl mx-auto px-4 w-full">
 
           {/* Terms and Privacy Disclaimer - Above input field */}

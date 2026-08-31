@@ -1542,7 +1542,7 @@ export function ChatPage() {
 
             return (
               <div className="flex flex-col items-start gap-3 mt-2 w-full min-w-0 max-w-full">
-                <div className="flex items-center gap-2 pb-4 w-full min-w-0">
+                <div className="flex items-center gap-2 pb-6 mb-4 w-full min-w-0">
                   {showThreadCardTrigger && (
                     <InlineThreadCard
                       details={threadCardDetails}
@@ -1555,7 +1555,7 @@ export function ChatPage() {
                       {showThreadCardTrigger && (
                         <div className="w-[2px] h-10 bg-gradient-to-b from-transparent via-gray-200 dark:via-gray-600 to-transparent mx-2 flex-shrink-0 rounded-full"></div>
                       )}
-                      <div className="flex items-center gap-2 flex-1 min-w-0 overflow-x-auto overflow-y-hidden custom-scrollbar">
+                      <div className="flex items-center gap-2 flex-1 min-w-0 overflow-x-auto overflow-y-hidden snap-x snap-mandatory scroll-smooth hide-scrollbar" style={{ WebkitOverflowScrolling: 'touch' }}>
                     {replies.map((reply, idx) => {
                       const isReflection = reply.toLowerCase().includes("reflection");
                       if (isReflection) {
@@ -1571,7 +1571,7 @@ export function ChatPage() {
                               });
                             }}
                             disabled={isSending || !!requiresSignup}
-                            className="px-4 py-3 bg-[#FCD34D] hover:bg-[#FBBF24] text-gray-900 rounded-xl transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 font-semibold text-xs sm:text-sm flex-shrink-0"
+                            className="px-4 py-3 bg-[#FCD34D] hover:bg-[#FBBF24] text-gray-900 rounded-xl transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 font-semibold text-xs sm:text-sm flex-shrink-0 snap-start"
                             title="View Reflection"
                           >
                             <ListTodo className="h-4 w-4" />
@@ -1620,7 +1620,7 @@ export function ChatPage() {
                             }
                           }}
                           disabled={isSending || !!requiresSignup}
-                          className="w-[200px] px-4 py-3 bg-[#e4f0ff] dark:bg-blue-900/30 text-[#475b75] dark:text-gray-300 rounded-[12px] border border-[#c6dfff] dark:border-blue-800 hover:bg-[#d4e6ff] dark:hover:bg-blue-900/50 text-[13px] leading-[1.4] font-medium transition disabled:opacity-50 disabled:cursor-not-allowed text-left flex items-start justify-start flex-shrink-0"
+                          className="w-[200px] px-4 py-3 bg-[#e4f0ff] dark:bg-blue-900/30 text-[#475b75] dark:text-gray-300 rounded-[12px] border border-[#c6dfff] dark:border-blue-800 hover:bg-[#d4e6ff] dark:hover:bg-blue-900/50 text-[13px] leading-[1.4] font-medium transition disabled:opacity-50 disabled:cursor-not-allowed text-left flex items-start justify-start flex-shrink-0 snap-start"
                         >
                           {reply}
                         </button>

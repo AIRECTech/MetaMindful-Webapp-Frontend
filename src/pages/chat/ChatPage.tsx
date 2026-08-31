@@ -1423,122 +1423,7 @@ export function ChatPage() {
             </>
           )}
 
-          {/* Suggested replies from the last assistant message */}
-          {(() => {
-            // Find the last assistant message
-            const lastAssistantMessage = [...displayMessages]
-              .reverse()
-              .find(m => m.role === "assistant" && !m.isError);
-
-            let replies: string[] = [];
-            if (lastAssistantMessage) {
-              if (lastAssistantMessage.replies && lastAssistantMessage.replies.length > 0) {
-                replies = lastAssistantMessage.replies;
-              } else if (id) {
-                const stored = localStorage.getItem(`suggested_replies_${id}_${lastAssistantMessage.id}`);
-                if (stored) {
-                  try {
-                    replies = JSON.parse(stored);
-                  } catch (e) {
-                    console.error("Failed to parse suggested replies from localStorage", e);
-                  }
-                }
-              }
-            }
-
-            // Only show suggestions if the last message is from the assistant and hasn't been used yet
-            const isLastMessageAssistant = displayMessages.length > 0 && displayMessages[displayMessages.length - 1].role === "assistant";
-
-            const messageLimit = parseInt(import.meta.env.VITE_MESSAGE_LIMIT || "0", 10);
-            const userMessageCount = displayMessages.filter(msg => msg.role === 'user').length;
-            const isLimitReached = messageLimit > 0 && userMessageCount >= messageLimit;
-
-            if (replies.length > 0 && !suggestionUsed && isLastMessageAssistant && !isLimitReached) {
-              const lastMessage = displayMessages[displayMessages.length - 1];
-              const requiresSignup = isGuest && lastMessage?.role === "assistant" && lastMessage?.requiresSignup;
-
-              if (requiresSignup) return null;
-
-              return (
-                <div className="flex flex-col items-start gap-3 mt-2 w-full">
-                  <div className="flex flex-wrap gap-2 pb-2 w-full">
-                    {replies.map((reply, idx) => {
-                      const isReflection = reply.toLowerCase().includes("reflection");
-                      if (isReflection) {
-                        return (
-                          <button
-                            key={idx}
-                            onClick={async () => {
-                              if (isSending || requiresSignup) return;
-                              // Toggle thread card floating panel instead of sending text
-                              setShowThreadCard(!showThreadCard);
-                              logAnalyticsEvent("view_reflection_clicked", {
-                                thread_id: id
-                              });
-                            }}
-                            disabled={isSending || !!requiresSignup}
-                            className="px-4 py-3 bg-[#FCD34D] hover:bg-[#FBBF24] text-gray-900 rounded-xl transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 font-semibold text-xs sm:text-sm flex-shrink-0"
-                            title="View Reflection"
-                          >
-                            <ListTodo className="h-4 w-4" />
-                            <span className="hidden sm:inline">{reply}</span>
-                          </button>
-                        );
-                      }
-
-                      return (
-                        <button
-                          key={idx}
-                          onClick={async () => {
-                            if (isSending || requiresSignup) return;
-                            
-                            // Mark as used in localStorage
-                            const lastAssistant = [...displayMessages]
-                              .reverse()
-                              .find(m => m.role === "assistant" && !m.isError);
-                            if (lastAssistant && id) {
-                              localStorage.setItem(`suggestion_used_${id}_${lastAssistant.id}`, "true");
-                            }
-                            setSuggestionUsed(true);
-
-                            logAnalyticsEvent("suggestion_selected", {
-                              thread_id: id,
-                              suggestion: reply
-                            });
-
-                            // Place text in input instead of auto-sending
-                            setMessage(reply);
-
-                            // Focus input
-                            setTimeout(() => {
-                              if (window.innerWidth > 768) {
-                                messageInputRef.current?.focus();
-                              }
-                            }, 0);
-
-                            try {
-                              await api.post("/threads/suggestion-click", {
-                                suggestion: reply,
-                                threadId: id,
-                              });
-                            } catch (error) {
-                              console.error("[ChatPage] Error logging suggestion click:", error);
-                            }
-                          }}
-                          disabled={isSending || !!requiresSignup}
-                          className="px-5 py-3 bg-blue-100 dark:bg-blue-900/30 text-gray-700 dark:text-gray-300 rounded-xl border border-blue-200 dark:border-blue-800 hover:bg-blue-200 dark:hover:bg-blue-900/50 text-[12px] leading-normal font-normal transition disabled:opacity-50 disabled:cursor-not-allowed text-left [text-wrap-mode:wrap] flex-shrink-0"
-                        >
-                          {reply}
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-              );
-            }
-            return null;
-          })()}
-
+          
           <div ref={messagesEndRef} className="h-0" />
         </div>
       </div>
@@ -1618,13 +1503,128 @@ export function ChatPage() {
 
             return (
               <div className="relative">
-                <div className="w-full flex justify-start mb-5 pl-2">
-                  <InlineThreadCard
-                    details={requiresSignup ? [] : threadCardDetails}
-                    isOpen={showThreadCard}
-                    onToggle={() => setShowThreadCard(!showThreadCard)}
-                  />
+{/* Suggested replies from the last assistant message */}
+          {(() => {
+            // Find the last assistant message
+            const lastAssistantMessage = [...displayMessages]
+              .reverse()
+              .find(m => m.role === "assistant" && !m.isError);
+
+            let replies: string[] = [];
+            if (lastAssistantMessage) {
+              if (lastAssistantMessage.replies && lastAssistantMessage.replies.length > 0) {
+                replies = lastAssistantMessage.replies;
+              } else if (id) {
+                const stored = localStorage.getItem(`suggested_replies_${id}_${lastAssistantMessage.id}`);
+                if (stored) {
+                  try {
+                    replies = JSON.parse(stored);
+                  } catch (e) {
+                    console.error("Failed to parse suggested replies from localStorage", e);
+                  }
+                }
+              }
+            }
+
+            // Only show suggestions if the last message is from the assistant and hasn't been used yet
+            const isLastMessageAssistant = displayMessages.length > 0 && displayMessages[displayMessages.length - 1].role === "assistant";
+
+            const messageLimit = parseInt(import.meta.env.VITE_MESSAGE_LIMIT || "0", 10);
+            const userMessageCount = displayMessages.filter(msg => msg.role === 'user').length;
+            const isLimitReached = messageLimit > 0 && userMessageCount >= messageLimit;
+
+            if (replies.length > 0 && !suggestionUsed && isLastMessageAssistant && !isLimitReached) {
+              const lastMessage = displayMessages[displayMessages.length - 1];
+              const requiresSignup = isGuest && lastMessage?.role === "assistant" && lastMessage?.requiresSignup;
+
+              if (requiresSignup) return null;
+
+              return (
+                <div className="flex flex-col items-start gap-3 mt-2 w-full">
+                  <div className="flex flex-wrap items-center gap-2 pb-2 w-full">
+                                        <InlineThreadCard
+                      details={requiresSignup ? [] : threadCardDetails}
+                      isOpen={showThreadCard}
+                      onToggle={() => setShowThreadCard(!showThreadCard)}
+                    />
+                    <div className="w-[1px] h-8 bg-gray-200 dark:bg-gray-700 mx-1"></div>
+                    {replies.map((reply, idx) => {
+                      const isReflection = reply.toLowerCase().includes("reflection");
+                      if (isReflection) {
+                        return (
+                          <button
+                            key={idx}
+                            onClick={async () => {
+                              if (isSending || requiresSignup) return;
+                              // Toggle thread card floating panel instead of sending text
+                              setShowThreadCard(!showThreadCard);
+                              logAnalyticsEvent("view_reflection_clicked", {
+                                thread_id: id
+                              });
+                            }}
+                            disabled={isSending || !!requiresSignup}
+                            className="px-4 py-3 bg-[#FCD34D] hover:bg-[#FBBF24] text-gray-900 rounded-xl transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 font-semibold text-xs sm:text-sm flex-shrink-0"
+                            title="View Reflection"
+                          >
+                            <ListTodo className="h-4 w-4" />
+                            <span className="hidden sm:inline">{reply}</span>
+                          </button>
+                        );
+                      }
+
+                      return (
+                        <button
+                          key={idx}
+                          onClick={async () => {
+                            if (isSending || requiresSignup) return;
+                            
+                            // Mark as used in localStorage
+                            const lastAssistant = [...displayMessages]
+                              .reverse()
+                              .find(m => m.role === "assistant" && !m.isError);
+                            if (lastAssistant && id) {
+                              localStorage.setItem(`suggestion_used_${id}_${lastAssistant.id}`, "true");
+                            }
+                            setSuggestionUsed(true);
+
+                            logAnalyticsEvent("suggestion_selected", {
+                              thread_id: id,
+                              suggestion: reply
+                            });
+
+                            // Place text in input instead of auto-sending
+                            setMessage(reply);
+
+                            // Focus input
+                            setTimeout(() => {
+                              if (window.innerWidth > 768) {
+                                messageInputRef.current?.focus();
+                              }
+                            }, 0);
+
+                            try {
+                              await api.post("/threads/suggestion-click", {
+                                suggestion: reply,
+                                threadId: id,
+                              });
+                            } catch (error) {
+                              console.error("[ChatPage] Error logging suggestion click:", error);
+                            }
+                          }}
+                          disabled={isSending || !!requiresSignup}
+                          className="w-[200px] px-4 py-3 bg-[#e4f0ff] dark:bg-blue-900/30 text-[#475b75] dark:text-gray-300 rounded-[12px] border border-[#c6dfff] dark:border-blue-800 hover:bg-[#d4e6ff] dark:hover:bg-blue-900/50 text-[13px] leading-[1.4] font-medium transition disabled:opacity-50 disabled:cursor-not-allowed text-left flex items-start justify-start flex-shrink-0"
+                        >
+                          {reply}
+                        </button>
+                      );
+                    })}
+                  </div>
                 </div>
+              );
+            }
+            return null;
+          })()}
+
                 <div className="relative z-10 bg-gray-100 rounded-full border border-gray-200/50 flex items-center gap-2 p-1.5 pl-4 pr-1.5 shadow-sm">
                   <textarea
                     ref={messageInputRef}

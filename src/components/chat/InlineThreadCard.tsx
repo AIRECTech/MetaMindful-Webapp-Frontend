@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 import { ChevronDown, MessagesSquare, ListChecks } from "lucide-react";
 
 interface InlineThreadCardProps {
@@ -9,11 +9,8 @@ interface InlineThreadCardProps {
 
 export function InlineThreadCard({ details, isOpen, onToggle }: InlineThreadCardProps) {
   const containerRef = useRef<HTMLDivElement>(null);
-  const [hasBeenOpened, setHasBeenOpened] = useState(false);
-
   useEffect(() => {
     if (!isOpen) return;
-    setHasBeenOpened(true);
 
     function handleClickOutside(event: MouseEvent | TouchEvent) {
       if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
@@ -38,15 +35,14 @@ export function InlineThreadCard({ details, isOpen, onToggle }: InlineThreadCard
     >
       {/* Container to handle positioning and overflow */}
       <div className="relative pointer-events-none flex">
-        {/* The Card - slides up/down */}
         <div 
           className={`
             bg-white dark:bg-gray-800 
-            border-t border-l border-r border-yellow-400 
-            rounded-t-2xl shadow-sm
+            border border-yellow-400 
+            rounded-2xl shadow-lg
             overflow-hidden transition-all duration-300 ease-in-out transform origin-bottom
-            w-full md:w-auto md:min-w-[400px]
-            absolute bottom-full mb-3 left-0
+            w-[90vw] md:w-[400px]
+            fixed bottom-[90px] left-1/2 -translate-x-1/2 z-50
             ${isOpen ? 'translate-y-0 opacity-100 pointer-events-auto' : 'translate-y-4 opacity-0 pointer-events-none'}
           `}
         >
@@ -83,15 +79,13 @@ export function InlineThreadCard({ details, isOpen, onToggle }: InlineThreadCard
               onClick={onToggle}
               className={`
                 bg-yellow-300 dark:bg-yellow-400
-                ${hasBeenOpened ? 'rounded-[14px] h-[44px] w-[44px] px-0 justify-center' : 'rounded-[12px] px-4 py-2.5 gap-2'}
-                flex items-center
+                rounded-[14px] h-[44px] w-[44px] flex justify-center items-center
                 hover:bg-yellow-400 dark:hover:bg-yellow-500 transition-colors
-                pointer-events-auto shadow-md flex-shrink-0
+                pointer-events-auto shadow-sm flex-shrink-0
               `}
-              title={hasBeenOpened ? "View threadcard" : undefined}
+              title="View threadcard"
             >
               <ListChecks className="h-5 w-5 text-gray-900 flex-shrink-0" />
-              {!hasBeenOpened && <span className="text-gray-900 font-medium text-[14px] whitespace-nowrap">View threadcard</span>}
             </button>
           </div>
         </div>

@@ -1533,21 +1533,29 @@ export function ChatPage() {
             const userMessageCount = displayMessages.filter(msg => msg.role === 'user').length;
             const isLimitReached = messageLimit > 0 && userMessageCount >= messageLimit;
 
-            if (replies.length > 0 && !suggestionUsed && isLastMessageAssistant && !isLimitReached) {
-              const lastMessage = displayMessages[displayMessages.length - 1];
-              const requiresSignup = isGuest && lastMessage?.role === "assistant" && lastMessage?.requiresSignup;
+            const showSuggestions = replies.length > 0 && !suggestionUsed && isLastMessageAssistant && !isLimitReached;
+            const lastMessage = displayMessages[displayMessages.length - 1];
+            const requiresSignup = isGuest && lastMessage?.role === "assistant" && lastMessage?.requiresSignup;
+            const showThreadCardTrigger = !requiresSignup && threadCardDetails && threadCardDetails.length > 0;
 
-              if (requiresSignup) return null;
+            if (!showSuggestions && !showThreadCardTrigger) return null;
 
-              return (
-                <div className="flex flex-col items-start gap-3 mt-2 w-full">
-                  <div className="flex items-center gap-2 pb-2 w-full overflow-x-auto overflow-y-hidden custom-scrollbar">
-                                        <InlineThreadCard
-                      details={requiresSignup ? [] : threadCardDetails}
+            return (
+              <div className="flex flex-col items-start gap-3 mt-2 w-full min-w-0 max-w-full">
+                <div className="flex items-center gap-2 pb-4 w-full min-w-0">
+                  {showThreadCardTrigger && (
+                    <InlineThreadCard
+                      details={threadCardDetails}
                       isOpen={showThreadCard}
                       onToggle={() => setShowThreadCard(!showThreadCard)}
                     />
-                    <div className="w-[2px] h-10 bg-gradient-to-b from-transparent via-gray-200 dark:via-gray-600 to-transparent mx-2 flex-shrink-0 rounded-full"></div>
+                  )}
+                  {showSuggestions && (
+                    <>
+                      {showThreadCardTrigger && (
+                        <div className="w-[2px] h-10 bg-gradient-to-b from-transparent via-gray-200 dark:via-gray-600 to-transparent mx-2 flex-shrink-0 rounded-full"></div>
+                      )}
+                      <div className="flex items-center gap-2 flex-1 min-w-0 overflow-x-auto overflow-y-hidden custom-scrollbar">
                     {replies.map((reply, idx) => {
                       const isReflection = reply.toLowerCase().includes("reflection");
                       if (isReflection) {
@@ -1618,11 +1626,12 @@ export function ChatPage() {
                         </button>
                       );
                     })}
-                  </div>
+                      </div>
+                    </>
+                  )}
                 </div>
-              );
-            }
-            return null;
+              </div>
+            );
           })()}
 
                 <div className="relative z-10 bg-gray-100 rounded-full border border-gray-200/50 flex items-center gap-2 p-1.5 pl-4 pr-1.5 shadow-sm">

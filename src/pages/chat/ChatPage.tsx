@@ -736,7 +736,7 @@ export function ChatPage() {
       setTokens(responseData.accessToken, responseData.refreshToken, false);
       toast.success("Welcome!");
       // Store pending auto-send message to send after reload
-      // sessionStorage.setItem("pending_auto_send_message", "I signed up");
+      sessionStorage.setItem("pending_auto_send_message", "I have signed up");
       // Force reload to current thread as authenticated user with a small delay
       // to ensure database migrations fully commit and the toast is visible
       setTimeout(() => {

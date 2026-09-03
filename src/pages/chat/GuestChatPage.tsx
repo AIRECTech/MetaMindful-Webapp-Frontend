@@ -2,7 +2,7 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 import { useState, useEffect, useRef } from "react";
 import { useParams, useNavigate, Link, useSearchParams } from "react-router-dom";
 import { toast } from "react-hot-toast";
-import { X, Send } from "lucide-react";
+import { X, Send, ArrowRight } from "lucide-react";
 import { api } from "../../lib/api";
 import { extractErrorMessage } from "../../lib/errors";
 import { logAnalyticsEvent } from "../../lib/firebase";
@@ -520,7 +520,7 @@ export function GuestChatPage() {
                   onClick={() => navigate(`/guest/${lastThread.threadId || lastThread.id}`)}
                   className="w-full bg-[#FCD34D] hover:bg-[#FBBF24] text-gray-900 font-semibold py-3 px-4 rounded-xl flex items-center justify-center gap-1 transition shadow-sm text-sm"
                 >
-                  Continue <span className="text-base leading-none">↗</span>
+                  Continue <ArrowRight className="w-4 h-4" />
                 </button>
               </div>
             )}

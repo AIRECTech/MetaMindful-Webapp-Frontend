@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useQueryClient, useQuery } from "@tanstack/react-query";
 import { useNavigate, Link } from "react-router-dom";
-import { Send } from "lucide-react";
+import { Send, ArrowRight } from "lucide-react";
 import { api } from "../../lib/api";
 import { extractErrorMessage } from "../../lib/errors";
 import { logAnalyticsEvent } from "../../lib/firebase";
@@ -359,7 +359,7 @@ export function NewChatPage() {
                         <span className="text-yellow-400 text-xl leading-none font-bold pb-0.5">•</span>
                         <span className="font-bold text-[13px] truncate">To do : {toDo}</span>
                       </div>
-                      <span className="text-[15px] font-semibold">↗</span>
+                      <ArrowRight className="w-4 h-4 flex-shrink-0" />
                     </button>
                   ) : (
                     <button 
@@ -369,7 +369,7 @@ export function NewChatPage() {
                       <div className="flex items-center gap-2 truncate pr-4">
                         <span className="font-bold text-[13px] truncate">Continue chat</span>
                       </div>
-                      <span className="text-[15px] font-semibold">↗</span>
+                      <ArrowRight className="w-4 h-4 flex-shrink-0" />
                     </button>
                   )}
                 </div>

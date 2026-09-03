@@ -1,4 +1,4 @@
-import { Clock } from "lucide-react";
+import { AlarmClockCheck } from "lucide-react";
 
 interface ReminderCardProps {
   reminders: any[];
@@ -22,7 +22,7 @@ export function ReminderCard({ reminders, onClick }: ReminderCardProps) {
         className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 p-4 flex items-center gap-3 shadow-sm rounded-[24px] cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-750 transition-colors"
       >
         <div className="bg-[#fef9c3] dark:bg-yellow-900/40 p-2 rounded-full flex-shrink-0">
-          <Clock className="h-5 w-5 text-[#d97706] dark:text-yellow-500" strokeWidth={2.5} />
+          <AlarmClockCheck className="h-5 w-5 text-[#d97706] dark:text-yellow-500" strokeWidth={2.5} />
         </div>
         <div className="flex-1 min-w-0">
           <div className="text-[15px] font-semibold text-gray-900 dark:text-gray-100 truncate">

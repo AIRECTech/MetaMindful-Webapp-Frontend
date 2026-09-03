@@ -2,7 +2,7 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 import { useState, useEffect, useRef } from "react";
 import { useParams, useNavigate, Link, useSearchParams } from "react-router-dom";
 import { toast } from "react-hot-toast";
-import { X, Mic, Send } from "lucide-react";
+import { X, Send } from "lucide-react";
 import { api } from "../../lib/api";
 import { extractErrorMessage } from "../../lib/errors";
 import { logAnalyticsEvent } from "../../lib/firebase";
@@ -582,13 +582,13 @@ export function GuestChatPage() {
                   rows={1}
                 />
                 <div className="flex items-center gap-1 flex-shrink-0">
-                  <button
+                  {/* <button
                     type="button"
                     className="p-2 text-gray-400 hover:text-gray-650 transition"
                     title="Voice input (Not active)"
                   >
                     <Mic className="h-5 w-5" />
-                  </button>
+                  </button> */}
                   <button
                     onClick={handleSend}
                     disabled={!message.trim() || isLoading}
@@ -602,25 +602,9 @@ export function GuestChatPage() {
 
             {/* Guest user message */}
             <div className="text-center mt-1 sm:mt-2">
-              {!threadId ? (
-                <p className="text-xs sm:text-sm text-gray-400 dark:text-gray-500">
-                  Your data stays 100% private
-                </p>
-              ) : (
-                <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">
-                  Don't lose your chat history. <button
-                    onClick={() => { setIsAuthGate(true); setShowLoginPopup(true); }}
-                    className="text-blue-600 dark:text-blue-400 hover:underline font-medium"
-                  >
-                    Log in
-                  </button> or <button
-                    onClick={() => { setIsAuthGate(true); setShowSignupPopup(true); }}
-                    className="text-blue-600 dark:text-blue-400 hover:underline font-medium"
-                  >
-                    Sign up
-                  </button> to save your conversations.
-                </p>
-              )}
+              <p className="text-xs sm:text-sm text-gray-400 dark:text-gray-500">
+                Your data stays 100% private
+              </p>
             </div>
           </div>
         </div>

@@ -2,7 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState, useEffect, useRef } from "react";
 import { useParams, useNavigate, Link, useLocation } from "react-router-dom";
 import { toast } from "react-hot-toast";
-import { X, RefreshCw, ThumbsUp, ThumbsDown, Mic, ListTodo, Send } from "lucide-react";
+import { X, RefreshCw, ThumbsUp, ThumbsDown, ListTodo, Send } from "lucide-react";
 import { api } from "../../lib/api";
 import { extractErrorMessage } from "../../lib/errors";
 import { logAnalyticsEvent } from "../../lib/firebase";
@@ -1651,13 +1651,13 @@ export function ChatPage() {
                     rows={1}
                   />
                   <div className="flex items-center gap-1 flex-shrink-0">
-                    <button
-                      type="button"
-                      className="p-2 text-gray-400 hover:text-gray-650 transition"
-                      title="Voice input (Not active)"
-                    >
-                      <Mic className="h-5 w-5" />
-                    </button>
+                  {/* <button
+                    type="button"
+                    className="p-2 text-gray-400 hover:text-gray-650 transition"
+                    title="Voice input (Not active)"
+                  >
+                    <Mic className="h-5 w-5" />
+                  </button> */}
                     <button
                       onClick={handleSend}
                       disabled={!message.trim() || isSending || !!requiresSignup}
@@ -1674,24 +1674,7 @@ export function ChatPage() {
             );
           })()}
 
-          {/* Guest user login/signup prompt - text only */}
-          {isGuest && (
-            <div className="text-center mt-4">
-              <p className="text-sm text-gray-600 dark:text-gray-400">
-                Don't lose your chat history. <button
-                  onClick={() => setShowLoginPopup(true)}
-                  className="text-blue-600 dark:text-blue-400 hover:underline font-medium"
-                >
-                  Sign in
-                </button> or <button
-                  onClick={() => setShowSignupPopup(true)}
-                  className="text-blue-600 dark:text-blue-400 hover:underline font-medium"
-                >
-                  Sign up
-                </button> to save your chats.
-              </p>
-            </div>
-          )}
+          {/* Guest user login/signup prompt - removed per request */}
         </div>
       </div>
 

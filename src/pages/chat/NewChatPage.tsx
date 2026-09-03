@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useQueryClient, useQuery } from "@tanstack/react-query";
 import { useNavigate, Link } from "react-router-dom";
-import { Mic, Send } from "lucide-react";
+import { Send } from "lucide-react";
 import { api } from "../../lib/api";
 import { extractErrorMessage } from "../../lib/errors";
 import { logAnalyticsEvent } from "../../lib/firebase";
@@ -308,13 +308,13 @@ export function NewChatPage() {
                   rows={1}
                 />
                 <div className="flex items-center gap-1 flex-shrink-0">
-                  <button
+                  {/* <button
                     type="button"
                     className="p-2 text-gray-400 hover:text-gray-650 transition"
                     title="Voice input (Not active)"
                   >
                     <Mic className="h-5 w-5" />
-                  </button>
+                  </button> */}
                     <button
                       onClick={handleSend}
                       disabled={!message.trim() || isLoading}

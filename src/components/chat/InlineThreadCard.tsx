@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ChevronDown, MessagesSquare, ListChecks } from "lucide-react";
 
 interface InlineThreadCardProps {
@@ -9,6 +9,13 @@ interface InlineThreadCardProps {
 
 export function InlineThreadCard({ details, isOpen, onToggle }: InlineThreadCardProps) {
   const containerRef = useRef<HTMLDivElement>(null);
+  const [hasOpened, setHasOpened] = useState(false);
+
+  useEffect(() => {
+    if (isOpen) {
+      setHasOpened(true);
+    }
+  }, [isOpen]);
   useEffect(() => {
     if (!isOpen) return;
 
@@ -79,13 +86,17 @@ export function InlineThreadCard({ details, isOpen, onToggle }: InlineThreadCard
               onClick={onToggle}
               className={`
                 bg-yellow-300 dark:bg-yellow-400
-                rounded-[14px] h-[44px] w-[44px] flex justify-center items-center
+                rounded-[14px] h-[44px] ${hasOpened ? 'w-[44px]' : 'px-4'} flex justify-center items-center
                 hover:bg-yellow-400 dark:hover:bg-yellow-500 transition-colors
                 pointer-events-auto shadow-sm flex-shrink-0
               `}
               title="View threadcard"
             >
-              <ListChecks className="h-5 w-5 text-gray-900 flex-shrink-0" />
+              {!hasOpened ? (
+                <span className="text-gray-900 font-semibold text-sm whitespace-nowrap">View thread card</span>
+              ) : (
+                <ListChecks className="h-5 w-5 text-gray-900 flex-shrink-0" />
+              )}
             </button>
           </div>
         </div>

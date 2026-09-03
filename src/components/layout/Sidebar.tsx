@@ -1,6 +1,6 @@
 import { useNavigate, useParams } from "react-router-dom";
 import { cn } from "../../lib/utils";
-import { MessageSquare, Settings, Search, Columns, ListTodo, Edit2, Trash2, MoreVertical, LogOut } from "lucide-react";
+import { MessageSquare, Settings, Search, Columns, Edit2, Trash2, MoreVertical, LogOut } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "../../lib/api";
@@ -267,7 +267,7 @@ export function Sidebar() {
             <span>New chat</span>
           </button>
 
-          <button
+          {/* <button
             onClick={() => {
               if (isGuest) {
                 setSignupPopupText("Create your free account to view and complete actions");
@@ -291,7 +291,7 @@ export function Sidebar() {
             <span className="bg-blue-50 text-blue-600 text-[10px] font-bold px-2 py-0.5 rounded-full">
               New
             </span>
-          </button>
+          </button> */}
         </div>
 
         {/* Threads section */}

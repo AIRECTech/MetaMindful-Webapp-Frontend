@@ -14,6 +14,7 @@ import { useChatToast } from "../../contexts/ChatToastContext";
 import { MessageFormatter } from "../../components/chat/MessageFormatter";
 import { InlineThreadCard } from "../../components/chat/InlineThreadCard";
 import { ReminderCard } from "../../components/chat/ReminderCard";
+import { AppDownloadCard } from "../../components/chat/AppDownloadCard";
 
 interface Message {
   id: string;
@@ -27,6 +28,7 @@ interface Message {
   feedback?: any[]; // To track if feedback was given
   requiresSignup?: boolean;
   reminders?: any[]; // Reminders associated with this message
+  showAppCard?: boolean;
 }
 
 interface Thread {
@@ -361,6 +363,7 @@ export function ChatPage() {
           requiresSignup: data.message?.auth_gate?.should_show || false,
           createdAt: new Date().toISOString(),
           reminders: data.ui_element?.reminders || [],
+          showAppCard: data.ui_element?.show_app_card || false,
           ...(shouldRetry ? { retry: true, originalUserMessage: variables } : {}),
         };
 
@@ -557,6 +560,7 @@ export function ChatPage() {
                   replies: data.message.suggested_replies || [],
                   requiresSignup: data.message.auth_gate?.should_show || false,
                   createdAt: new Date().toISOString(),
+                  showAppCard: data.ui_element?.show_app_card || false,
                   ...(shouldRetry ? { retry: true, originalUserMessage: variables } : {}),
                 });
                 logAnalyticsEvent("chat_message_received", {
@@ -1219,6 +1223,9 @@ export function ChatPage() {
                         }}
                       />
                     )}
+
+                    {/* Render AppDownloadCard if triggered by this message */}
+                    {msg.showAppCard && <AppDownloadCard />}
 
                     {msg.role === "assistant" && isGuest && msg.requiresSignup && (() => {
                       const isLastMessage = displayMessages[displayMessages.length - 1]?.id === msg.id;

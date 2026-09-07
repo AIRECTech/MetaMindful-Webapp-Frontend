@@ -22,6 +22,7 @@ interface Message {
   content: string;
   isError?: boolean;
   originalUserMessage?: string; // Store the original user message for retry
+  showAppCard?: boolean;
 }
 
 
@@ -134,6 +135,7 @@ export function NewChatPage() {
           content: chatResponse.message?.assistantMessage || "",
           replies: chatResponse.message?.suggested_replies || [],
           requiresSignup: chatResponse.message?.auth_gate?.should_show || false,
+          showAppCard: chatResponse.ui_element?.show_app_card || false,
           createdAt: new Date().toISOString(),
         }
       ];

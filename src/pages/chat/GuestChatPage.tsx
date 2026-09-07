@@ -29,6 +29,7 @@ interface Message {
   isError?: boolean;
   replies?: string[];
   requiresSignup?: boolean;
+  showAppCard?: boolean;
 }
 
 /**
@@ -254,6 +255,7 @@ export function GuestChatPage() {
             content: data.message?.assistantMessage || "",
             replies: data.message?.suggested_replies || [],
             requiresSignup: data.message?.auth_gate?.should_show || false,
+            showAppCard: data.ui_element?.show_app_card || false,
             createdAt: new Date().toISOString(),
           }
         ];

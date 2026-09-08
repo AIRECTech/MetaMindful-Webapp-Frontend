@@ -40,7 +40,7 @@ export const AppDownloadCard: React.FC = () => {
         <div className="flex items-center gap-3 flex-shrink-0">
           <button 
             className="flex-shrink-0 hover:opacity-90 transition-opacity"
-            onClick={() => window.open('https://apps.apple.com', '_blank')}
+            onClick={() => window.open('https://apps.apple.com/us/app/metamindful/id6569248759', '_blank')}
           >
             <img src="/app-store-badge.svg" alt="Download on the App Store" className="h-10 md:h-12 w-auto bg-black rounded-lg" 
               onError={(e) => {
@@ -60,7 +60,7 @@ export const AppDownloadCard: React.FC = () => {
           
           <button 
             className="flex-shrink-0 hover:opacity-90 transition-opacity"
-            onClick={() => window.open('https://play.google.com', '_blank')}
+            onClick={() => window.open('https://play.google.com/store/apps/details?id=com.metamindful', '_blank')}
           >
             <img src="/google-play-badge.svg" alt="Get it on Google Play" className="h-10 md:h-12 w-auto bg-black rounded-lg"
               onError={(e) => {

@@ -1215,12 +1215,12 @@ export function ChatPage() {
                     {msg.reminders && msg.reminders.length > 0 && (
                       <ReminderCard 
                         reminders={msg.reminders} 
-                        onClick={() => {
+                        onClick={!isGuest ? () => {
                           setExpandedReminders(prev => ({
                             ...prev,
                             [msg.id]: !prev[msg.id]
                           }));
-                        }}
+                        } : undefined}
                       />
                     )}
 
@@ -1338,15 +1338,6 @@ export function ChatPage() {
                               <div className="text-[15px] text-gray-700 dark:text-gray-300">
                                 Your <span className="font-semibold">{msg.reminders[msg.reminders.length - 1].actionDescription || "Task"}</span> reminder is now active. You'll receive a notification {msg.reminders[msg.reminders.length - 1].remindAt || msg.reminders[msg.reminders.length - 1].remind_at ? `at ${new Date(msg.reminders[msg.reminders.length - 1].remindAt || msg.reminders[msg.reminders.length - 1].remind_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}` : ''}.
                               </div>
-                            </div>
-                            
-                            <div className="flex items-center gap-2 mt-1">
-                              <button className="px-5 py-2.5 bg-[#f0f6ff] dark:bg-blue-900/30 hover:bg-[#e0efff] dark:hover:bg-blue-900/50 text-[#1e3a8a] dark:text-blue-200 rounded-xl text-[14px] font-medium transition border-0 flex-shrink-0">
-                                Add another reminder
-                              </button>
-                              <button className="px-5 py-2.5 bg-[#f0f6ff] dark:bg-blue-900/30 hover:bg-[#e0efff] dark:hover:bg-blue-900/50 text-[#1e3a8a] dark:text-blue-200 rounded-xl text-[14px] font-medium transition border-0 flex-shrink-0">
-                                That's all
-                              </button>
                             </div>
                           </div>
                         )}

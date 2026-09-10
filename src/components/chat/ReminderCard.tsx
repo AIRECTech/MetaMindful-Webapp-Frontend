@@ -19,7 +19,7 @@ export function ReminderCard({ reminders, onClick }: ReminderCardProps) {
     <div className="mt-3 w-full">
       <div 
         onClick={onClick}
-        className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 p-4 flex items-center gap-3 shadow-sm rounded-[24px] cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-750 transition-colors"
+        className={`bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 p-4 flex items-center gap-3 shadow-sm rounded-[24px] transition-colors ${onClick ? 'cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-750' : ''}`}
       >
         <div className="bg-[#fef9c3] dark:bg-yellow-900/40 p-2 rounded-full flex-shrink-0">
           <AlarmClockCheck className="h-5 w-5 text-[#d97706] dark:text-yellow-500" strokeWidth={2.5} />

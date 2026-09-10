@@ -21,7 +21,18 @@ export const AppDownloadCard: React.FC = () => {
         </div>
         <button 
           className="bg-[#FCD34D] hover:bg-[#FBBF24] text-gray-900 font-semibold px-5 py-2.5 rounded-full text-sm transition-colors flex-shrink-0"
-          onClick={() => window.open('https://metamindful.app', '_blank')}
+          onClick={() => {
+            const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+            const isAndroid = /android/i.test(navigator.userAgent);
+            
+            if (isAndroid) {
+              window.open('https://play.google.com/store/apps/details?id=com.metamindful', '_blank');
+            } else if (isIOS) {
+              window.open('https://apps.apple.com/us/app/metamindful/id6569248759', '_blank');
+            } else {
+              window.open('https://metamindful.app', '_blank');
+            }
+          }}
         >
           Download
         </button>

@@ -1,30 +1,32 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 
 export const AppDownloadCard: React.FC = () => {
+  const [isIOS, setIsIOS] = useState(false);
+  const [isAndroid, setIsAndroid] = useState(false);
+
+  useEffect(() => {
+    const checkIsIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+    const checkIsAndroid = /android/i.test(navigator.userAgent);
+    setIsIOS(checkIsIOS);
+    setIsAndroid(checkIsAndroid);
+  }, []);
+
   return (
     <div className="mt-4 mb-2 w-full max-w-full">
       {/* Mobile Design (visible on small screens) */}
-      <div className="flex sm:hidden items-center justify-between bg-[url('/mobile%20web%20view%20background.png')] bg-cover bg-center bg-no-repeat bg-gray-50/80 dark:bg-gray-800/80 rounded-2xl p-4 border border-gray-100 dark:border-gray-700 shadow-sm w-full">
+      <div className="flex sm:hidden flex-col bg-[url('/mobile%20web%20view%20background.png')] bg-cover bg-center bg-no-repeat bg-gray-50/80 dark:bg-gray-800/80 rounded-2xl p-5 border border-gray-100 dark:border-gray-700 shadow-sm w-full gap-3">
         <div className="flex items-center gap-3">
-          <div className="w-12 h-12 bg-white dark:bg-gray-700 rounded-xl flex items-center justify-center shadow-sm overflow-hidden flex-shrink-0">
-            {/* MetaMindful Logo placeholder */}
-            <svg viewBox="0 0 48 48" className="w-8 h-8" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M24 8C15.1634 8 8 15.1634 8 24C8 32.8366 15.1634 40 24 40C32.8366 40 40 32.8366 40 24C40 15.1634 32.8366 8 24 8Z" fill="#EBF3FF"/>
-              <path d="M24 12C17.3726 12 12 17.3726 12 24C12 30.6274 17.3726 36 24 36C30.6274 36 36 30.6274 36 24C36 17.3726 30.6274 12 24 12Z" stroke="#4B5563" strokeWidth="2"/>
-              <path d="M24 16C19.5817 16 16 19.5817 16 24C16 28.4183 19.5817 32 24 32C28.4183 32 32 28.4183 32 24C32 19.5817 28.4183 16 24 16Z" stroke="#3B82F6" strokeWidth="2"/>
-            </svg>
+          <div className="w-10 h-10 bg-[#EBF3FF] rounded-xl flex items-center justify-center shadow-sm overflow-hidden flex-shrink-0">
+            <img src="/logo.png" alt="MetaMindful Logo" className="w-7 h-7 object-contain" />
           </div>
-          <div className="flex flex-col">
-            <span className="text-gray-900 dark:text-gray-100 font-bold text-[15px] leading-tight">MetaMindful</span>
-            <span className="text-gray-500 dark:text-gray-400 text-xs font-medium mt-0.5">5.2mb</span>
-          </div>
+          <span className="text-gray-900 dark:text-gray-100 font-bold text-lg leading-tight">Try MetaMindful app</span>
         </div>
+        <p className="text-gray-600 dark:text-gray-300 text-[15px] leading-snug">
+          It's lightweight and won't take up much space on your device.
+        </p>
         <button 
-          className="bg-[#FCD34D] hover:bg-[#FBBF24] text-gray-900 font-semibold px-5 py-2.5 rounded-full text-sm transition-colors flex-shrink-0"
+          className="mt-1 bg-[#FCD34D] hover:bg-[#FBBF24] text-gray-900 font-semibold w-full py-3 rounded-full text-[15px] transition-colors"
           onClick={() => {
-            const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
-            const isAndroid = /android/i.test(navigator.userAgent);
-            
             if (isAndroid) {
               window.open('https://play.google.com/store/apps/details?id=com.metamindful', '_blank');
             } else if (isIOS) {
@@ -34,7 +36,7 @@ export const AppDownloadCard: React.FC = () => {
             }
           }}
         >
-          Download
+          {isAndroid ? 'Get it on Google Play' : isIOS ? 'Download on the App Store' : 'Download the App'}
         </button>
       </div>
 

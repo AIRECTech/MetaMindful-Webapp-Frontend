@@ -4,7 +4,7 @@ export const AppDownloadCard: React.FC = () => {
   return (
     <div className="mt-4 mb-2 w-full max-w-full">
       {/* Mobile Design (visible on small screens) */}
-      <div className="flex sm:hidden items-center justify-between bg-gray-50/80 dark:bg-gray-800/80 rounded-2xl p-4 border border-gray-100 dark:border-gray-700 shadow-sm w-full">
+      <div className="flex sm:hidden items-center justify-between bg-[url('/mobile%20web%20view%20background.png')] bg-cover bg-center bg-no-repeat bg-gray-50/80 dark:bg-gray-800/80 rounded-2xl p-4 border border-gray-100 dark:border-gray-700 shadow-sm w-full">
         <div className="flex items-center gap-3">
           <div className="w-12 h-12 bg-white dark:bg-gray-700 rounded-xl flex items-center justify-center shadow-sm overflow-hidden flex-shrink-0">
             {/* MetaMindful Logo placeholder */}
@@ -39,7 +39,7 @@ export const AppDownloadCard: React.FC = () => {
       </div>
 
       {/* Web Design (visible on medium and larger screens) */}
-      <div className="hidden sm:flex items-center justify-between bg-gray-50/80 dark:bg-gray-800/80 rounded-2xl p-5 border border-gray-100 dark:border-gray-700 shadow-sm w-full">
+      <div className="hidden sm:flex items-center justify-between bg-[url('/laptop%20web%20view%20background.png')] lg:bg-[url('/complete%20background.png')] bg-cover bg-center bg-no-repeat bg-gray-50/80 dark:bg-gray-800/80 rounded-2xl p-5 border border-gray-100 dark:border-gray-700 shadow-sm w-full">
         <div className="flex flex-col pr-4">
           <h3 className="text-gray-900 dark:text-gray-100 font-bold text-base md:text-lg flex items-center gap-2">
             Take MetaMindful with you <span role="img" aria-label="mobile">📱</span>

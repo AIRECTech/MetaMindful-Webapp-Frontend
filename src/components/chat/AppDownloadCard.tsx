@@ -24,11 +24,11 @@ export const AppDownloadCard: React.FC = () => {
         <p className="text-gray-600 dark:text-gray-300 text-[15px] leading-snug">
           It's lightweight and won't take up much space on your device.
         </p>
-        <button 
+        <button
           className="mt-1 bg-[#FCD34D] hover:bg-[#FBBF24] text-gray-900 font-semibold w-full py-3 rounded-full text-[15px] transition-colors"
           onClick={() => {
             if (isAndroid) {
-              window.open('https://play.google.com/store/apps/details?id=com.metamindful', '_blank');
+              window.open('https://play.google.com/store/apps/details?id=com.AIREC.MetaMindful&hl=en', '_blank');
             } else if (isIOS) {
               window.open('https://apps.apple.com/us/app/metamindful/id6569248759', '_blank');
             } else {
@@ -51,15 +51,15 @@ export const AppDownloadCard: React.FC = () => {
           </p>
         </div>
         <div className="flex items-center gap-3 flex-shrink-0">
-          <button 
+          <button
             className="flex-shrink-0 hover:opacity-90 transition-opacity"
             onClick={() => window.open('https://apps.apple.com/us/app/metamindful/id6569248759', '_blank')}
           >
-            <img src="/app-store-badge.svg" alt="Download on the App Store" className="h-10 md:h-12 w-auto bg-black rounded-lg" 
+            <img src="/app-store-badge.svg" alt="Download on the App Store" className="h-10 md:h-12 w-auto bg-black rounded-lg"
               onError={(e) => {
                 e.currentTarget.style.display = 'none';
                 e.currentTarget.nextElementSibling?.classList.remove('hidden');
-              }} 
+              }}
             />
             {/* Fallback if image is missing */}
             <div className="hidden h-10 md:h-12 px-4 bg-black text-white rounded-lg flex items-center justify-center gap-2 border border-gray-700">
@@ -70,8 +70,8 @@ export const AppDownloadCard: React.FC = () => {
               </div>
             </div>
           </button>
-          
-          <button 
+
+          <button
             className="flex-shrink-0 hover:opacity-90 transition-opacity"
             onClick={() => window.open('https://play.google.com/store/apps/details?id=com.metamindful', '_blank')}
           >
@@ -79,15 +79,15 @@ export const AppDownloadCard: React.FC = () => {
               onError={(e) => {
                 e.currentTarget.style.display = 'none';
                 e.currentTarget.nextElementSibling?.classList.remove('hidden');
-              }} 
+              }}
             />
             {/* Fallback if image is missing */}
             <div className="hidden h-10 md:h-12 px-4 bg-black text-white rounded-lg flex items-center justify-center gap-2 border border-gray-700">
               <svg viewBox="0 0 24 24" className="w-5 h-5" xmlns="http://www.w3.org/2000/svg">
-                <path d="M3 20.5v-17c0-.5.4-.9.9-.9.2 0 .4.1.5.2l12 11.1L3.2 20.7c-.1.1-.3.2-.5.2-.4 0-.7-.4-.7-.9z" fill="#00e676"/>
-                <path d="M16.4 13.9l4.5-2.6c.7-.4.7-1.4 0-1.8l-4.5-2.6-3.2 3.5 3.2 3.5z" fill="#ffc107"/>
-                <path d="M3.2 3.5L16.4 15.6l-3.2-3.5L3.2 3.5z" fill="#f44336"/>
-                <path d="M3.2 20.7L16.4 8.6l-3.2 3.5-10 8.6z" fill="#2196f3"/>
+                <path d="M3 20.5v-17c0-.5.4-.9.9-.9.2 0 .4.1.5.2l12 11.1L3.2 20.7c-.1.1-.3.2-.5.2-.4 0-.7-.4-.7-.9z" fill="#00e676" />
+                <path d="M16.4 13.9l4.5-2.6c.7-.4.7-1.4 0-1.8l-4.5-2.6-3.2 3.5 3.2 3.5z" fill="#ffc107" />
+                <path d="M3.2 3.5L16.4 15.6l-3.2-3.5L3.2 3.5z" fill="#f44336" />
+                <path d="M3.2 20.7L16.4 8.6l-3.2 3.5-10 8.6z" fill="#2196f3" />
               </svg>
               <div className="flex flex-col items-start leading-none">
                 <span className="text-[10px]">GET IT ON</span>

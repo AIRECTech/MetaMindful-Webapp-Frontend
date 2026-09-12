@@ -30,7 +30,7 @@ export function SmartAppBanner() {
         const url = data?.results?.[0]?.artworkUrl100;
         if (url) setIconUrl(url);
       })
-      .catch(() => {});
+      .catch(() => { });
   }, []);
 
   // Visibility logic — poll every second to handle both initial load and post-close re-appear
@@ -68,7 +68,7 @@ export function SmartAppBanner() {
   const handleGetApp = () => {
     const ua = window.navigator.userAgent.toLowerCase();
     if (/android/.test(ua)) {
-      window.open('https://play.google.com/store/apps/details?id=com.metamindful', '_blank');
+      window.open('https://play.google.com/store/apps/details?id=com.AIREC.MetaMindful&hl=en', '_blank');
     } else {
       window.open('https://apps.apple.com/us/app/metamindful/id6569248759', '_blank');
     }

@@ -73,7 +73,7 @@ export const AppDownloadCard: React.FC = () => {
 
           <button
             className="flex-shrink-0 hover:opacity-90 transition-opacity"
-            onClick={() => window.open('https://play.google.com/store/apps/details?id=com.metamindful', '_blank')}
+            onClick={() => window.open('https://play.google.com/store/apps/details?id=com.AIREC.MetaMindful&hl=en', '_blank')}
           >
             <img src="/google-play-badge.svg" alt="Get it on Google Play" className="h-10 md:h-12 w-auto bg-black rounded-lg"
               onError={(e) => {

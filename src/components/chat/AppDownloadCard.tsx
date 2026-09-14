@@ -55,14 +55,7 @@ export const AppDownloadCard: React.FC = () => {
             className="flex-shrink-0 hover:opacity-90 transition-opacity"
             onClick={() => window.open('https://apps.apple.com/us/app/metamindful/id6569248759', '_blank')}
           >
-            <img src="/app-store-badge.svg" alt="Download on the App Store" className="h-10 md:h-12 w-auto bg-black rounded-lg"
-              onError={(e) => {
-                e.currentTarget.style.display = 'none';
-                e.currentTarget.nextElementSibling?.classList.remove('hidden');
-              }}
-            />
-            {/* Fallback if image is missing */}
-            <div className="hidden h-10 md:h-12 px-4 bg-black text-white rounded-lg flex items-center justify-center gap-2 border border-gray-700">
+            <div className="h-10 md:h-12 px-4 bg-black text-white rounded-lg flex items-center justify-center gap-2 border border-gray-700">
               <svg viewBox="0 0 24 24" className="w-5 h-5 fill-current" xmlns="http://www.w3.org/2000/svg"><path d="M17.05 20.28c-.98.95-2.05.88-3.08.4-1.09-.5-2.08-.48-3.24 0-1.44.62-2.2.44-3.06-.4C2.79 15.25 3.51 7.59 9.05 7.31c1.35.07 2.29.74 3.08.8 1.18-.24 2.31-.93 3.57-.84 1.51.12 2.65.72 3.4 1.8-3.12 1.87-2.38 5.98.48 7.13-.57 1.5-1.31 2.99-2.54 4.09l.01-.01zM12.03 7.25c-.15-2.23 1.66-4.07 3.74-4.25.29 2.58-2.34 4.5-3.74 4.25z" /></svg>
               <div className="flex flex-col items-start leading-none">
                 <span className="text-[10px]">Download on the</span>
@@ -75,20 +68,8 @@ export const AppDownloadCard: React.FC = () => {
             className="flex-shrink-0 hover:opacity-90 transition-opacity"
             onClick={() => window.open('https://play.google.com/store/apps/details?id=com.AIREC.MetaMindful&hl=en', '_blank')}
           >
-            <img src="/google-play-badge.svg" alt="Get it on Google Play" className="h-10 md:h-12 w-auto bg-black rounded-lg"
-              onError={(e) => {
-                e.currentTarget.style.display = 'none';
-                e.currentTarget.nextElementSibling?.classList.remove('hidden');
-              }}
-            />
-            {/* Fallback if image is missing */}
-            <div className="hidden h-10 md:h-12 px-4 bg-black text-white rounded-lg flex items-center justify-center gap-2 border border-gray-700">
-              <svg viewBox="0 0 24 24" className="w-5 h-5" xmlns="http://www.w3.org/2000/svg">
-                <path d="M3 20.5v-17c0-.5.4-.9.9-.9.2 0 .4.1.5.2l12 11.1L3.2 20.7c-.1.1-.3.2-.5.2-.4 0-.7-.4-.7-.9z" fill="#00e676" />
-                <path d="M16.4 13.9l4.5-2.6c.7-.4.7-1.4 0-1.8l-4.5-2.6-3.2 3.5 3.2 3.5z" fill="#ffc107" />
-                <path d="M3.2 3.5L16.4 15.6l-3.2-3.5L3.2 3.5z" fill="#f44336" />
-                <path d="M3.2 20.7L16.4 8.6l-3.2 3.5-10 8.6z" fill="#2196f3" />
-              </svg>
+            <div className="h-10 md:h-12 px-4 bg-black text-white rounded-lg flex items-center justify-center gap-2 border border-gray-700">
+              <img src="/icons8-google-play-store-48.png" alt="Play Store" className="w-5 h-5 object-contain" />
               <div className="flex flex-col items-start leading-none">
                 <span className="text-[10px]">GET IT ON</span>
                 <span className="text-[14px] font-semibold">Google Play</span>

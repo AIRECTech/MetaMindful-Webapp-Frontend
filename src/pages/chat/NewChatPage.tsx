@@ -257,11 +257,8 @@ export function NewChatPage() {
           <div className="w-full max-w-lg md:max-w-2xl flex flex-col items-start mx-auto py-2">
             {/* Profile logo on top */}
             <div className="mb-4">
-              <div className="w-14 h-14 rounded-full bg-sky-100 flex items-center justify-center text-sky-600">
-                <svg className="w-8 h-8" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M38 12C31.5 12 26 15.5 23 21C22 23 20 23.5 18 24.5C16.5 25.2 15 26.5 15.5 28.5C16 30 18 30.5 19 32C20.2 33.8 19.5 35 19 36C18.5 37 17.5 37.5 18 39C18.5 40.5 20.5 41 21.5 42C23.5 44 26 47 30 48.5C34 50 36 52 38 52C46.8366 52 54 44.8366 54 36C54 27.1634 46.8366 12 38 12Z" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
-                  <path d="M36 24C34.5 22.5 32 22.5 30.5 24C29 25.5 29 28 30.5 29.5L36 35L41.5 29.5C43 28 43 25.5 41.5 24C40 22.5 37.5 22.5 36 24Z" fill="currentColor" opacity="0.8" />
-                </svg>
+              <div className="w-14 h-14 rounded-full bg-sky-100 flex items-center justify-center text-sky-600 overflow-hidden shadow-sm border border-blue-50/50">
+                <img src="/logo.png" alt="MetaMindful Logo" className="w-9 h-9 object-contain" />
               </div>
             </div>
 

@@ -38,7 +38,7 @@ export function InlineThreadCard({ details, isOpen, onToggle }: InlineThreadCard
   return (
     <div 
       ref={containerRef}
-      className="inline-flex z-20 pointer-events-none relative"
+      className="inline-flex z-30 pointer-events-none relative"
     >
       {/* Container to handle positioning and overflow */}
       <div className="relative pointer-events-none flex">
@@ -47,10 +47,10 @@ export function InlineThreadCard({ details, isOpen, onToggle }: InlineThreadCard
             bg-white dark:bg-gray-800 
             border border-yellow-400 
             rounded-2xl shadow-lg
-            overflow-hidden transition-all duration-300 ease-in-out transform origin-bottom
+            overflow-hidden transition-opacity duration-300 ease-in-out
             w-[90vw] md:w-[400px]
             fixed bottom-[90px] left-1/2 -translate-x-1/2 z-50
-            ${isOpen ? 'translate-y-0 opacity-100 pointer-events-auto' : 'translate-y-4 opacity-0 pointer-events-none'}
+            ${isOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}
           `}
         >
           <div className="p-5 border-b border-white dark:border-gray-800">

@@ -1570,7 +1570,7 @@ export function ChatPage() {
                               });
                             }}
                             disabled={isSending || !!requiresSignup}
-                            className="relative z-20 px-4 py-3 bg-[#FCD34D] hover:bg-[#FBBF24] text-gray-900 rounded-xl transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 font-semibold text-xs sm:text-sm flex-shrink-0"
+                            className="relative z-20 px-4 py-3 bg-[#FCD34D] active:bg-[#FBBF24] sm:hover:bg-[#FBBF24] text-gray-900 rounded-xl transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 font-semibold text-xs sm:text-sm flex-shrink-0"
                             title="View Reflection"
                           >
                             <ListTodo className="h-4 w-4" />
@@ -1585,6 +1585,14 @@ export function ChatPage() {
                           onClick={async () => {
                             if (isSending || requiresSignup) return;
                             
+                            logAnalyticsEvent("suggestion_selected", {
+                              thread_id: id,
+                              suggestion: reply
+                            });
+
+                            // Place text in input instead of auto-sending
+                            setMessage(reply);
+
                             // Mark as used in localStorage
                             const lastAssistant = [...displayMessages]
                               .reverse()
@@ -1593,14 +1601,6 @@ export function ChatPage() {
                               localStorage.setItem(`suggestion_used_${id}_${lastAssistant.id}`, "true");
                             }
                             setSuggestionUsed(true);
-
-                            logAnalyticsEvent("suggestion_selected", {
-                              thread_id: id,
-                              suggestion: reply
-                            });
-
-                            // Place text in input instead of auto-sending
-                            setMessage(reply);
 
                             // Focus input
                             setTimeout(() => {
@@ -1619,7 +1619,7 @@ export function ChatPage() {
                             }
                           }}
                           disabled={isSending || !!requiresSignup}
-                          className="relative z-20 w-max max-w-[80vw] px-4 py-3 bg-[#e8f1fc] dark:bg-blue-900/30 text-[#475b75] dark:text-gray-300 rounded-[12px] hover:bg-[#d8e7fa] dark:hover:bg-blue-900/50 text-[13px] leading-[1.4] font-medium transition disabled:opacity-50 disabled:cursor-not-allowed text-center whitespace-nowrap flex-shrink-0"
+                          className="relative z-20 w-max max-w-[80vw] px-4 py-3 bg-[#e8f1fc] dark:bg-blue-900/30 text-[#475b75] dark:text-gray-300 rounded-[12px] active:bg-[#d8e7fa] dark:active:bg-blue-900/50 sm:hover:bg-[#d8e7fa] sm:dark:hover:bg-blue-900/50 text-[13px] leading-[1.4] font-medium transition disabled:opacity-50 disabled:cursor-not-allowed text-center whitespace-nowrap flex-shrink-0"
                         >
                           {reply}
                         </button>

@@ -87,7 +87,7 @@ export function InlineThreadCard({ details, isOpen, onToggle }: InlineThreadCard
               className={`
                 bg-yellow-300 dark:bg-yellow-400
                 rounded-[14px] h-[44px] ${hasOpened ? 'w-[44px]' : 'px-4'} flex justify-center items-center
-                hover:bg-yellow-400 dark:hover:bg-yellow-500 transition-colors
+                active:bg-yellow-400 dark:active:bg-yellow-500 sm:hover:bg-yellow-400 sm:dark:hover:bg-yellow-500 transition-colors
                 pointer-events-auto shadow-sm flex-shrink-0
               `}
               title="View threadcard"

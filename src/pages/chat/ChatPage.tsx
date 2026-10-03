@@ -1240,10 +1240,10 @@ export function ChatPage() {
                           <div className="bg-gray-50/50 dark:bg-gray-800/40 rounded-2xl border border-gray-150 dark:border-gray-805 p-5 w-full max-w-md flex flex-col gap-4 shadow-sm">
                             <div>
                               <h3 className="text-[16px] font-bold text-gray-800 dark:text-gray-100">
-                                Get your reminder
+                                Continue anytime
                               </h3>
                               <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                                Sign in or sign up to receive your reminder when it's time.
+                                Sign in or sign up to save your progress and pick up where you left off.
                               </p>
                             </div>
 

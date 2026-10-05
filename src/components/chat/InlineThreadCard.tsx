@@ -57,12 +57,12 @@ export function InlineThreadCard({ details, isOpen, onToggle }: InlineThreadCard
                 <MessagesSquare className="h-5 w-5 text-gray-500 fill-current" />
                 <h2 className="text-lg font-medium text-gray-800 dark:text-gray-200">Thread Card</h2>
               </div>
-              <button onClick={onToggle} className="text-gray-400 hover:text-gray-600 transition pointer-events-auto">
+              <button onClick={onToggle} className="text-gray-400 hover:text-gray-600 transition">
                 <ChevronDown className="h-5 w-5" />
               </button>
             </div>
             <p className="text-[13px] text-gray-400 italic mb-4">This card shows your current progress</p>
-            <div className="bg-[#eff4f9] dark:bg-gray-700/50 rounded-[10px] px-5 py-4 space-y-4 max-h-[300px] overflow-y-auto pointer-events-auto">
+            <div className="bg-[#eff4f9] dark:bg-gray-700/50 rounded-[10px] px-5 py-4 space-y-4 max-h-[300px] overflow-y-auto">
               {details.map((item, idx) => (
                 <div key={idx} className="flex flex-col gap-0.5">
                   <span className="text-[14px] font-medium text-gray-800 dark:text-gray-200">

@@ -1461,8 +1461,7 @@ export function ChatPage() {
           )}
 
           {(() => {
-            const lastMessage = displayMessages[displayMessages.length - 1];
-            const requiresSignup = isGuest && lastMessage?.role === "assistant" && lastMessage?.requiresSignup;
+
             const messageLimit = parseInt(import.meta.env.VITE_MESSAGE_LIMIT || "0", 10);
             const userMessageCount = displayMessages.filter(msg => msg.role === 'user').length;
             const isLimitReached = messageLimit > 0 && userMessageCount >= messageLimit;
@@ -1562,14 +1561,14 @@ export function ChatPage() {
                           <button
                             key={idx}
                             onClick={async () => {
-                              if (isSending || requiresSignup) return;
+                              if (isSending) return;
                               // Toggle thread card floating panel instead of sending text
                               setShowThreadCard(!showThreadCard);
                               logAnalyticsEvent("view_reflection_clicked", {
                                 thread_id: id
                               });
                             }}
-                            disabled={isSending || !!requiresSignup}
+                            disabled={isSending}
                             className="relative z-20 px-4 py-3 bg-[#FCD34D] active:bg-[#FBBF24] sm:hover:bg-[#FBBF24] text-gray-900 rounded-xl transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 font-semibold text-xs sm:text-sm flex-shrink-0"
                             title="View Reflection"
                           >
@@ -1583,7 +1582,7 @@ export function ChatPage() {
                         <button
                           key={idx}
                           onClick={async () => {
-                            if (isSending || requiresSignup) return;
+                            if (isSending) return;
                             
                             logAnalyticsEvent("suggestion_selected", {
                               thread_id: id,
@@ -1618,7 +1617,7 @@ export function ChatPage() {
                               console.error("[ChatPage] Error logging suggestion click:", error);
                             }
                           }}
-                          disabled={isSending || !!requiresSignup}
+                          disabled={isSending}
                           className="relative z-20 w-max max-w-[80vw] px-4 py-3 bg-[#e8f1fc] dark:bg-blue-900/30 text-[#475b75] dark:text-gray-300 rounded-[12px] active:bg-[#d8e7fa] dark:active:bg-blue-900/50 sm:hover:bg-[#d8e7fa] sm:dark:hover:bg-blue-900/50 text-[13px] leading-[1.4] font-medium transition disabled:opacity-50 disabled:cursor-not-allowed text-center whitespace-nowrap flex-shrink-0"
                         >
                           {reply}
@@ -1645,7 +1644,7 @@ export function ChatPage() {
                         handleSend();
                       }
                     }}
-                    disabled={isSending || !!requiresSignup}
+                    disabled={isSending}
                     rows={1}
                   />
                   <div className="flex items-center gap-1 flex-shrink-0">
@@ -1658,7 +1657,7 @@ export function ChatPage() {
                   </button> */}
                     <button
                       onClick={handleSend}
-                      disabled={!message.trim() || isSending || !!requiresSignup}
+                      disabled={!message.trim() || isSending}
                       className="bg-gray-200 hover:bg-gray-300 p-2 rounded-full disabled:opacity-50 disabled:cursor-not-allowed transition flex-shrink-0 flex items-center justify-center h-9 w-9"
                     >
                       <Send className="h-4.5 w-4.5 text-gray-600" />

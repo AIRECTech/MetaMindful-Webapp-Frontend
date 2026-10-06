@@ -362,7 +362,10 @@ export function ChatPage() {
           replies: data.message?.suggested_replies || [],
           requiresSignup: data.message?.auth_gate?.should_show || false,
           createdAt: new Date().toISOString(),
-          reminders: data.ui_element?.reminders || [],
+          // Reminders are bound to the message the backend assigned them to
+          reminders: (data.ui_element?.reminders || []).filter(
+            (r: any) => String(r.messageId) === String(assistantMsgId)
+          ),
           showAppCard: data.ui_element?.show_app_card || false,
           ...(shouldRetry ? { retry: true, originalUserMessage: variables } : {}),
         };

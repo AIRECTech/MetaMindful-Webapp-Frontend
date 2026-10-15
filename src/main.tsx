@@ -60,12 +60,14 @@ import { PrivacyPolicyPage } from "./pages/legal/PrivacyPolicyPage";
 import { TermsPage } from "./pages/legal/TermsPage";
 import { Outlet } from "react-router-dom";
 import { PageTracker } from "./components/layout/PageTracker";
+import { NewFeatureAnnouncementModal } from "./components/chat/NewFeatureAnnouncementModal";
 
 const router = createBrowserRouter([
   {
     element: (
       <>
         <PageTracker />
+        <NewFeatureAnnouncementModal />
         <Outlet />
       </>
     ),

@@ -4,7 +4,6 @@ import { AlarmClock, ChevronRight } from "lucide-react";
 import { api } from "../../lib/api";
 
 const FEATURE_NAME = "Reminders";
-const STORAGE_DISMISSED_KEY = "airec_reminder_feature_dismissed";
 const STORAGE_VISIT_COUNT_KEY = "airec_reminder_feature_visits";
 const SESSION_SHOWN_KEY = "airec_reminder_feature_shown_session";
 const MAX_VISITS = 3;
@@ -23,10 +22,6 @@ export function NewFeatureAnnouncementModal() {
       pathname === "/start-chat";
 
     if (!isChatPage) return;
-
-    // Check if user already dismissed / acknowledged this feature
-    const isDismissed = localStorage.getItem(STORAGE_DISMISSED_KEY) === "true";
-    if (isDismissed) return;
 
     // Check total visits/impressions shown so far
     const currentVisits = parseInt(localStorage.getItem(STORAGE_VISIT_COUNT_KEY) || "0", 10);
@@ -49,11 +44,8 @@ export function NewFeatureAnnouncementModal() {
   }, [location.pathname]);
 
   const handleGotIt = async () => {
-    // Hide popup immediately
+    // Hide popup immediately for this visit
     setIsOpen(false);
-
-    // Persist dismissal so it will never appear again
-    localStorage.setItem(STORAGE_DISMISSED_KEY, "true");
 
     // Send tracking request to backend to save feature click with user IP
     try {

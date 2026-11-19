@@ -1212,22 +1212,24 @@ export function ChatPage() {
           ) : (
             <>
               {displayMessages.filter((msg, index, array) => {
-                const isAssistantEmpty = (m: Message) => {
+                const isAssistantEmpty = (m: Message, mIndex: number) => {
                   if (m.role !== "assistant") return false;
                   if (m.isError) return false;
+                  const isLast = mIndex === array.length - 1;
                   const hasContent = !!m.content;
                   const hasReminders = m.reminders && m.reminders.length > 0;
                   const hasRequiresSignup = !!m.requiresSignup;
-                  const hasRetry = !!m.retry;
+                  // A retry placeholder has no content and only renders the "Try again" button when it is the last message
+                  const hasRetry = !!m.retry && isLast;
                   const hasReplies = m.replies && m.replies.length > 0;
                   return !hasContent && !hasReminders && !hasRequiresSignup && !hasRetry && !hasReplies;
                 };
 
-                if (isAssistantEmpty(msg)) return false;
+                if (isAssistantEmpty(msg, index)) return false;
                 
                 if (msg.role === "user") {
                   const nextMsg = array[index + 1];
-                  if (nextMsg && isAssistantEmpty(nextMsg)) {
+                  if (nextMsg && isAssistantEmpty(nextMsg, index + 1)) {
                     return false;
                   }
                 }

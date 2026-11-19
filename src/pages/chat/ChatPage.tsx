@@ -192,6 +192,7 @@ export function ChatPage() {
     // or to get the latest chat counts/limits.
     enabled: !!id,
     refetchOnMount: true,
+    refetchOnWindowFocus: false,
     staleTime: 0, // Always refetch on mount to ensure fresh data
     gcTime: Infinity,
   });

@@ -167,6 +167,16 @@ export function ChatPage() {
         });
       }
 
+      // Preserve any optimistic in-flight temp user messages if a refetch completes while sending
+      const cachedThread = queryClient.getQueryData<Thread>(["thread", id]);
+      const inFlightTempMsgs = (cachedThread?.messages || []).filter(m => m.id?.startsWith("temp-"));
+      if (inFlightTempMsgs.length > 0 && isSendingRef.current) {
+        fetchedThread.messages = [
+          ...(fetchedThread.messages || []),
+          ...inFlightTempMsgs,
+        ];
+      }
+
       logAnalyticsEvent("thread_opened", {
         thread_id: id,
         message_count: fetchedThread.messages?.length || 0

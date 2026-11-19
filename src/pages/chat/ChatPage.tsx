@@ -377,13 +377,40 @@ export function ChatPage() {
           createdAt: new Date().toISOString(),
         };
 
+        const stripTempAndTrailingDupUser = (msgs: Message[]) => {
+          // 1. Remove any retry assistant messages and their preceding user message
+          const withoutRetry: Message[] = [];
+          for (let i = 0; i < msgs.length; i++) {
+            const m = msgs[i];
+            const next = msgs[i + 1];
+            if (m.role === "user" && next && next.role === "assistant" && next.retry) {
+              i++; // skip both the failed user message and its retry assistant bubble
+              continue;
+            }
+            if (m.role === "assistant" && m.retry) {
+              continue;
+            }
+            withoutRetry.push(m);
+          }
+
+          // 2. Remove temp messages
+          const withoutTemp = withoutRetry.filter(m => !m.id?.startsWith("temp-"));
+
+          // 3. Remove trailing duplicate user message with identical content
+          const last = withoutTemp[withoutTemp.length - 1];
+          if (last && last.role === "user" && last.content === variables) {
+            return withoutTemp.slice(0, -1);
+          }
+          return withoutTemp;
+        };
+
         if (isGuest) {
           // Update query cache for guests too, so it's ready on reload
           queryClient.setQueryData(["thread", id], (old: Thread | undefined) => {
             if (!old) return old;
             const updated = { ...old };
             updated.messages = [
-              ...old.messages.filter(m => !m.id?.startsWith("temp-")),
+              ...stripTempAndTrailingDupUser(old.messages),
               userMsg,
               assistantMsg,
             ];
@@ -398,7 +425,7 @@ export function ChatPage() {
             setGuestMessages((prev) => {
               console.log("BEFORE:", prev);
               const newMessages: Message[] = [
-                ...prev.filter(m => !m.id?.startsWith("temp-")),
+                ...stripTempAndTrailingDupUser(prev),
                 userMsg,
                 assistantMsg,
               ];
@@ -550,7 +577,7 @@ export function ChatPage() {
 
               // Add confirmed user message and assistant message
               const newMessages = [
-                ...old.messages.filter(m => !m.id?.startsWith("temp-")),
+                ...stripTempAndTrailingDupUser(old.messages),
                 userMsg,
               ];
 
@@ -935,26 +962,42 @@ export function ChatPage() {
     // Store message for potential retry
     setLastFailedMessage(trimmedMessage);
 
-    if (isGuest) {
-      // Remove any previous error messages
-      setGuestMessages((prev) => {
-        return prev.filter((msg) => !msg.isError).map(msg => ({
-          ...msg,
-          replies: undefined
-        }));
-      });
+    const cleanFailedAndErrorMessages = (msgs: Message[]): Message[] => {
+      const cleaned: Message[] = [];
+      for (let i = 0; i < msgs.length; i++) {
+        const m = msgs[i];
+        const next = msgs[i + 1];
+        if (m.isError) continue;
+        if (m.role === "user" && next && next.role === "assistant" && next.retry) {
+          i++; // skip failed user message and its retry assistant placeholder
+          continue;
+        }
+        if (m.role === "assistant" && m.retry) continue;
+        cleaned.push({
+          ...m,
+          replies: undefined,
+        });
+      }
+      return cleaned;
+    };
 
-      setGuestMessages((prev) => {
-        const newMessages: Message[] = [
-          ...prev,
-          {
-            id: `temp-user-${Date.now()}`,
-            role: "user" as const,
-            content: trimmedMessage,
-            createdAt: new Date().toISOString(),
-          },
-        ];
-        return newMessages;
+    if (isGuest) {
+      const tempUserMsg: Message = {
+        id: `temp-user-${Date.now()}`,
+        role: "user" as const,
+        content: trimmedMessage,
+        createdAt: new Date().toISOString(),
+      };
+
+      setGuestMessages((prev) => [...cleanFailedAndErrorMessages(prev), tempUserMsg]);
+
+      // Keep queryClient thread cache in sync for guest so useEffect doesn't overwrite guestMessages
+      queryClient.setQueryData(["thread", id], (old: Thread | undefined) => {
+        if (!old) return old;
+        return {
+          ...old,
+          messages: [...cleanFailedAndErrorMessages(old.messages || []), tempUserMsg],
+        };
       });
     } else {
       // Cancel any outgoing refetches (so they don't overwrite our optimistic update)
@@ -963,24 +1006,15 @@ export function ChatPage() {
         queryClient.cancelQueries({ queryKey: ["thread", id] });
       }
 
-      // Remove any previous error messages
-      queryClient.setQueryData(["thread", id], (old: Thread | undefined) => {
-        if (!old) return old;
-        const filteredMessages = old.messages
-          .filter((msg) => !msg.isError)
-          .map(msg => ({
-            ...msg,
-            replies: undefined
-          }));
-        return { ...old, messages: filteredMessages };
-      });
+      // Remove any previous error / retry messages and append temp user message
       queryClient.setQueryData(["thread", id], (old: Thread | undefined) => {
         if (!old) {
           console.warn("[ChatPage] sendText: no thread data in cache");
           return old;
         }
+        const filteredMessages = cleanFailedAndErrorMessages(old.messages);
         const newMessages: Message[] = [
-          ...old.messages,
+          ...filteredMessages,
           {
             id: `temp-user-${Date.now()}`,
             role: "user",
@@ -1389,12 +1423,11 @@ export function ChatPage() {
                           };
                           if (isGuest) {
                             setGuestMessages((prev) => removeRetryMessages(prev));
-                          } else {
-                            queryClient.setQueryData(["thread", id], (old: Thread | undefined) => {
-                              if (!old) return old;
-                              return { ...old, messages: removeRetryMessages(old.messages) };
-                            });
                           }
+                          queryClient.setQueryData(["thread", id], (old: Thread | undefined) => {
+                            if (!old) return old;
+                            return { ...old, messages: removeRetryMessages(old.messages) };
+                          });
                           logAnalyticsEvent("thread_refreshed", { thread_id: id });
                           sendText(msg.originalUserMessage);
                         }}
